@@ -6,4 +6,5 @@ export type StoryStep = {
 
 export type Feature = {
   title: string;
+  description: string;
 };

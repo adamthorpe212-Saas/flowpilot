@@ -24,8 +24,20 @@ export const storySteps: StoryStep[] = [
 ];
 
 export const features: Feature[] = [
-  { title: "24/7 call handling" },
-  { title: "Lead qualification" },
-  { title: "Automatic booking" },
-  { title: "Instant team alerts" },
+  {
+    title: "24/7 call handling",
+    description: "Every call answered instantly, even outside working hours.",
+  },
+  {
+    title: "Lead qualification",
+    description: "Job type, urgency and location captured automatically.",
+  },
+  {
+    title: "Automatic booking",
+    description: "Appointments added straight to your calendar.",
+  },
+  {
+    title: "Instant team alerts",
+    description: "Your team knows the moment a new job comes in.",
+  },
 ];

@@ -29,6 +29,9 @@ export default function Features() {
             >
               <div className="mb-12 h-2 w-2 rounded-full bg-white shadow-[0_0_20px_rgba(255,255,255,0.7)]" />
               <h3 className="text-lg font-semibold">{feature.title}</h3>
+              <p className="mt-2 text-sm leading-6 text-zinc-500">
+                {feature.description}
+              </p>
             </div>
           ))}
         </div>

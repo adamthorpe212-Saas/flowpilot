@@ -1,4 +1,23 @@
+"use client";
+
+import { useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+
+const CONTACT_EMAIL = "hello@flowpilot.ie";
+
 export default function CTA() {
+  const [copied, setCopied] = useState(false);
+
+  async function handleCopyEmail() {
+    try {
+      await navigator.clipboard.writeText(CONTACT_EMAIL);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      // Clipboard API unavailable in this browser — the mailto link above still works.
+    }
+  }
+
   return (
     <section
       id="contact"
@@ -16,11 +35,37 @@ export default function CTA() {
           offline or already on another job.
         </p>
         <a
-          href="mailto:hello@flowpilot.ie"
+          href={`mailto:${CONTACT_EMAIL}`}
           className="mt-10 inline-block rounded-full bg-white px-8 py-4 font-semibold text-black transition hover:scale-[1.02]"
         >
           Book your demo
         </a>
+
+        <p className="mt-4 flex items-center justify-center gap-2 text-sm text-zinc-500">
+          <span>
+            or email{" "}
+            <span className="select-all text-zinc-400">{CONTACT_EMAIL}</span>
+          </span>
+          <button
+            type="button"
+            onClick={handleCopyEmail}
+            aria-label="Copy email address to clipboard"
+            className="text-zinc-500 transition hover:text-zinc-300"
+          >
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={copied ? "copied" : "idle"}
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.15 }}
+                className="inline-block underline decoration-dotted underline-offset-4"
+              >
+                {copied ? "copied" : "copy"}
+              </motion.span>
+            </AnimatePresence>
+          </button>
+        </p>
       </div>
     </section>
   );

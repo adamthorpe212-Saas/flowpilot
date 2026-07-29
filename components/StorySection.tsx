@@ -1,16 +1,33 @@
 "use client";
 
 import { motion } from "motion/react";
+import { useState } from "react";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { storySteps } from "@/lib/content";
 
-function StoryCards({ className = "" }: { className?: string }) {
+function StoryCards({
+  className = "",
+  activeStep,
+  onHoverStep,
+}: {
+  className?: string;
+  activeStep?: string | null;
+  onHoverStep?: (step: string | null) => void;
+}) {
   return (
-    <div className={`mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 ${className}`}>
+    <div
+      onMouseLeave={() => onHoverStep?.(null)}
+      className={`mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-1 ${className}`}
+    >
       {storySteps.map((step) => (
         <div
           key={step.number}
-          className="rounded-2xl border border-white/10 bg-white/[0.025] p-5"
+          onMouseEnter={() => onHoverStep?.(step.number)}
+          className={`rounded-2xl border p-5 transition-colors duration-300 ${
+            activeStep === step.number
+              ? "border-white/25 bg-white/[0.05]"
+              : "border-white/10 bg-white/[0.025]"
+          }`}
         >
           <div className="flex items-start gap-4">
             <span className="text-xs text-zinc-600">{step.number}</span>
@@ -28,6 +45,7 @@ function StoryCards({ className = "" }: { className?: string }) {
 }
 
 export default function StorySection() {
+  const [hoveredStep, setHoveredStep] = useState<string | null>(null);
   const {
     animationRef,
     orbScale,
@@ -49,6 +67,24 @@ export default function StorySection() {
     bookedScale,
   } = useScrollAnimation();
 
+  // Hovering a step in the list overrides which card is visible. This is
+  // deliberately plain React state + CSS opacity on a wrapping <div>, not a
+  // Framer MotionValue: the scroll-driven cards below already own their
+  // opacity via an externally-bound MotionValue, and once Framer has that
+  // binding it keeps applying it even if the `style`/`animate` prop swaps to
+  // something else on a later render — so a motion-value-based override
+  // fights and loses. A plain CSS opacity on an ordinary parent element is a
+  // separate mechanism entirely and composes with the child's own opacity
+  // with no conflict.
+  const hoverOverrideStyle = (step: string) =>
+    hoveredStep === null
+      ? undefined
+      : {
+          opacity: hoveredStep === step ? 1 : 0,
+          transition: "opacity 300ms ease",
+          pointerEvents: "none" as const,
+        };
+
   return (
     <section
       ref={animationRef}
@@ -68,7 +104,11 @@ export default function StorySection() {
               Scroll through a complete customer enquiry handled without your
               team lifting a finger.
             </p>
-            <StoryCards className="hidden lg:grid" />
+            <StoryCards
+              className="hidden lg:grid"
+              activeStep={hoveredStep}
+              onHoverStep={setHoveredStep}
+            />
           </div>
 
           <div className="relative flex min-h-[580px] items-center justify-center sm:min-h-[640px] lg:h-[calc(100svh-7rem)] lg:min-h-[480px] lg:max-h-[640px]">
@@ -94,141 +134,137 @@ export default function StorySection() {
               <div className="absolute h-[15%] w-[15%] rounded-full bg-black" />
             </motion.div>
 
-            <motion.div
-              style={{
-                opacity: callOpacity,
-                y: callY,
-                scale: callScale,
-              }}
-              className="absolute left-1/2 top-[15%] z-20 w-[84%] max-w-[320px] -translate-x-1/2 rounded-3xl border border-white/15 bg-black/90 p-4 shadow-2xl backdrop-blur-xl sm:top-[14%] sm:p-5"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="relative h-4">
-                    <motion.p
-                      style={{ opacity: callIncomingOpacity }}
-                      className="absolute inset-0 text-xs uppercase tracking-[0.2em] text-zinc-500"
-                    >
-                      Incoming call
-                    </motion.p>
-                    <motion.p
-                      style={{ opacity: callMissedOpacity }}
-                      className="absolute inset-0 text-xs uppercase tracking-[0.2em] text-zinc-400"
-                    >
-                      Missed call
-                    </motion.p>
-                  </div>
-                  <p className="mt-2 text-lg font-semibold">John Murphy</p>
-                  <p className="text-sm text-zinc-500">Mobile number</p>
-                </div>
-                <div
-                  aria-hidden="true"
-                  className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-black"
-                >
-                  ☎
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              style={{
-                opacity: messageOpacity,
-                x: messageX,
-                scale: messageScale,
-              }}
-              className="absolute left-[3%] top-1/2 z-20 w-[72%] max-w-[300px] -translate-y-1/2 rounded-3xl border border-white/15 bg-zinc-900/95 p-4 shadow-2xl backdrop-blur-xl sm:w-[48%] sm:p-5"
-            >
-              <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
-                FlowPilot
-              </p>
-              <p className="mt-3 leading-7 text-zinc-200">
-                Hi John, thanks for calling. Can you tell me what happened and
-                where the job is located?
-              </p>
-              <div
-                aria-hidden="true"
-                className="mt-5 flex items-end gap-1"
+            <div style={hoverOverrideStyle("01")}>
+              <motion.div
+                style={{ opacity: callOpacity, y: callY, scale: callScale }}
+                className="absolute left-1/2 top-[15%] z-20 w-[84%] max-w-[320px] -translate-x-1/2 rounded-3xl border border-white/15 bg-black/90 p-4 shadow-2xl backdrop-blur-xl sm:top-[14%] sm:p-5"
               >
-                {[10, 20, 14, 28, 18, 32, 16, 24, 12].map((height, index) => (
-                  <motion.span
-                    key={index}
-                    animate={{ height: [height, height + 14, height] }}
-                    transition={{
-                      duration: 1,
-                      repeat: Infinity,
-                      delay: index * 0.08,
-                    }}
-                    className="block w-1 rounded-full bg-white motion-reduce:animate-none"
-                    style={{ height }}
-                  />
-                ))}
-              </div>
-            </motion.div>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="relative h-4">
+                      <motion.p
+                        style={{ opacity: callIncomingOpacity }}
+                        className="absolute inset-0 text-xs uppercase tracking-[0.2em] text-zinc-500"
+                      >
+                        Incoming call
+                      </motion.p>
+                      <motion.p
+                        style={{ opacity: callMissedOpacity }}
+                        className="absolute inset-0 text-xs uppercase tracking-[0.2em] text-zinc-400"
+                      >
+                        Missed call
+                      </motion.p>
+                    </div>
+                    <p className="mt-2 text-lg font-semibold">John Murphy</p>
+                    <p className="text-sm text-zinc-500">Mobile number</p>
+                  </div>
+                  <div
+                    aria-hidden="true"
+                    className="flex h-12 w-12 items-center justify-center rounded-full bg-white text-black"
+                  >
+                    ☎
+                  </div>
+                </div>
+              </motion.div>
+            </div>
 
-            <motion.div
-              style={{
-                opacity: leadOpacity,
-                x: leadX,
-                scale: leadScale,
-              }}
-              className="absolute right-[3%] top-[58%] z-20 w-[72%] max-w-[300px] -translate-y-1/2 rounded-3xl border border-white/15 bg-white p-4 text-black shadow-2xl sm:w-[48%] sm:p-5"
-            >
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
-                    New qualified lead
-                  </p>
-                  <h3 className="mt-2 text-xl font-semibold">John Murphy</h3>
-                </div>
-                <div className="rounded-full bg-black px-3 py-1 text-xs text-white">
-                  Urgent
-                </div>
-              </div>
-              <div className="mt-4 space-y-3 text-sm sm:mt-5">
-                <div className="flex justify-between border-b border-black/10 pb-3">
-                  <span className="text-zinc-500">Job</span>
-                  <span className="font-medium">Burst pipe</span>
-                </div>
-                <div className="flex justify-between border-b border-black/10 pb-3">
-                  <span className="text-zinc-500">Location</span>
-                  <span className="font-medium">Raheny, Dublin</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-zinc-500">Preferred time</span>
-                  <span className="font-medium">Today</span>
-                </div>
-              </div>
-            </motion.div>
-
-            <motion.div
-              style={{
-                opacity: bookedOpacity,
-                y: bookedY,
-                scale: bookedScale,
-              }}
-              className="absolute bottom-[4%] left-1/2 z-20 w-[84%] max-w-[340px] -translate-x-1/2 rounded-3xl border border-white/15 bg-black/95 p-4 shadow-2xl backdrop-blur-xl sm:bottom-[6%] sm:p-5"
-            >
-              <div className="flex items-center gap-4">
+            <div style={hoverOverrideStyle("02")}>
+              <motion.div
+                style={{ opacity: messageOpacity, x: messageX, scale: messageScale }}
+                className="absolute left-[3%] top-1/2 z-20 w-[72%] max-w-[300px] -translate-y-1/2 rounded-3xl border border-white/15 bg-zinc-900/95 p-4 shadow-2xl backdrop-blur-xl sm:w-[48%] sm:p-5"
+              >
+                <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
+                  FlowPilot
+                </p>
+                <p className="mt-3 leading-7 text-zinc-200">
+                  Hi John, thanks for calling. Can you tell me what happened and
+                  where the job is located?
+                </p>
                 <div
                   aria-hidden="true"
-                  className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-xl text-black"
+                  className="mt-5 flex items-end gap-1"
                 >
-                  ✓
+                  {[10, 20, 14, 28, 18, 32, 16, 24, 12].map((height, index) => (
+                    <motion.span
+                      key={index}
+                      animate={{ height: [height, height + 14, height] }}
+                      transition={{
+                        duration: 1,
+                        repeat: Infinity,
+                        delay: index * 0.08,
+                      }}
+                      className="block w-1 rounded-full bg-white motion-reduce:animate-none"
+                      style={{ height }}
+                    />
+                  ))}
                 </div>
-                <div>
-                  <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
-                    Appointment confirmed
-                  </p>
-                  <p className="mt-2 font-semibold">Today · 4:30 PM</p>
-                  <p className="text-sm text-zinc-500">
-                    Added to team calendar
-                  </p>
+              </motion.div>
+            </div>
+
+            <div style={hoverOverrideStyle("03")}>
+              <motion.div
+                style={{ opacity: leadOpacity, x: leadX, scale: leadScale }}
+                className="absolute right-[3%] top-[58%] z-20 w-[72%] max-w-[300px] -translate-y-1/2 rounded-3xl border border-white/15 bg-white p-4 text-black shadow-2xl sm:w-[48%] sm:p-5"
+              >
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
+                      New qualified lead
+                    </p>
+                    <h3 className="mt-2 text-xl font-semibold">John Murphy</h3>
+                  </div>
+                  <div className="rounded-full bg-black px-3 py-1 text-xs text-white">
+                    Urgent
+                  </div>
                 </div>
-              </div>
-            </motion.div>
+                <div className="mt-4 space-y-3 text-sm sm:mt-5">
+                  <div className="flex justify-between border-b border-black/10 pb-3">
+                    <span className="text-zinc-500">Job</span>
+                    <span className="font-medium">Burst pipe</span>
+                  </div>
+                  <div className="flex justify-between border-b border-black/10 pb-3">
+                    <span className="text-zinc-500">Location</span>
+                    <span className="font-medium">Raheny, Dublin</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-zinc-500">Preferred time</span>
+                    <span className="font-medium">Today</span>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+
+            <div style={hoverOverrideStyle("04")}>
+              <motion.div
+                style={{ opacity: bookedOpacity, y: bookedY, scale: bookedScale }}
+                className="absolute bottom-[4%] left-1/2 z-20 w-[84%] max-w-[340px] -translate-x-1/2 rounded-3xl border border-white/15 bg-black/95 p-4 shadow-2xl backdrop-blur-xl sm:bottom-[6%] sm:p-5"
+              >
+                <div className="flex items-center gap-4">
+                  <div
+                    aria-hidden="true"
+                    className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-xl text-black"
+                  >
+                    ✓
+                  </div>
+                  <div>
+                    <p className="text-xs uppercase tracking-[0.2em] text-zinc-500">
+                      Appointment confirmed
+                    </p>
+                    <p className="mt-2 font-semibold">Today · 4:30 PM</p>
+                    <p className="text-sm text-zinc-500">
+                      Added to team calendar
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
           </div>
 
-          <StoryCards className="lg:hidden" />
+          <StoryCards
+            className="lg:hidden"
+            activeStep={hoveredStep}
+            onHoverStep={setHoveredStep}
+          />
         </div>
       </div>
     </section>

@@ -39,8 +39,9 @@ export default function Hero({ children }: { children: ReactNode }) {
           transition={{ duration: 0.8, delay: 0.25 }}
           className="mt-7 max-w-2xl text-base leading-7 text-zinc-400 sm:mt-8 sm:text-xl sm:leading-8"
         >
-          Answer missed calls, qualify new leads and book appointments
-          automatically, day or night.
+          When you can&apos;t pick up, FlowPilot does — texting back in
+          seconds, finding out what the job is, and getting it booked before
+          the customer calls someone else.
         </motion.p>
 
         <motion.div
@@ -50,7 +51,7 @@ export default function Hero({ children }: { children: ReactNode }) {
           className="mt-9 flex w-full max-w-sm flex-col gap-3 sm:mt-10 sm:w-auto sm:max-w-none sm:flex-row sm:gap-4"
         >
           <a
-            href="#contact"
+            href="mailto:hello@flowpilot.ie"
             className="rounded-full bg-white px-7 py-3.5 font-semibold text-black transition hover:scale-[1.02]"
           >
             Book a demo

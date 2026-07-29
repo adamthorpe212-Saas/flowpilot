@@ -1,6 +1,4 @@
 import AIOrb from "@/components/AIOrb";
-import CTA from "@/components/CTA";
-import Features from "@/components/Features";
 import Footer from "@/components/Footer";
 import Hero from "@/components/Hero";
 import Navbar from "@/components/Navbar";
@@ -14,8 +12,6 @@ export default function Home() {
         <AIOrb />
       </Hero>
       <StorySection />
-      <Features />
-      <CTA />
       <Footer />
     </main>
   );

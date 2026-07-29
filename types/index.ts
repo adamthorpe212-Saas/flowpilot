@@ -3,8 +3,3 @@ export type StoryStep = {
   title: string;
   text: string;
 };
-
-export type Feature = {
-  title: string;
-  description: string;
-};

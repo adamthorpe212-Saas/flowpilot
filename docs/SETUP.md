@@ -12,13 +12,14 @@ Roughly an hour end to end, most of it waiting for Stripe and Twilio dashboards.
 
 ### A1. Apply the migrations
 
-Supabase Dashboard → **SQL Editor** → New query. Run these three in order,
+Supabase Dashboard → **SQL Editor** → New query. Run these four in order,
 pasting the contents of each and checking it succeeds before the next:
 
 ```
 supabase/migrations/20260731120000_initial_schema.sql
 supabase/migrations/20260731120100_bootstrap_business.sql
 supabase/migrations/20260731120200_create_business_rpc.sql
+supabase/migrations/20260731120300_call_notified_at.sql
 ```
 
 Verify: **Table Editor** should now list `business`, `business_member`,
@@ -200,10 +201,18 @@ does not match the URL Twilio is calling.
 
 ## Known gaps
 
-**Call allowances are not enforced.** Plans advertise 50/200/500 answered calls
-and nothing counts or caps them. A customer on Starter can take unlimited calls.
-Worth fixing before the first customer who might abuse it, not before the first
-customer.
+**Call allowances are counted but not capped.** Usage is tracked and shown on
+the billing page with a nudge toward a bigger plan, but nothing stops a customer
+going over. That is deliberate — the pricing page promises "we never cut you off
+mid-month" — though it does mean a Starter customer could take Business-level
+volume indefinitely without paying for it. Revisit if anyone actually does.
+
+**Nothing has run against a real database or phone line.** 60 tests pass,
+including eleven that drive the real webhook handlers through a whole simulated
+call with fakes only at the database, Twilio and model boundaries. That found
+one bug that would otherwise have shipped silently — notifications never being
+sent for completed calls. But the first genuine run through section E is still
+where remaining bugs will surface.
 
 **Voice is turn-based.** Twilio `<Gather>` rather than ConversationRelay, so
 there is a pause between the caller finishing and the reply, and no barge-in.

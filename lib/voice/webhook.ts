@@ -25,10 +25,19 @@ export async function readTwilioRequest(
     params[key] = value;
   }
 
-  // Twilio signs the URL it was configured with. Rebuilding it from siteUrl
-  // rather than reading request.url matters behind a proxy, where the incoming
-  // host may be an internal address that was never part of the signature.
-  const url = `${siteUrl()}${request.nextUrl.pathname}`;
+  /*
+   * Twilio signs the exact URL it posted to, query string included.
+   *
+   * The search params are not optional here. The silence re-prompt posts to
+   * /api/voice/turn?silences=1, so validating against the bare path produces a
+   * mismatch and a 403 — which kills the call at precisely the moment someone
+   * is on a bad line or hesitating, the case that path exists to handle.
+   *
+   * Rebuilding from siteUrl rather than reading request.url matters behind a
+   * proxy, where the incoming host may be an internal address that was never
+   * part of what Twilio signed.
+   */
+  const url = `${siteUrl()}${request.nextUrl.pathname}${request.nextUrl.search}`;
 
   const valid = verifyTwilioSignature({
     signature: request.headers.get("x-twilio-signature"),

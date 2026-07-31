@@ -23,6 +23,8 @@ let tables: Tables;
 let signatureValid = true;
 let smsConfigured = true;
 const sentSms: { to: string; body: string }[] = [];
+/** URLs the signature check was asked to verify, in order. */
+const signedUrls: string[] = [];
 
 vi.mock("@/lib/supabase/server", () => ({
   createAdminClient: () => createFakeSupabase(tables),
@@ -30,7 +32,10 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 vi.mock("@/lib/twilio", () => ({
-  verifyTwilioSignature: () => signatureValid,
+  verifyTwilioSignature: (options: { url: string }) => {
+    signedUrls.push(options.url);
+    return signatureValid;
+  },
   isSmsConfigured: () => smsConfigured,
   /*
    * No `from` parameter, deliberately. Irish numbers have no SMS capability,
@@ -79,6 +84,7 @@ beforeEach(() => {
   signatureValid = true;
   smsConfigured = true;
   sentSms.length = 0;
+  signedUrls.length = 0;
   resetIds();
   vi.unstubAllGlobals();
   process.env.ANTHROPIC_API_KEY = "test-key";
@@ -99,6 +105,42 @@ describe("signature verification", () => {
     expect(response.status).toBe(403);
     // Nothing may be recorded for a request that was never proven to be Twilio.
     expect(tables.call).toHaveLength(0);
+  });
+});
+
+describe("the URL the signature is checked against", () => {
+  it("includes the query string", async () => {
+    /*
+     * Twilio signs the exact URL it posted to, query string included. The
+     * silence re-prompt posts to /api/voice/turn?silences=1, so validating
+     * against the bare path is a mismatch and a 403 — killing the call at
+     * exactly the moment someone is on a bad line, which is the case that path
+     * exists to handle.
+     *
+     * The other tests mock the signature check to pass, so only this one can
+     * catch it.
+     */
+    await turn(
+      twilioRequest("/api/voice/turn?silences=1", { CallSid: "CA1", SpeechResult: "" }),
+    );
+
+    expect(signedUrls).toHaveLength(1);
+    expect(signedUrls[0]).toContain("/api/voice/turn");
+    expect(signedUrls[0]).toContain("?silences=1");
+  });
+
+  it("is an absolute URL, not a path", async () => {
+    // Rebuilt from siteUrl rather than request.url, so a proxy's internal host
+    // cannot corrupt what is compared against Twilio's signature.
+    await incoming(
+      twilioRequest("/api/voice/incoming", {
+        CallSid: "CA1",
+        From: CALLER_NUMBER,
+        To: FLOWPILOT_NUMBER,
+      }),
+    );
+
+    expect(signedUrls[0]).toMatch(/^https?:\/\//);
   });
 });
 

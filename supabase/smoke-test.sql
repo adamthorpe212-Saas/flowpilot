@@ -109,6 +109,49 @@ begin
   end if;
   raise notice 'OK: notification destination updates in place';
 
+  -- Column privileges: the guard against a customer granting themselves a
+  -- free subscription. Row-level security cannot express this, so if the
+  -- grants did not apply, nothing else would reveal it until someone tried.
+  if exists (
+    select 1 from information_schema.column_privileges
+    where grantee = 'authenticated'
+      and table_schema = 'public'
+      and table_name = 'business'
+      and privilege_type = 'UPDATE'
+      and column_name in (
+        'plan', 'subscription_status', 'status',
+        'stripe_customer_id', 'stripe_subscription_id',
+        'phone_number', 'phone_number_sid', 'forwarding_verified_at'
+      )
+  ) then
+    raise exception 'FAIL: authenticated can still update billing or routing columns on business';
+  end if;
+  raise notice 'OK: customers cannot write billing or routing columns';
+
+  if not exists (
+    select 1 from information_schema.column_privileges
+    where grantee = 'authenticated'
+      and table_schema = 'public'
+      and table_name = 'business'
+      and privilege_type = 'UPDATE'
+      and column_name = 'name'
+  ) then
+    raise exception 'FAIL: customers cannot edit their own business name';
+  end if;
+  raise notice 'OK: customers can still edit their own details';
+
+  if exists (
+    select 1 from information_schema.column_privileges
+    where grantee = 'authenticated'
+      and table_schema = 'public'
+      and table_name = 'lead'
+      and privilege_type = 'UPDATE'
+      and column_name <> 'status'
+  ) then
+    raise exception 'FAIL: authenticated can rewrite captured lead details';
+  end if;
+  raise notice 'OK: lead details are read-only to customers';
+
   raise notice 'ALL CHECKS PASSED';
 end;
 $$;

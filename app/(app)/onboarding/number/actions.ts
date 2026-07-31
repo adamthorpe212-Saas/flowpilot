@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentBusiness } from "@/lib/auth";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/server";
 import {
   findAvailableIrishNumbers,
   isTwilioConfigured,
@@ -48,7 +48,16 @@ export async function provisionNumber(
 
     const purchased = await purchaseNumber(available[0].phoneNumber);
 
-    const supabase = await createClient();
+    /*
+     * Admin client, deliberately.
+     *
+     * phone_number is no longer writable by a customer — it decides which
+     * business an incoming call is routed to, so letting a user set it would
+     * let them point their business at a number they do not own. Attaching the
+     * number FlowPilot just purchased is a privileged act, and this is the
+     * server having verified it, not the customer asserting it.
+     */
+    const supabase = createAdminClient();
     const { error } = await supabase
       .from("business")
       .update({

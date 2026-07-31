@@ -21,6 +21,7 @@ supabase/migrations/20260731120100_bootstrap_business.sql
 supabase/migrations/20260731120200_create_business_rpc.sql
 supabase/migrations/20260731120300_call_notified_at.sql
 supabase/migrations/20260731120400_atomic_replacements.sql
+supabase/migrations/20260731120500_restrict_business_columns.sql
 ```
 
 Verify: **Table Editor** should now list `business`, `business_member`,

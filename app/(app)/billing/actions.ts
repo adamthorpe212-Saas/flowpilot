@@ -5,7 +5,6 @@ import { siteUrl } from "@/lib/env";
 import { getCurrentBusiness } from "@/lib/auth";
 import { PLANS, TRIAL_DAYS } from "@/lib/plans";
 import { isStripeConfigured, priceIdForPlan, stripe } from "@/lib/stripe";
-import { createClient } from "@/lib/supabase/server";
 import type { Plan } from "@/types/database";
 
 export type BillingState = { error: string | null };
@@ -99,11 +98,12 @@ export async function openBillingPortal(
   redirect(url);
 }
 
-/** Records the plan a customer intends to move to, ahead of checkout. */
-export async function selectPlan(plan: Plan): Promise<void> {
-  const business = await getCurrentBusiness();
-  if (!business) return;
-
-  const supabase = await createClient();
-  await supabase.from("business").update({ plan }).eq("id", business.id);
-}
+/*
+ * `selectPlan` used to live here, writing business.plan directly from a user
+ * session. It was never called, and it encoded exactly the pattern that made a
+ * free-subscription escalation possible — a customer-writable column deciding
+ * what they are entitled to.
+ *
+ * The plan a customer chooses now travels as checkout metadata and is applied
+ * by the Stripe webhook, which is the only thing that can prove they paid.
+ */

@@ -5,6 +5,7 @@ import ServicesForm from "@/app/(app)/onboarding/services/ServicesForm";
 import OpeningHoursForm from "./OpeningHoursForm";
 import NotificationRules from "./NotificationRules";
 import VoiceForm from "./VoiceForm";
+import ReceptionistPreview from "./ReceptionistPreview";
 import { getCurrentBusiness } from "@/lib/auth";
 import { isEmailConfigured } from "@/lib/email";
 import { formatIrishNumber } from "@/lib/phone";
@@ -75,6 +76,14 @@ export default async function SettingsPage() {
             .map((service) => service.name)}
           submitLabel="Save changes"
         />
+      </section>
+
+      <section className="mt-14 border-t border-white/10 pt-10">
+        <h2 className="text-sm font-medium text-zinc-300">Try it out</h2>
+        <p className="mt-2 text-sm leading-6 text-zinc-500">
+          See how your receptionist handles a call, without needing a phone.
+        </p>
+        <ReceptionistPreview />
       </section>
 
       <section className="mt-14 border-t border-white/10 pt-10">

@@ -4,6 +4,7 @@ import BusinessForm from "@/app/(app)/onboarding/business/BusinessForm";
 import ServicesForm from "@/app/(app)/onboarding/services/ServicesForm";
 import OpeningHoursForm from "./OpeningHoursForm";
 import NotificationRules from "./NotificationRules";
+import VoiceForm from "./VoiceForm";
 import { getCurrentBusiness } from "@/lib/auth";
 import { isEmailConfigured } from "@/lib/email";
 import { formatIrishNumber } from "@/lib/phone";
@@ -74,6 +75,16 @@ export default async function SettingsPage() {
             .map((service) => service.name)}
           submitLabel="Save changes"
         />
+      </section>
+
+      <section className="mt-14 border-t border-white/10 pt-10">
+        <h2 className="text-sm font-medium text-zinc-300">How it sounds</h2>
+        <p className="mt-2 text-sm leading-6 text-zinc-500">
+          What your receptionist says, and what it must never say.
+        </p>
+        {profile && (
+          <VoiceForm profile={profile} businessName={business.name} />
+        )}
       </section>
 
       <section className="mt-14 border-t border-white/10 pt-10">

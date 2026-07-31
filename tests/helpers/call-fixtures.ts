@@ -24,6 +24,7 @@ export function seedTables(overrides: { business?: Record<string, unknown> } = {
         stripe_customer_id: null,
         stripe_subscription_id: null,
         status: "active",
+        trial_reminder_stage: null,
         created_at: "2026-07-01T00:00:00Z",
         updated_at: "2026-07-01T00:00:00Z",
         ...overrides.business,

@@ -12,7 +12,7 @@ Roughly an hour end to end, most of it waiting for Stripe and Twilio dashboards.
 
 ### A1. Apply the migrations
 
-Supabase Dashboard → **SQL Editor** → New query. Run these seven in order,
+Supabase Dashboard → **SQL Editor** → New query. Run these eight in order,
 pasting the contents of each and checking it succeeds before the next:
 
 ```
@@ -23,6 +23,7 @@ supabase/migrations/20260731120300_call_notified_at.sql
 supabase/migrations/20260731120400_atomic_replacements.sql
 supabase/migrations/20260731120500_restrict_business_columns.sql
 supabase/migrations/20260731120600_sms_abuse_limits.sql
+supabase/migrations/20260731120700_trial_reminders.sql
 ```
 
 Verify: **Table Editor** should now list `business`, `business_member`,
@@ -283,7 +284,7 @@ refuses to run without it — the job deletes phone numbers, so an
 unauthenticated version of it would be a way for anyone to disconnect every
 customer at once.
 
-One job runs daily: it gives back numbers belonging to businesses whose trial
+Two jobs run daily. One warns customers before their trial ends and tells them when it has — without it, a trial expiring means a receptionist that silently stops answering, which a customer discovers as a quiet week. The other gives back numbers belonging to businesses whose trial
 or subscription ended more than a fortnight ago. Without it, every abandoned
 trial leaves a number billed to you every month forever, findable only by
 reading the Twilio invoice line by line.

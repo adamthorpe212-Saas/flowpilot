@@ -61,6 +61,7 @@ function makeBusiness(daysAgo: number): Business {
     stripe_customer_id: null,
     stripe_subscription_id: null,
     status: "active",
+    trial_reminder_stage: null,
     created_at: createdAt.toISOString(),
     updated_at: createdAt.toISOString(),
   };

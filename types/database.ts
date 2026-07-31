@@ -68,6 +68,8 @@ export type Business = {
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   status: BusinessStatus;
+  /** Last trial reminder sent, so the daily job cannot repeat itself. */
+  trial_reminder_stage: "ending_soon" | "expired" | null;
   created_at: string;
   updated_at: string;
 };

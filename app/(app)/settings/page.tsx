@@ -2,10 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import BusinessForm from "@/app/(app)/onboarding/business/BusinessForm";
 import ServicesForm from "@/app/(app)/onboarding/services/ServicesForm";
+import OpeningHoursForm from "./OpeningHoursForm";
 import { getCurrentBusiness } from "@/lib/auth";
 import { formatIrishNumber } from "@/lib/phone";
 import { createClient } from "@/lib/supabase/server";
-import type { NotificationRule, Service } from "@/types/database";
+import type { BusinessProfile, NotificationRule, Service } from "@/types/database";
 
 export const metadata: Metadata = {
   title: "Settings — FlowPilot",
@@ -23,7 +24,7 @@ export default async function SettingsPage() {
 
   const supabase = await createClient();
 
-  const [{ data: serviceRows }, { data: ruleRows }] = await Promise.all([
+  const [{ data: serviceRows }, { data: ruleRows }, { data: profileRow }] = await Promise.all([
     supabase
       .from("service")
       .select("*")
@@ -33,10 +34,16 @@ export default async function SettingsPage() {
       .from("notification_rule")
       .select("*")
       .eq("business_id", business.id),
+    supabase
+      .from("business_profile")
+      .select("*")
+      .eq("business_id", business.id)
+      .maybeSingle(),
   ]);
 
   const services = (serviceRows ?? []) as Service[];
   const rules = (ruleRows ?? []) as NotificationRule[];
+  const profile = (profileRow as BusinessProfile) ?? null;
 
   return (
     <div className="mx-auto max-w-lg">
@@ -64,6 +71,16 @@ export default async function SettingsPage() {
             .map((service) => service.name)}
           submitLabel="Save changes"
         />
+      </section>
+
+      <section className="mt-14 border-t border-white/10 pt-10">
+        <h2 className="text-sm font-medium text-zinc-300">When you answer</h2>
+        {profile && (
+          <OpeningHoursForm
+            openingHours={profile.opening_hours}
+            behaviour={profile.out_of_hours_behaviour}
+          />
+        )}
       </section>
 
       <section className="mt-14 border-t border-white/10 pt-10">

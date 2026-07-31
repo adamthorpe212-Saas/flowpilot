@@ -12,14 +12,19 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+/**
+ * Keep this in step with the pages: FlowPilot answers, qualifies and hands the
+ * job over. It does not book — that's Phase 4 in docs/ROADMAP.md, and claiming
+ * it here would promise a calendar integration the product doesn't have.
+ */
 export const metadata: Metadata = {
   title: "FlowPilot — The AI Receptionist for Service Businesses",
   description:
-    "FlowPilot answers missed calls, qualifies leads and books appointments automatically, day or night — so tradespeople never lose a customer to a call they couldn't take.",
+    "FlowPilot answers the calls you miss, finds out what the job is, and sends it straight to your phone — on holidays, over the weekend, or when you're busy on another site.",
   openGraph: {
     title: "FlowPilot — The AI Receptionist for Service Businesses",
     description:
-      "Answer missed calls, qualify leads and book appointments automatically, day or night.",
+      "Answer every missed call, qualify the job, and get the details sent straight to your phone.",
     siteName: "FlowPilot",
     type: "website",
   },

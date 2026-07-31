@@ -83,17 +83,51 @@ export async function purchaseNumber(
   return { phoneNumber: purchased.phoneNumber, sid: purchased.sid };
 }
 
+export function isSmsConfigured(): boolean {
+  return Boolean(
+    process.env.TWILIO_MESSAGING_SERVICE_SID || process.env.TWILIO_SMS_SENDER_ID,
+  );
+}
+
 /**
- * Outbound A2P to Irish mobiles is well supported even though inbound is not,
- * which is what lets the confirmation text exist at all (D6). The sender is the
- * business's own FlowPilot number so the customer sees a consistent identity.
+ * Outbound A2P to Irish mobiles, used for the confirmation text and the job
+ * alert (D6).
+ *
+ * The sender is deliberately NOT the business's own FlowPilot number. Irish
+ * numbers have no SMS capability in Twilio's inventory at all — the one we
+ * provision is voice-only — so sending from it fails every time, and because
+ * the callers here swallow errors it would fail silently: no job alert, no
+ * written record, and nothing to show for it.
+ *
+ * Sending instead goes through a Messaging Service or a ComReg-registered
+ * alphanumeric sender ID. Registration is per-organisation and cannot be
+ * automated per customer, so there is one FlowPilot sender and the message body
+ * names the business — which is what the default templates already do.
+ *
+ * A consequence worth knowing: alphanumeric senders cannot receive replies.
+ * That is acceptable for a confirmation, and no worse than the situation
+ * already forced by Irish numbering.
  */
 export async function sendSms(options: {
   to: string;
-  from: string;
   body: string;
 }): Promise<void> {
-  await client().messages.create(options);
+  const messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID;
+  const senderId = process.env.TWILIO_SMS_SENDER_ID;
+
+  if (!messagingServiceSid && !senderId) {
+    throw new Error(
+      "No SMS sender configured. Set TWILIO_MESSAGING_SERVICE_SID or TWILIO_SMS_SENDER_ID (registered with ComReg).",
+    );
+  }
+
+  await client().messages.create({
+    to: options.to,
+    body: options.body,
+    ...(messagingServiceSid
+      ? { messagingServiceSid }
+      : { from: senderId as string }),
+  });
 }
 
 export async function placeCall(options: {

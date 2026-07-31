@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/server";
-import { sendSms } from "@/lib/twilio";
+import { isSmsConfigured, sendSms } from "@/lib/twilio";
 import type { Business, BusinessProfile, Lead } from "@/types/database";
 
 /**
@@ -36,7 +36,18 @@ export async function notifyAfterCall(options: {
 }): Promise<void> {
   const { business, profile, lead } = options;
 
-  if (!lead || !business.phone_number) return;
+  if (!lead) return;
+
+  // Loud, and checked before anything is attempted. Without a sender every
+  // message below fails identically, and the per-message catches would turn
+  // that into a product that quietly does nothing at all.
+  if (!isSmsConfigured()) {
+    console.error(
+      "SMS NOT CONFIGURED: no confirmation or job alert can be sent. Set TWILIO_MESSAGING_SERVICE_SID or TWILIO_SMS_SENDER_ID.",
+      { businessId: business.id, leadId: lead.id },
+    );
+    return;
+  }
 
   const values = {
     caller_name: lead.caller_name ?? "there",
@@ -51,7 +62,6 @@ export async function notifyAfterCall(options: {
   try {
     await sendSms({
       to: lead.caller_number,
-      from: business.phone_number,
       body: render(profile.confirmation_sms_template, values),
     });
   } catch (error) {
@@ -84,11 +94,7 @@ export async function notifyAfterCall(options: {
       .join(" · ");
 
     try {
-      await sendSms({
-        to: rule.destination,
-        from: business.phone_number,
-        body: summary,
-      });
+      await sendSms({ to: rule.destination, body: summary });
     } catch (error) {
       console.error("Failed to notify owner", {
         businessId: business.id,

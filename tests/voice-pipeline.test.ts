@@ -21,7 +21,8 @@ import { createFakeSupabase, resetIds, type Tables } from "./helpers/fake-supaba
 
 let tables: Tables;
 let signatureValid = true;
-const sentSms: { to: string; from: string; body: string }[] = [];
+let smsConfigured = true;
+const sentSms: { to: string; body: string }[] = [];
 
 vi.mock("@/lib/supabase/server", () => ({
   createAdminClient: () => createFakeSupabase(tables),
@@ -30,7 +31,14 @@ vi.mock("@/lib/supabase/server", () => ({
 
 vi.mock("@/lib/twilio", () => ({
   verifyTwilioSignature: () => signatureValid,
-  sendSms: async (options: { to: string; from: string; body: string }) => {
+  isSmsConfigured: () => smsConfigured,
+  /*
+   * No `from` parameter, deliberately. Irish numbers have no SMS capability,
+   * so sending from the business's own provisioned number is impossible — the
+   * signature of this mock is what keeps that fact enforced in tests.
+   */
+  sendSms: async (options: { to: string; body: string }) => {
+    if (!smsConfigured) throw new Error("No SMS sender configured");
     sentSms.push(options);
   },
   isTwilioConfigured: () => true,
@@ -69,6 +77,7 @@ function mockModel(replies: { speech: string; captured?: Record<string, string>;
 beforeEach(() => {
   tables = seedTables();
   signatureValid = true;
+  smsConfigured = true;
   sentSms.length = 0;
   resetIds();
   vi.unstubAllGlobals();
@@ -354,6 +363,65 @@ describe("after the call", () => {
     // Texting a customer and an owner twice for the same job is the kind of
     // bug that erodes trust in the whole product.
     expect(sentSms).toHaveLength(afterFirst);
+  });
+
+  it("never sends from the business's own number", async () => {
+    /*
+     * Irish numbers have no SMS capability — the one FlowPilot provisions is
+     * voice-only. Sending from it fails every time, and because notify()
+     * swallows send errors it would fail silently: no job alert, no written
+     * record, and nothing to show for it.
+     *
+     * Asserting on the absence of a `from` is what keeps that from creeping
+     * back in.
+     */
+    await incoming(
+      twilioRequest("/api/voice/incoming", {
+        CallSid: "CA1",
+        From: CALLER_NUMBER,
+        To: FLOWPILOT_NUMBER,
+      }),
+    );
+
+    mockModel([{ speech: "Thanks.", captured: { job_type: "Leak" }, complete: true }]);
+    await turn(twilioRequest("/api/voice/turn", { CallSid: "CA1", SpeechResult: "A leak" }));
+    await status(
+      twilioRequest("/api/voice/status", { CallSid: "CA1", CallStatus: "completed", CallDuration: "30" }),
+    );
+
+    expect(sentSms.length).toBeGreaterThan(0);
+    for (const sms of sentSms) {
+      expect(sms).not.toHaveProperty("from");
+      expect(JSON.stringify(sms)).not.toContain(FLOWPILOT_NUMBER);
+    }
+  });
+
+  it("says so loudly when no SMS sender is configured", async () => {
+    smsConfigured = false;
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await incoming(
+      twilioRequest("/api/voice/incoming", {
+        CallSid: "CA1",
+        From: CALLER_NUMBER,
+        To: FLOWPILOT_NUMBER,
+      }),
+    );
+
+    mockModel([{ speech: "Thanks.", captured: { job_type: "Leak" }, complete: true }]);
+    await turn(twilioRequest("/api/voice/turn", { CallSid: "CA1", SpeechResult: "A leak" }));
+    await status(
+      twilioRequest("/api/voice/status", { CallSid: "CA1", CallStatus: "completed", CallDuration: "30" }),
+    );
+
+    expect(sentSms).toHaveLength(0);
+    // A misconfiguration that produces no messages must be findable in logs,
+    // not inferred from customer complaints.
+    expect(
+      errors.mock.calls.some((call) => String(call[0]).includes("SMS NOT CONFIGURED")),
+    ).toBe(true);
+
+    errors.mockRestore();
   });
 
   it("still finalises a call that was abandoned mid-sentence", async () => {

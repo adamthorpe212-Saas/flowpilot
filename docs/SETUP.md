@@ -117,14 +117,41 @@ Once approved, add to Vercel:
 
 Provisioning passes both through when present and works without them in test.
 
-### C2. Credentials
+### C2. SMS sender — also start early, ComReg registration takes time
+
+The confirmation text and the job alert cannot be sent from the number you
+provision. Irish numbers have **no SMS capability at all** in Twilio's
+inventory, so sending from one fails every time.
+
+Register an alphanumeric sender ID with ComReg — `FlowPilot`, 3–11 characters —
+via Twilio Console → **Messaging → Sender IDs**, or the
+[ComReg SMS Sender ID Registry](https://www.comreg.ie/industry/electronic-communications/nuisance-communications/sms-sender-id-registry/).
+Unregistered sender IDs are delivered to Irish phones labelled **"Likely Scam"**,
+which is worse than not sending at all.
+
+Then set one of these in Vercel:
+
+- `TWILIO_MESSAGING_SERVICE_SID` — preferred; Twilio picks the sender
+- `TWILIO_SMS_SENDER_ID` — the registered alphanumeric ID
+
+There is one sender for all customers, because ComReg registration is
+per-organisation and cannot be automated per business. The message body names
+the business instead, which is what the default templates already do.
+
+Alphanumeric senders cannot receive replies. That is fine for a confirmation,
+and no worse than Irish numbering already forces.
+
+**If neither is set, no confirmation and no job alert is ever sent.** The logs
+will say `SMS NOT CONFIGURED` — check for it after your first test call.
+
+### C3. Credentials
 
 From the Twilio Console dashboard, add to Vercel:
 
 - `TWILIO_ACCOUNT_SID`
 - `TWILIO_AUTH_TOKEN`
 
-### C3. Webhooks
+### C4. Webhooks
 
 Numbers bought through the app configure their own webhooks automatically. If
 you buy one by hand, set it under **Phone Numbers → Manage → Active numbers**:

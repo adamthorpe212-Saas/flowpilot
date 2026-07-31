@@ -25,19 +25,11 @@ export async function saveMobile(
 
   const supabase = await createClient();
 
-  await supabase
-    .from("notification_rule")
-    .delete()
-    .eq("business_id", business.id)
-    .eq("channel", "sms");
-
-  const { error } = await supabase.from("notification_rule").insert({
-    business_id: business.id,
-    channel: "sms",
-    destination: mobile,
-    on_new_lead: true,
-    on_urgent_lead: true,
-    outside_hours: true,
+  // Single transaction. As a delete followed by an insert, a failure between
+  // them left the business with nowhere to send jobs at all.
+  const { error } = await supabase.rpc("replace_sms_notification", {
+    target_business_id: business.id,
+    sms_destination: mobile,
   });
 
   if (error) {

@@ -20,12 +20,28 @@ supabase/migrations/20260731120000_initial_schema.sql
 supabase/migrations/20260731120100_bootstrap_business.sql
 supabase/migrations/20260731120200_create_business_rpc.sql
 supabase/migrations/20260731120300_call_notified_at.sql
+supabase/migrations/20260731120400_atomic_replacements.sql
 ```
 
 Verify: **Table Editor** should now list `business`, `business_member`,
 `business_profile`, `service`, `qualification_question`, `notification_rule`,
 `call` and `lead`. Each should show **RLS enabled**. If any does not, stop —
 that table would be readable across tenants.
+
+### A1b. Run the smoke test
+
+Paste and run `supabase/smoke-test.sql`. It creates a business, exercises the
+database functions, checks the results and rolls everything back — so it is
+safe to run and leaves nothing behind.
+
+Expect a series of `OK:` notices ending in `ALL CHECKS PASSED`, and no rows from
+the final query.
+
+This is not optional belt-and-braces. `npm run validate:sql` cannot check inside
+plpgsql function bodies — to that parser a function body is one string literal,
+so a misspelled variable parses cleanly and only fails when a real customer
+saves their services. That has already happened once in this codebase. Running
+the functions is the only way to know.
 
 ### A2. Auth settings
 

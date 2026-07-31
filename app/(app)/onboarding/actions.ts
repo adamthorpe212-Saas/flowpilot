@@ -92,28 +92,23 @@ export async function saveServices(
 
   const supabase = await createClient();
 
-  // Replace rather than merge. The form shows the full list, so what the user
-  // submits is the complete intended state — merging would silently resurrect
-  // services they had just removed.
-  const { error: deleteError } = await supabase
-    .from("service")
-    .delete()
-    .eq("business_id", business.id);
-
-  if (deleteError) {
-    console.error("Failed to clear services", deleteError);
-    return { error: "Couldn't save that. Try again in a moment." };
-  }
-
-  const { error } = await supabase.from("service").insert(
-    names.map((name, index) => ({
-      business_id: business.id,
-      name,
-      emergency_eligible: emergencyNames.has(name.toLowerCase()),
-      typical_urgency: emergencyNames.has(name.toLowerCase()) ? "high" : "normal",
-      sort_order: index,
-    })),
-  );
+  /*
+   * Replace rather than merge: the form shows the full list, so what is
+   * submitted is the complete intended state, and merging would silently
+   * resurrect services the user had just removed.
+   *
+   * Done in one database function rather than a delete followed by an insert.
+   * As two round trips, a failure between them wiped every service and left the
+   * receptionist with no vocabulary to match callers against — invisibly, and
+   * with nothing to roll back to.
+   */
+  const { error } = await supabase.rpc("replace_services", {
+    target_business_id: business.id,
+    service_names: names,
+    emergency_names: names.filter((name) =>
+      emergencyNames.has(name.toLowerCase()),
+    ),
+  });
 
   if (error) {
     console.error("Failed to save services", error);
@@ -143,19 +138,12 @@ export async function saveNotificationTarget(
 
   const supabase = await createClient();
 
-  await supabase
-    .from("notification_rule")
-    .delete()
-    .eq("business_id", business.id)
-    .eq("channel", "sms");
-
-  const { error } = await supabase.from("notification_rule").insert({
-    business_id: business.id,
-    channel: "sms",
-    destination,
-    on_new_lead: true,
-    on_urgent_lead: true,
-    outside_hours: true,
+  // One transaction — see replace_services above. A half-failure here would
+  // leave the business with no notification rule, so qualified jobs would be
+  // captured perfectly and then sent nowhere.
+  const { error } = await supabase.rpc("replace_sms_notification", {
+    target_business_id: business.id,
+    sms_destination: destination,
   });
 
   if (error) {

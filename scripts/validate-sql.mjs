@@ -7,6 +7,13 @@
  * they are applied to a real project. Parsing is not a substitute for running
  * them — it catches syntax, not semantics — but it is the difference between
  * handing over SQL that has been checked and SQL that has only been read.
+ *
+ * IMPORTANT LIMITATION: plpgsql function bodies are NOT checked. To this
+ * parser a `$$ ... $$` body is a single string literal, so a misspelled
+ * variable inside a function parses perfectly and then fails the first time it
+ * runs. That has already happened once here. `supabase/smoke-test.sql`
+ * executes the functions and is the only thing that catches it — run it after
+ * applying migrations.
  */
 import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";

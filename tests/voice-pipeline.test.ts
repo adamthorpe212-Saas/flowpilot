@@ -274,6 +274,54 @@ describe("a full call", () => {
   });
 });
 
+describe("call length limit", () => {
+  it("closes a call that has run past the configured limit", async () => {
+    await incoming(
+      twilioRequest("/api/voice/incoming", {
+        CallSid: "CA1",
+        From: CALLER_NUMBER,
+        To: FLOWPILOT_NUMBER,
+      }),
+    );
+
+    // Backdate the call past the 180s limit in the fixture.
+    tables.call[0].started_at = new Date(Date.now() - 200_000).toISOString();
+
+    mockModel([{ speech: "And whereabouts are you?" }]);
+
+    const xml = await twimlOf(
+      await turn(
+        twilioRequest("/api/voice/turn", { CallSid: "CA1", SpeechResult: "Still talking" }),
+      ),
+    );
+
+    // Closed on the business's own closing line, not cut off mid-sentence.
+    expect(xml).toContain("<Hangup/>");
+    expect(xml).not.toContain("<Gather");
+    expect(xml).toContain("someone will be in touch");
+    expect(tables.call[0].status).toBe("completed");
+  });
+
+  it("leaves a call within the limit alone", async () => {
+    await incoming(
+      twilioRequest("/api/voice/incoming", {
+        CallSid: "CA1",
+        From: CALLER_NUMBER,
+        To: FLOWPILOT_NUMBER,
+      }),
+    );
+
+    tables.call[0].started_at = new Date(Date.now() - 30_000).toISOString();
+    mockModel([{ speech: "And whereabouts are you?" }]);
+
+    const xml = await twimlOf(
+      await turn(twilioRequest("/api/voice/turn", { CallSid: "CA1", SpeechResult: "A leak" })),
+    );
+
+    expect(xml).toContain("<Gather");
+  });
+});
+
 describe("silence handling", () => {
   it("re-prompts once, then closes rather than looping forever", async () => {
     await incoming(

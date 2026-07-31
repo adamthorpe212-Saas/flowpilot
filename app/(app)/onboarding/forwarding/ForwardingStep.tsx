@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect, useState } from "react";
 import {
   saveMobile,
   startForwardingTest,
@@ -19,6 +20,10 @@ import {
 
 const INITIAL: ForwardingState = { error: null };
 
+/** How long to wait for a forwarded test call before offering help. */
+const POLL_INTERVAL_MS = 3000;
+const POLL_ATTEMPTS = 15;
+
 export default function ForwardingStep({
   flowpilotNumber,
   mobile,
@@ -30,6 +35,35 @@ export default function ForwardingStep({
 }) {
   const [mobileState, saveMobileAction] = useActionState(saveMobile, INITIAL);
   const [testState, testAction] = useActionState(startForwardingTest, INITIAL);
+
+  const router = useRouter();
+  const [attempts, setAttempts] = useState<number | null>(null);
+
+  const waiting = attempts !== null && attempts < POLL_ATTEMPTS && !verified;
+  const gaveUp = attempts !== null && attempts >= POLL_ATTEMPTS && !verified;
+
+  /*
+   * Watch for the forwarded call arriving.
+   *
+   * Confirmation happens server-side, in the voice webhook — there is no signal
+   * on this page when it lands. Without polling, a customer whose forwarding is
+   * not set up correctly sees "we're ringing you now" and then nothing at all,
+   * forever, on the one step most likely to go wrong.
+   */
+  useEffect(() => {
+    // Counting starts in the submit handler, not here — initialising it from
+    // inside the effect would be a synchronous setState that triggers an extra
+    // render pass on every poll.
+    if (attempts === null || verified) return;
+    if (attempts >= POLL_ATTEMPTS) return;
+
+    const id = setTimeout(() => {
+      router.refresh();
+      setAttempts((current) => (current ?? 0) + 1);
+    }, POLL_INTERVAL_MS);
+
+    return () => clearTimeout(id);
+  }, [verified, attempts, router]);
 
   if (!flowpilotNumber) {
     return (
@@ -151,9 +185,51 @@ export default function ForwardingStep({
           we&apos;ll confirm the call reached us.
         </p>
 
-        <form action={testAction} className="mt-4 space-y-4">
+        <form
+          action={() => {
+            // Restart the count on every attempt, or a second try would stay
+            // stuck on "we didn't get that call" and never poll again.
+            setAttempts(0);
+            testAction();
+          }}
+          className="mt-4 space-y-4"
+        >
           <FormError message={testState.error} />
-          {testState.message && (
+
+          {waiting && (
+            <p
+              role="status"
+              className="flex items-center gap-3 rounded-xl border border-white/15 bg-white/[0.05] px-4 py-3 text-sm text-zinc-200"
+            >
+              <span
+                aria-hidden="true"
+                className="h-2 w-2 flex-none animate-pulse rounded-full bg-emerald-400 motion-reduce:animate-none"
+              />
+              Ringing you now — don&apos;t answer. Waiting for the call to reach
+              us…
+            </p>
+          )}
+
+          {gaveUp && (
+            <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
+              <p className="font-medium">We didn&apos;t get that call.</p>
+              <ul className="mt-2 space-y-1.5 text-amber-100/80">
+                <li>
+                  Did you dial the forwarding code above, and did your network
+                  confirm it?
+                </li>
+                <li>
+                  Did you answer the call? It has to ring out for us to see it.
+                </li>
+                <li>
+                  If your phone went to voicemail first, voicemail is taking the
+                  call instead — turn it off and try again.
+                </li>
+              </ul>
+            </div>
+          )}
+
+          {!waiting && !gaveUp && testState.message && (
             <p
               role="status"
               className="rounded-xl border border-white/15 bg-white/[0.05] px-4 py-3 text-sm text-zinc-200"
@@ -161,7 +237,10 @@ export default function ForwardingStep({
               {testState.message}
             </p>
           )}
-          <SubmitButton>Ring my phone</SubmitButton>
+
+          <SubmitButton>
+            {gaveUp ? "Try the test again" : "Ring my phone"}
+          </SubmitButton>
         </form>
       </section>
     </div>

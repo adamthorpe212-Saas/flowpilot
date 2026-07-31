@@ -57,6 +57,28 @@ export async function POST(request: NextRequest) {
   const { business, receptionist } = context;
   const transcript = call.transcript ?? [];
 
+  /*
+   * The per-business time limit, which until now was configured and never read.
+   *
+   * MAX_TURNS bounds a looping conversation, but not a slow one: twelve long
+   * rambles is a far more expensive call than twelve short exchanges, and voice
+   * is billed by the minute. Closing on the caller's own words rather than
+   * cutting them off mid-sentence is the polite version of a cost control.
+   */
+  const elapsedSeconds =
+    (Date.now() - new Date(call.started_at).getTime()) / 1000;
+
+  if (elapsedSeconds > receptionist.profile.max_call_seconds) {
+    await supabase
+      .from("call")
+      .update({ status: "completed", ended_at: new Date().toISOString() })
+      .eq("id", call.id);
+
+    return twiml(
+      `<Response>${say(receptionist.profile.closing_line)}<Hangup/></Response>`,
+    );
+  }
+
   // The caller said nothing. Ask once more, then close politely — repeating
   // forever at somebody who cannot hear us is worse than ending the call.
   if (!spoken) {

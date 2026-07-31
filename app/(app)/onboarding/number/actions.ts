@@ -3,10 +3,12 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentBusiness } from "@/lib/auth";
 import { createAdminClient } from "@/lib/supabase/server";
+import { shouldAnswerCalls } from "@/lib/usage";
 import {
   findAvailableIrishNumbers,
   isTwilioConfigured,
   purchaseNumber,
+  releaseNumber,
 } from "@/lib/twilio";
 
 export type ProvisionState = { error: string | null; phoneNumber?: string };
@@ -27,6 +29,20 @@ export async function provisionNumber(
 
   if (business.phone_number) {
     return { error: null, phoneNumber: business.phone_number };
+  }
+
+  /*
+   * A number costs monthly rental from the moment it is bought, so a customer
+   * whose subscription has lapsed must not be able to buy one. Without this
+   * check, cancelling and then provisioning is a way to make FlowPilot pay
+   * indefinitely for a number that will never answer a call — shouldAnswerCalls
+   * would decline every one of them.
+   */
+  if (!shouldAnswerCalls(business)) {
+    return {
+      error:
+        "Your subscription isn't active, so we can't set up a number yet. Sort out billing and come back.",
+    };
   }
 
   if (!isTwilioConfigured()) {
@@ -67,15 +83,37 @@ export async function provisionNumber(
       .eq("id", business.id);
 
     if (error) {
-      // The number is bought and billing has started, but it is not attached to
-      // anyone. Log loudly rather than silently: this is the one failure here
-      // that costs real money and needs a human to reconcile.
-      console.error(
-        "PROVISIONING ORPHAN: purchased number not saved to business",
-        { businessId: business.id, phoneNumber: purchased.phoneNumber, error },
-      );
+      /*
+       * The number is bought and billing has started, but it is attached to
+       * nobody. Rather than logging it for someone to reconcile off the Twilio
+       * bill later, give it straight back — an orphaned number is a permanent
+       * monthly cost that nothing in the product will ever surface again.
+       *
+       * If the release also fails there is genuinely nothing left to do but
+       * shout, so that case is logged with both identifiers needed to find it.
+       */
+      console.error("Failed to attach purchased number, releasing it", {
+        businessId: business.id,
+        phoneNumber: purchased.phoneNumber,
+        error,
+      });
+
+      try {
+        await releaseNumber(purchased.sid);
+      } catch (releaseError) {
+        console.error(
+          "PROVISIONING ORPHAN: number bought, not attached, and not released",
+          {
+            businessId: business.id,
+            phoneNumber: purchased.phoneNumber,
+            sid: purchased.sid,
+            releaseError,
+          },
+        );
+      }
+
       return {
-        error: "We got your number but couldn't save it. We're looking into it.",
+        error: "Couldn't finish setting up your number. Try again in a moment.",
       };
     }
 

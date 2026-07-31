@@ -108,6 +108,18 @@ export function isSmsConfigured(): boolean {
  * That is acceptable for a confirmation, and no worse than the situation
  * already forced by Irish numbering.
  */
+/**
+ * Gives a number back.
+ *
+ * Used to roll back a purchase that could not be attached to a business.
+ * Without it, a failure between buying and saving leaves FlowPilot paying
+ * monthly rental on a number nobody owns, discoverable only by someone
+ * reconciling the Twilio bill by hand.
+ */
+export async function releaseNumber(sid: string): Promise<void> {
+  await client().incomingPhoneNumbers(sid).remove();
+}
+
 export async function sendSms(options: {
   to: string;
   body: string;

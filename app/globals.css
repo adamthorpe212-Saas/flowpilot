@@ -24,3 +24,40 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/*
+ * Reveal animations for the lifecycle ring and the two-phone demo.
+ *
+ * These are CSS rather than JS-driven on purpose. A JS fade holds the element
+ * at its `initial` value until an animation frame runs, so a backgrounded tab
+ * (where rAF is paused) renders a blank phone. With no fill-mode the resting
+ * state here is the visible one — if the animation never plays, the content is
+ * simply there.
+ */
+@keyframes fp-fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes fp-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.fp-fade-in {
+  animation: fp-fade-in 300ms ease-out;
+}
+
+.fp-rise-in {
+  animation: fp-rise-in 350ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fp-fade-in,
+  .fp-rise-in {
+    animation: none;
+  }
+}

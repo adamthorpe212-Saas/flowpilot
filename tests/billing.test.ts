@@ -74,10 +74,21 @@ describe("toSubscriptionStatus", () => {
 });
 
 describe("shouldAnswerCalls", () => {
-  it("answers while trialing, active, or before checkout", () => {
+  it("answers while trialing or active", () => {
     expect(shouldAnswerCalls(business({ subscription_status: "trialing" }))).toBe(true);
     expect(shouldAnswerCalls(business({ subscription_status: "active" }))).toBe(true);
-    expect(shouldAnswerCalls(business({ subscription_status: "incomplete" }))).toBe(true);
+  });
+
+  it("does not answer for a signup whose trial has run out", () => {
+    /*
+     * This fixture was created well over the trial length ago. It previously
+     * asserted the opposite, which is how the free-forever bug survived: every
+     * signup starts as 'incomplete', and nothing anywhere measured how long ago
+     * that was. See tests/trial.test.ts for the boundaries.
+     */
+    expect(shouldAnswerCalls(business({ subscription_status: "incomplete" }))).toBe(
+      false,
+    );
   });
 
   it("keeps answering while a payment is being sorted out", () => {

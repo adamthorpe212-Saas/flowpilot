@@ -8,7 +8,7 @@ import {
   STATUS_STYLES,
 } from "@/lib/lead-views";
 import { createClient } from "@/lib/supabase/server";
-import { shouldAnswerCalls } from "@/lib/usage";
+import { shouldAnswerCalls, trialStatus } from "@/lib/usage";
 import type { Lead } from "@/types/database";
 
 export const metadata: Metadata = {
@@ -70,6 +70,15 @@ export default async function DashboardPage({
   const isLive = setupDone && business ? shouldAnswerCalls(business) : false;
   const suspended = setupDone && !isLive;
 
+  // A trial running out is a different problem from a subscription lapsing,
+  // and telling someone to "sort out billing" when they never had a bill is
+  // confusing at exactly the wrong moment.
+  const trial = business ? trialStatus(business) : null;
+  const onTrial =
+    business?.subscription_status === "incomplete" && !trial?.expired;
+  const trialExpired =
+    business?.subscription_status === "incomplete" && trial?.expired;
+
   return (
     <div>
       <div className="flex flex-wrap items-end justify-between gap-4">
@@ -99,18 +108,37 @@ export default async function DashboardPage({
         </span>
       </div>
 
+      {onTrial && trial && trial.daysRemaining <= 5 && (
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-amber-500/25 bg-amber-500/10 p-5">
+          <p className="text-sm text-amber-100">
+            {trial.daysRemaining === 0
+              ? "Your free trial ends today."
+              : `${trial.daysRemaining} ${trial.daysRemaining === 1 ? "day" : "days"} left on your free trial.`}{" "}
+            Calls stop being answered after that.
+          </p>
+          <Link
+            href="/billing"
+            className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200"
+          >
+            Choose a plan
+          </Link>
+        </div>
+      )}
+
       {!isLive && (
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
           <p className="text-sm text-zinc-300">
-            {suspended
-              ? "Your subscription has lapsed, so calls aren't being answered."
-              : "Your receptionist isn't answering calls yet."}
+            {trialExpired
+              ? "Your free trial has ended, so calls aren't being answered."
+              : suspended
+                ? "Your subscription has lapsed, so calls aren't being answered."
+                : "Your receptionist isn't answering calls yet."}
           </p>
           <Link
             href={suspended ? "/billing" : "/onboarding"}
             className="mt-4 inline-block rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-zinc-200"
           >
-            {suspended ? "Sort out billing" : "Finish setup"}
+            {suspended ? (trialExpired ? "Choose a plan" : "Sort out billing") : "Finish setup"}
           </Link>
         </div>
       )}

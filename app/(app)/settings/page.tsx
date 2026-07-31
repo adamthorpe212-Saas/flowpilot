@@ -3,7 +3,9 @@ import Link from "next/link";
 import BusinessForm from "@/app/(app)/onboarding/business/BusinessForm";
 import ServicesForm from "@/app/(app)/onboarding/services/ServicesForm";
 import OpeningHoursForm from "./OpeningHoursForm";
+import NotificationRules from "./NotificationRules";
 import { getCurrentBusiness } from "@/lib/auth";
+import { isEmailConfigured } from "@/lib/email";
 import { formatIrishNumber } from "@/lib/phone";
 import { createClient } from "@/lib/supabase/server";
 import type { BusinessProfile, NotificationRule, Service } from "@/types/database";
@@ -44,6 +46,7 @@ export default async function SettingsPage() {
   const services = (serviceRows ?? []) as Service[];
   const rules = (ruleRows ?? []) as NotificationRule[];
   const profile = (profileRow as BusinessProfile) ?? null;
+  const emailAvailable = isEmailConfigured();
 
   return (
     <div className="mx-auto max-w-lg">
@@ -125,36 +128,11 @@ export default async function SettingsPage() {
 
       <section className="mt-14 border-t border-white/10 pt-10">
         <h2 className="text-sm font-medium text-zinc-300">Where jobs go</h2>
+        <p className="mt-2 text-sm leading-6 text-zinc-500">
+          Every qualified job is sent to everyone here.
+        </p>
 
-        <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
-          {rules.length > 0 ? (
-            <ul className="space-y-2 text-sm">
-              {rules.map((rule) => (
-                <li key={rule.id} className="flex justify-between gap-4">
-                  <span className="text-zinc-200">
-                    {rule.channel === "sms"
-                      ? formatIrishNumber(rule.destination)
-                      : rule.destination}
-                  </span>
-                  <span className="text-zinc-600">
-                    {rule.channel === "sms" ? "Text" : "Email"}
-                  </span>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <p className="text-sm text-zinc-400">
-              No one is being alerted about new jobs yet.
-            </p>
-          )}
-
-          <Link
-            href="/onboarding/forwarding"
-            className="mt-4 inline-block text-sm text-zinc-400 underline-offset-4 transition hover:text-white hover:underline"
-          >
-            Change where jobs are sent
-          </Link>
-        </div>
+        <NotificationRules rules={rules} emailAvailable={emailAvailable} />
       </section>
 
       <section className="mt-14 border-t border-white/10 pt-10">

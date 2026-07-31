@@ -1,0 +1,36 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Roadmap Phase 1 requires that CI blocks broken code from merging. Every check
+# here runs without secrets: lib/env.ts reads variables lazily inside functions
+# rather than at module load, so a build on a machine with no credentials
+# succeeds instead of failing on an import.
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Validate migrations
+        run: npm run validate:sql
+
+      - name: Lint
+        run: npx eslint .
+
+      - name: Typecheck
+        run: npx tsc --noEmit
+
+      - name: Build
+        run: npx next build

@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { getCurrentBusiness } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { safeInternalPath } from "@/lib/safe-redirect";
 
 export type SaveState = { error: string | null; saved?: boolean };
 
@@ -17,7 +18,8 @@ export type SaveState = { error: string | null; saved?: boolean };
  */
 function destination(formData: FormData): string | null {
   const next = String(formData.get("next") ?? "");
-  return next.startsWith("/") ? next : null;
+  const safe = safeInternalPath(next, "");
+  return safe || null;
 }
 
 /** Splits a comma or newline separated list into trimmed, de-duplicated entries. */

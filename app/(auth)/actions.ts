@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { siteUrl } from "@/lib/env";
 import { PLANS } from "@/lib/plans";
+import { safeInternalPath } from "@/lib/safe-redirect";
 
 export type AuthState = { error: string | null };
 
@@ -59,9 +60,7 @@ export async function signIn(
   if (error) return { error: friendlyError(error.message) };
 
   revalidatePath("/", "layout");
-  // Only allow internal redirects — an attacker-supplied absolute URL here
-  // would turn the login form into an open redirect.
-  redirect(next.startsWith("/") ? next : "/dashboard");
+  redirect(safeInternalPath(next, "/dashboard"));
 }
 
 export async function signUp(

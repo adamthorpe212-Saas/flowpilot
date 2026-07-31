@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { safeInternalPath } from "@/lib/safe-redirect";
 
 /**
  * Email confirmation landing point. Supabase sends the user here with a code,
@@ -15,9 +16,9 @@ export async function GET(request: NextRequest) {
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      // Only internal paths — the `next` parameter arrives from a URL and must
-      // not be able to bounce a freshly authenticated user off-site.
-      const destination = next.startsWith("/") ? next : "/onboarding";
+      // The `next` parameter arrives from a URL and must not bounce a freshly
+      // authenticated user off-site.
+      const destination = safeInternalPath(next, "/onboarding");
       return NextResponse.redirect(`${origin}${destination}`);
     }
   }

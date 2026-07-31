@@ -3,7 +3,8 @@
 import { redirect } from "next/navigation";
 import { siteUrl } from "@/lib/env";
 import { getCurrentBusiness } from "@/lib/auth";
-import { PLANS, TRIAL_DAYS } from "@/lib/plans";
+import { PLANS } from "@/lib/plans";
+import { trialStatus } from "@/lib/usage";
 import { isStripeConfigured, priceIdForPlan, stripe } from "@/lib/stripe";
 import type { Plan } from "@/types/database";
 
@@ -40,6 +41,9 @@ export async function startCheckout(
     return { error: "That plan isn't available right now." };
   }
 
+  // Days left of the signup trial, so a customer never gets two.
+  const trialDaysLeft = trialStatus(business).daysRemaining;
+
   let url: string | null = null;
 
   try {
@@ -50,8 +54,18 @@ export async function startCheckout(
       ...(business.stripe_customer_id
         ? { customer: business.stripe_customer_id }
         : {}),
+      /*
+       * Only the days left of the trial they already started at signup — not a
+       * fresh TRIAL_DAYS.
+       *
+       * Granting the full period here would hand a second free fortnight to
+       * someone who had already used the first, and cancelling before the
+       * charge made it repeatable. The pricing page promises fourteen days
+       * free, once, and the clock starts when they sign up rather than when
+       * they get around to paying.
+       */
       subscription_data: {
-        trial_period_days: TRIAL_DAYS,
+        ...(trialDaysLeft > 0 ? { trial_period_days: trialDaysLeft } : {}),
         metadata: { business_id: business.id, plan },
       },
       metadata: { business_id: business.id, plan },

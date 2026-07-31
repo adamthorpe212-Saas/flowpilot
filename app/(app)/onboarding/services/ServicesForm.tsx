@@ -1,0 +1,138 @@
+"use client";
+
+import { useActionState, useState } from "react";
+import { saveServices, type SaveState } from "@/app/(app)/onboarding/actions";
+import FormError from "@/components/ui/FormError";
+import SubmitButton from "@/components/ui/SubmitButton";
+
+const INITIAL: SaveState = { error: null };
+
+/**
+ * Services and their emergency flag are edited together rather than through the
+ * shared TagInput, because the emergency checkboxes have to stay in step with
+ * the list as it changes. Two components each owning half of that state would
+ * let them disagree.
+ */
+export default function ServicesForm({
+  services: initialServices,
+  emergency: initialEmergency,
+}: {
+  services: string[];
+  emergency: string[];
+}) {
+  const [state, formAction] = useActionState(saveServices, INITIAL);
+  const [services, setServices] = useState<string[]>(initialServices);
+  const [emergency, setEmergency] = useState<string[]>(initialEmergency);
+  const [draft, setDraft] = useState("");
+
+  function add(raw: string) {
+    const additions = raw
+      .split(",")
+      .map((entry) => entry.trim())
+      .filter(Boolean)
+      .filter(
+        (entry) =>
+          !services.some((service) => service.toLowerCase() === entry.toLowerCase()),
+      );
+
+    if (additions.length > 0) setServices([...services, ...additions]);
+    setDraft("");
+  }
+
+  function remove(name: string) {
+    setServices(services.filter((service) => service !== name));
+    setEmergency(emergency.filter((service) => service !== name));
+  }
+
+  function toggleEmergency(name: string) {
+    setEmergency(
+      emergency.includes(name)
+        ? emergency.filter((service) => service !== name)
+        : [...emergency, name],
+    );
+  }
+
+  return (
+    <form action={formAction} className="mt-8 space-y-5">
+      <FormError message={state.error} />
+
+      <input type="hidden" name="services" value={services.join(", ")} />
+      {emergency.map((name) => (
+        <input key={name} type="hidden" name="emergency" value={name} />
+      ))}
+
+      <div>
+        <label htmlFor="service-draft" className="block text-sm font-medium text-zinc-300">
+          Services you offer
+        </label>
+        <input
+          id="service-draft"
+          type="text"
+          value={draft}
+          placeholder="Burst pipes, boiler repair, bathroom fitting"
+          aria-describedby="service-draft-hint"
+          onChange={(event) => {
+            const value = event.target.value;
+            if (value.includes(",")) add(value);
+            else setDraft(value);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              add(draft);
+            }
+            if (event.key === "Backspace" && draft === "" && services.length > 0) {
+              remove(services[services.length - 1]);
+            }
+          }}
+          onBlur={() => add(draft)}
+          className="mt-2 w-full rounded-xl border border-white/15 bg-white/[0.04] px-4 py-3 text-[15px] text-white placeholder:text-zinc-600 transition focus:border-white/40 focus:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-white/10"
+        />
+        <p id="service-draft-hint" className="mt-2 text-xs text-zinc-500">
+          Type a service and press Enter. Use the words your customers would.
+        </p>
+      </div>
+
+      {services.length > 0 && (
+        <fieldset className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
+          <legend className="px-1 text-xs uppercase tracking-[0.14em] text-zinc-500">
+            Which can be emergencies?
+          </legend>
+          <ul className="mt-2 divide-y divide-white/5">
+            {services.map((service) => (
+              <li
+                key={service}
+                className="flex items-center justify-between gap-3 py-2.5"
+              >
+                <label className="flex min-w-0 flex-1 items-center gap-3 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={emergency.includes(service)}
+                    onChange={() => toggleEmergency(service)}
+                    className="h-4 w-4 flex-none rounded border-white/25 bg-white/10 accent-white"
+                  />
+                  <span className="truncate text-zinc-200">{service}</span>
+                </label>
+
+                <button
+                  type="button"
+                  onClick={() => remove(service)}
+                  className="flex-none text-xs text-zinc-600 transition hover:text-white"
+                >
+                  Remove
+                  <span className="sr-only"> {service}</span>
+                </button>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-xs text-zinc-500">
+            Emergencies get flagged as urgent and alert you straight away, even
+            out of hours.
+          </p>
+        </fieldset>
+      )}
+
+      <SubmitButton>Save and continue</SubmitButton>
+    </form>
+  );
+}

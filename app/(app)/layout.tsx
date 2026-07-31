@@ -24,8 +24,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
               <Link href="/dashboard" className="text-zinc-400 transition hover:text-white">
                 Leads
               </Link>
-              <Link href="/onboarding" className="text-zinc-400 transition hover:text-white">
-                Setup
+              <Link href="/settings" className="text-zinc-400 transition hover:text-white">
+                Settings
               </Link>
               <Link href="/billing" className="text-zinc-400 transition hover:text-white">
                 Billing

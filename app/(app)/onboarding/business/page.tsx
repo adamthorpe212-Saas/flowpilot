@@ -33,6 +33,7 @@ export default async function BusinessStepPage() {
         name={business.name}
         industryLabel={business.industry_label ?? ""}
         serviceArea={business.service_area}
+        next="/onboarding/services"
       />
     </div>
   );

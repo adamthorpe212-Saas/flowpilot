@@ -5,7 +5,20 @@ import { redirect } from "next/navigation";
 import { getCurrentBusiness } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 
-export type SaveState = { error: string | null };
+export type SaveState = { error: string | null; saved?: boolean };
+
+/**
+ * Where to go after a successful save.
+ *
+ * During onboarding these forms advance to the next step; from settings the
+ * same form should stay put and confirm. Passing the destination in the form
+ * rather than duplicating the actions keeps one implementation of each save.
+ * Only internal paths are honoured, so the field cannot become an open redirect.
+ */
+function destination(formData: FormData): string | null {
+  const next = String(formData.get("next") ?? "");
+  return next.startsWith("/") ? next : null;
+}
 
 /** Splits a comma or newline separated list into trimmed, de-duplicated entries. */
 function parseList(raw: string): string[] {
@@ -53,8 +66,12 @@ export async function saveBusinessDetails(
     return { error: "Couldn't save that. Try again in a moment." };
   }
 
-  revalidatePath("/onboarding", "layout");
-  redirect("/onboarding/services");
+  revalidatePath("/", "layout");
+
+  const next = destination(formData);
+  if (next) redirect(next);
+
+  return { error: null, saved: true };
 }
 
 export async function saveServices(
@@ -103,8 +120,12 @@ export async function saveServices(
     return { error: "Couldn't save that. Try again in a moment." };
   }
 
-  revalidatePath("/onboarding", "layout");
-  redirect("/onboarding/number");
+  revalidatePath("/", "layout");
+
+  const next = destination(formData);
+  if (next) redirect(next);
+
+  return { error: null, saved: true };
 }
 
 export async function saveNotificationTarget(

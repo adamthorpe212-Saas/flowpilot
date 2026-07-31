@@ -83,36 +83,39 @@ export default async function DashboardPage() {
       ) : (
         <ul className="mt-8 space-y-3">
           {leads.map((lead) => (
-            <li
-              key={lead.id}
-              className="rounded-2xl border border-white/10 bg-white/[0.02] p-5 transition hover:border-white/20"
-            >
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="font-medium">
-                    {lead.job_type ?? "Enquiry"}
-                    {lead.location ? (
-                      <span className="text-zinc-500"> · {lead.location}</span>
-                    ) : null}
-                  </p>
-                  <p className="mt-1 text-sm text-zinc-500">
-                    {lead.caller_name ?? "Unknown caller"} · {lead.caller_number}
-                  </p>
-                </div>
+            <li key={lead.id}>
+              <Link
+                href={`/dashboard/${lead.id}`}
+                className="block rounded-2xl border border-white/10 bg-white/[0.02] p-5 transition hover:border-white/25"
+              >
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="font-medium">
+                      {lead.job_type ?? "Enquiry"}
+                      {lead.location ? (
+                        <span className="text-zinc-500"> · {lead.location}</span>
+                      ) : null}
+                    </p>
+                    <p className="mt-1 text-sm text-zinc-500">
+                      {lead.caller_name ?? "Unknown caller"} ·{" "}
+                      {lead.caller_number}
+                    </p>
+                  </div>
 
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`rounded-full border px-2.5 py-1 text-xs capitalize ${
-                      URGENCY_STYLES[lead.urgency] ?? URGENCY_STYLES.normal
-                    }`}
-                  >
-                    {lead.urgency}
-                  </span>
-                  <span className="text-xs text-zinc-600">
-                    {formatWhen(lead.created_at)}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span
+                      className={`rounded-full border px-2.5 py-1 text-xs capitalize ${
+                        URGENCY_STYLES[lead.urgency] ?? URGENCY_STYLES.normal
+                      }`}
+                    >
+                      {lead.urgency}
+                    </span>
+                    <span className="text-xs text-zinc-600">
+                      {formatWhen(lead.created_at)}
+                    </span>
+                  </div>
                 </div>
-              </div>
+              </Link>
             </li>
           ))}
         </ul>

@@ -44,6 +44,7 @@ export default async function ServicesStepPage() {
         emergency={services
           .filter((service) => service.emergency_eligible)
           .map((service) => service.name)}
+        next="/onboarding/number"
       />
     </div>
   );

@@ -22,6 +22,8 @@ import { createFakeSupabase, resetIds, type Tables } from "./helpers/fake-supaba
 let tables: Tables;
 let signatureValid = true;
 let smsConfigured = true;
+let emailConfigured = true;
+const sentEmails: { to: string; subject: string; text: string }[] = [];
 const sentSms: { to: string; body: string }[] = [];
 /** URLs the signature check was asked to verify, in order. */
 const signedUrls: string[] = [];
@@ -47,6 +49,14 @@ vi.mock("@/lib/twilio", () => ({
     sentSms.push(options);
   },
   isTwilioConfigured: () => true,
+}));
+
+vi.mock("@/lib/email", () => ({
+  isEmailConfigured: () => emailConfigured,
+  sendEmail: async (options: { to: string; subject: string; text: string }) => {
+    if (!emailConfigured) throw new Error("Email is not configured");
+    sentEmails.push(options);
+  },
 }));
 
 const { POST: incoming } = await import("@/app/api/voice/incoming/route");
@@ -83,7 +93,9 @@ beforeEach(() => {
   tables = seedTables();
   signatureValid = true;
   smsConfigured = true;
+  emailConfigured = true;
   sentSms.length = 0;
+  sentEmails.length = 0;
   signedUrls.length = 0;
   resetIds();
   vi.unstubAllGlobals();
@@ -511,6 +523,86 @@ describe("after the call", () => {
       errors.mock.calls.some((call) => String(call[0]).includes("SMS NOT CONFIGURED")),
     ).toBe(true);
 
+    errors.mockRestore();
+  });
+
+
+  it("delivers the job by email when SMS is unavailable", async () => {
+    /*
+     * The reason email exists. Outbound SMS needs a ComReg-registered sender ID
+     * that takes weeks to approve, and until it lands a job would be captured
+     * perfectly and the tradesperson never told. Email needs no regulator.
+     */
+    smsConfigured = false;
+    tables.notification_rule = [
+      {
+        id: "rule-email",
+        business_id: BUSINESS_ID,
+        channel: "email",
+        destination: "dave@obrienplumbing.ie",
+        on_new_lead: true,
+        on_urgent_lead: true,
+        outside_hours: true,
+        created_at: "2026-07-01T00:00:00Z",
+      },
+    ];
+
+    await incoming(
+      twilioRequest("/api/voice/incoming", {
+        CallSid: "CA1",
+        From: CALLER_NUMBER,
+        To: FLOWPILOT_NUMBER,
+      }),
+    );
+    mockModel([{ speech: "Thanks.", captured: { job_type: "Burst pipe", location: "Raheny" }, complete: true }]);
+    await turn(twilioRequest("/api/voice/turn", { CallSid: "CA1", SpeechResult: "Burst pipe in Raheny" }));
+    await status(twilioRequest("/api/voice/status", { CallSid: "CA1", CallStatus: "completed", CallDuration: "40" }));
+
+    expect(sentSms).toHaveLength(0);
+    expect(sentEmails).toHaveLength(1);
+    expect(sentEmails[0].to).toBe("dave@obrienplumbing.ie");
+    expect(sentEmails[0].subject).toContain("Burst pipe");
+    expect(sentEmails[0].text).toContain(CALLER_NUMBER);
+  });
+
+  it("one dead channel does not stop the other", async () => {
+    emailConfigured = false;
+    tables.notification_rule.push({
+      id: "rule-email",
+      business_id: BUSINESS_ID,
+      channel: "email",
+      destination: "dave@obrienplumbing.ie",
+      on_new_lead: true,
+      on_urgent_lead: true,
+      outside_hours: true,
+      created_at: "2026-07-01T00:00:00Z",
+    });
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await incoming(twilioRequest("/api/voice/incoming", { CallSid: "CA1", From: CALLER_NUMBER, To: FLOWPILOT_NUMBER }));
+    mockModel([{ speech: "Thanks.", captured: { job_type: "Leak" }, complete: true }]);
+    await turn(twilioRequest("/api/voice/turn", { CallSid: "CA1", SpeechResult: "A leak" }));
+    await status(twilioRequest("/api/voice/status", { CallSid: "CA1", CallStatus: "completed", CallDuration: "30" }));
+
+    // The SMS rule still delivered even though the email rule failed.
+    expect(sentSms.some((sms) => sms.to === OWNER_MOBILE)).toBe(true);
+    errors.mockRestore();
+  });
+
+  it("shouts when a job reaches nobody at all", async () => {
+    // The worst outcome the product has: a qualified job that nobody hears about.
+    smsConfigured = false;
+    emailConfigured = false;
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await incoming(twilioRequest("/api/voice/incoming", { CallSid: "CA1", From: CALLER_NUMBER, To: FLOWPILOT_NUMBER }));
+    mockModel([{ speech: "Thanks.", captured: { job_type: "Leak" }, complete: true }]);
+    await turn(twilioRequest("/api/voice/turn", { CallSid: "CA1", SpeechResult: "A leak" }));
+    await status(twilioRequest("/api/voice/status", { CallSid: "CA1", CallStatus: "completed", CallDuration: "30" }));
+
+    expect(sentSms).toHaveLength(0);
+    expect(sentEmails).toHaveLength(0);
+    expect(errors.mock.calls.some((call) => String(call[0]).includes("JOB NOT DELIVERED"))).toBe(true);
     errors.mockRestore();
   });
 

@@ -1,5 +1,6 @@
 import "server-only";
 
+import { isEmailConfigured } from "@/lib/email";
 import { siteUrl } from "@/lib/env";
 import { PLANS } from "@/lib/plans";
 import { createAdminClient } from "@/lib/supabase/server";
@@ -152,6 +153,19 @@ async function checkTwilio(): Promise<Check[]> {
   return checks;
 }
 
+function checkEmail(): Check {
+  const configured = isEmailConfigured();
+
+  return {
+    name: "Email alerts",
+    status: configured ? "ok" : "warn",
+    detail: configured
+      ? "Configured — jobs can reach you by email"
+      : "Not set. Worth having: it needs no regulator, so it works while the ComReg sender ID is still pending",
+    fix: configured ? undefined : "RESEND_API_KEY and EMAIL_FROM",
+  };
+}
+
 function checkModel(): Check {
   const hasKey = present(process.env.ANTHROPIC_API_KEY);
 
@@ -251,6 +265,7 @@ export async function runDiagnostics(
     checkSiteUrl(requestOrigin),
     ...supabase,
     ...twilio,
+    checkEmail(),
     checkModel(),
     ...checkStripe(),
   ];

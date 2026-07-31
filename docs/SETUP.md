@@ -60,6 +60,21 @@ Under **Authentication → Providers → Email**, decide on confirmation:
 The code handles both. On is the safer default for a paid product; off is
 defensible while you are getting first customers in front of it.
 
+### A2b. Email — do this before Twilio
+
+Job alerts can go by email as well as SMS, and email is worth setting up first
+because it needs no regulator's approval.
+
+Outbound SMS depends on the ComReg sender ID from section C2, which takes time.
+Until that lands, a job is captured perfectly and the tradesperson is never
+told — the product's whole promise, waiting on paperwork. Email closes that gap
+in about five minutes.
+
+Sign up at resend.com, verify a sending domain, and set:
+
+- `RESEND_API_KEY`
+- `EMAIL_FROM` — e.g. `jobs@flowpilot.ie`
+
 ### A3. Local environment
 
 ```bash

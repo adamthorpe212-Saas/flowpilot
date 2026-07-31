@@ -12,7 +12,7 @@ Roughly an hour end to end, most of it waiting for Stripe and Twilio dashboards.
 
 ### A1. Apply the migrations
 
-Supabase Dashboard → **SQL Editor** → New query. Run these four in order,
+Supabase Dashboard → **SQL Editor** → New query. Run these seven in order,
 pasting the contents of each and checking it succeeds before the next:
 
 ```
@@ -232,6 +232,8 @@ paying customer — so verify it shows a successful delivery before trusting it.
 
 ### D3. Also add
 
+
+
 - `STRIPE_SECRET_KEY`
 
 ---
@@ -270,6 +272,21 @@ If step 5 answers but sounds wrong, that is prompt tuning in `lib/receptionist.t
 and the business profile — not plumbing. If it does not answer at all, check
 Twilio → **Monitor → Logs → Errors**; a 403 there means `NEXT_PUBLIC_SITE_URL`
 does not match the URL Twilio is calling.
+
+---
+
+## F. Scheduled jobs
+
+Set `CRON_SECRET` in Vercel to any long random string. Vercel sends it as a
+bearer token to the endpoints listed in `vercel.json`, and the reclaim job
+refuses to run without it — the job deletes phone numbers, so an
+unauthenticated version of it would be a way for anyone to disconnect every
+customer at once.
+
+One job runs daily: it gives back numbers belonging to businesses whose trial
+or subscription ended more than a fortnight ago. Without it, every abandoned
+trial leaves a number billed to you every month forever, findable only by
+reading the Twilio invoice line by line.
 
 ---
 

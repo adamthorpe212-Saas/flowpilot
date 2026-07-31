@@ -77,18 +77,25 @@ export async function POST(request: NextRequest) {
         const plan = subscription.metadata?.plan as Plan | undefined;
         const status = toSubscriptionStatus(subscription.status);
 
+        /*
+         * Only an actually-cancelled subscription suspends the business.
+         *
+         * A failed payment (past_due) deliberately does NOT: the card that
+         * expired belongs to a tradesperson whose phone is their livelihood,
+         * and silently killing their line the same day would cost them far
+         * more than the unpaid month costs us. They keep answering while the
+         * dashboard and Stripe's own dunning emails chase the card.
+         *
+         * Suspending is reversible — nothing is deleted, so restoring service
+         * is just a successful payment.
+         */
         await supabase
           .from("business")
           .update({
             subscription_status: status,
             stripe_subscription_id: subscription.id,
             ...(plan ? { plan } : {}),
-            // A paying or trialling customer is live; anything else suspends
-            // them without deleting anything, so restoring is just a payment.
-            status:
-              status === "active" || status === "trialing"
-                ? "active"
-                : "suspended",
+            status: status === "canceled" ? "suspended" : "active",
           })
           .eq("id", businessId);
         break;

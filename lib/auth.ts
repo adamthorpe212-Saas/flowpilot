@@ -37,8 +37,15 @@ export async function getCurrentBusiness(): Promise<Business | null> {
     user.email?.split("@")[0] ||
     "My business";
 
+  // Which plan they clicked on the pricing page. Records intent only — the
+  // function validates it, and entitlement comes from subscription_status,
+  // which only the Stripe webhook can set.
+  const selectedPlan =
+    (user.user_metadata?.selected_plan as string | undefined) ?? "starter";
+
   const { error } = await supabase.rpc("create_business_for_current_user", {
     business_name: businessName,
+    selected_plan: selectedPlan,
   });
 
   if (error) {

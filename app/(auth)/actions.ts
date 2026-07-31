@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { siteUrl } from "@/lib/env";
+import { PLANS } from "@/lib/plans";
 
 export type AuthState = { error: string | null };
 
@@ -69,6 +70,10 @@ export async function signUp(
 ): Promise<AuthState> {
   const { email, password } = readCredentials(formData);
   const businessName = String(formData.get("business_name") ?? "").trim();
+  const rawPlan = String(formData.get("plan") ?? "");
+  const selectedPlan = PLANS.some((plan) => plan.id === rawPlan)
+    ? rawPlan
+    : "starter";
 
   if (!businessName) return { error: "What's your business called?" };
   if (!email) return { error: "Enter your email address." };
@@ -81,8 +86,10 @@ export async function signUp(
     email,
     password,
     options: {
-      // Read back by getCurrentBusiness() to name the business on first load.
-      data: { business_name: businessName },
+      // Read back by getCurrentBusiness() on first authenticated load. Auth
+      // metadata is user-editable, so this carries intent only — never
+      // entitlement, which comes from subscription_status via Stripe.
+      data: { business_name: businessName, selected_plan: selectedPlan },
       emailRedirectTo: `${siteUrl()}/auth/callback`,
     },
   });

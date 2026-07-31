@@ -8,11 +8,13 @@ import SubmitButton from "@/components/ui/SubmitButton";
 
 const INITIAL: AuthState = { error: null };
 
-export default function SignupForm() {
+export default function SignupForm({ plan }: { plan: string }) {
   const [state, formAction] = useActionState(signUp, INITIAL);
 
   return (
-    <form action={formAction} className="mt-8 space-y-4">
+    <form action={formAction} className="mt-6 space-y-4">
+      <input type="hidden" name="plan" value={plan} />
+
       <FormError message={state.error} />
 
       <Field

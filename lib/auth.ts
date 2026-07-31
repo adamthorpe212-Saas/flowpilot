@@ -1,0 +1,56 @@
+import "server-only";
+
+import { createClient } from "@/lib/supabase/server";
+import type { Business } from "@/types/database";
+
+/**
+ * The signed-in user's business, creating it on first access if needed.
+ *
+ * Business creation is lazy rather than part of the signup action because the
+ * project may or may not require email confirmation. With confirmation on there
+ * is no session immediately after sign-up, so an eager insert would fail
+ * silently and leave an account with no business. Doing it on first
+ * authenticated load works either way, and the RPC is idempotent so calling it
+ * repeatedly is harmless.
+ */
+export async function getCurrentBusiness(): Promise<Business | null> {
+  const supabase = await createClient();
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return null;
+
+  const { data: existing } = await supabase
+    .from("business")
+    .select("*")
+    .limit(1)
+    .maybeSingle();
+
+  if (existing) return existing as Business;
+
+  // Captured at sign-up; falls back to something usable rather than failing, so
+  // a user can never be stranded without a business they can rename later.
+  const businessName =
+    (user.user_metadata?.business_name as string | undefined)?.trim() ||
+    user.email?.split("@")[0] ||
+    "My business";
+
+  const { error } = await supabase.rpc("create_business_for_current_user", {
+    business_name: businessName,
+  });
+
+  if (error) {
+    console.error("Failed to create business", error);
+    return null;
+  }
+
+  const { data: created } = await supabase
+    .from("business")
+    .select("*")
+    .limit(1)
+    .maybeSingle();
+
+  return (created as Business) ?? null;
+}

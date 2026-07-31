@@ -5,7 +5,7 @@ import ConversationDemo from "@/components/ConversationDemo";
 export const metadata: Metadata = {
   title: "How FlowPilot works — one missed call, start to finish",
   description:
-    "Watch a missed call handled end to end: FlowPilot answers in seconds, captures the job, and sends it straight to your phone.",
+    "Watch a missed call handled end to end: FlowPilot answers the phone, finds out what the job is, and sends it straight to you.",
 };
 
 export default function HowItWorks() {
@@ -17,8 +17,8 @@ export default function HowItWorks() {
             You were on another site. This happened anyway.
           </h1>
           <p className="mx-auto mt-4 max-w-sm text-sm leading-6 text-zinc-400 sm:mt-5 sm:text-base sm:leading-7">
-            One missed call, start to finish — and you didn&apos;t touch your
-            phone once.
+            One missed call, answered start to finish — and you didn&apos;t
+            touch your phone once.
           </p>
 
           <div className="mt-10 sm:mt-12">

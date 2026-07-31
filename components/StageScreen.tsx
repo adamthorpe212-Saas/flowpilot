@@ -28,10 +28,27 @@ export default function StageScreen({ stage }: { stage: number }) {
 
   if (stage === 1) {
     return (
-      <div className="px-2.5 pt-5">
-        <div className="rounded-xl bg-white p-2 text-[9px] leading-relaxed text-black">
-          Sorry we missed you — what&apos;s the job and where?
+      <div className="px-2.5 pt-5 text-center">
+        <p className="text-[8px] uppercase tracking-[0.16em] text-emerald-300">
+          In call
+        </p>
+
+        <div
+          aria-hidden="true"
+          className="mt-3 flex h-6 items-center justify-center gap-[3px]"
+        >
+          {[0, 120, 240, 80, 200].map((delay, index) => (
+            <span
+              key={index}
+              style={{ animationDelay: `${delay}ms` }}
+              className="fp-wave-bar block h-full w-[3px] rounded-full bg-white/80"
+            />
+          ))}
         </div>
+
+        <p className="mt-3 text-[9px] leading-relaxed text-zinc-300">
+          &ldquo;Sorry we missed you — what&apos;s the problem?&rdquo;
+        </p>
       </div>
     );
   }

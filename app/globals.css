@@ -55,9 +55,26 @@ body {
   animation: fp-rise-in 350ms ease-out;
 }
 
+/* Speaking indicator for the in-call stage. */
+@keyframes fp-wave {
+  0%,
+  100% {
+    transform: scaleY(0.35);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.fp-wave-bar {
+  animation: fp-wave 900ms ease-in-out infinite;
+  transform-origin: center;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fp-fade-in,
-  .fp-rise-in {
+  .fp-rise-in,
+  .fp-wave-bar {
     animation: none;
   }
 }

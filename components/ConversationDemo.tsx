@@ -7,7 +7,7 @@ import { conversation } from "@/lib/content";
 import type { ConversationEvent } from "@/types";
 
 const FIRST_BEAT_MS = 600;
-const BEAT_MS = 2100;
+const BEAT_MS = 2400;
 
 function EventCard({ event }: { event: ConversationEvent }) {
   if (event.kind === "missed-call") {
@@ -63,39 +63,71 @@ function EventCard({ event }: { event: ConversationEvent }) {
     );
   }
 
-  const fromFlowPilot = event.kind === "message-in";
-
-  return (
-    <div className={`flex ${fromFlowPilot ? "justify-start" : "justify-end"}`}>
-      <div className="max-w-[88%]">
-        <p
-          className={`rounded-xl p-2 text-[9px] leading-relaxed sm:text-[10px] ${
-            fromFlowPilot ? "bg-zinc-800 text-zinc-200" : "bg-white text-black"
-          }`}
-        >
+  if (event.kind === "confirmation-sms") {
+    return (
+      <div className="rounded-xl border border-white/15 bg-white/[0.06] p-2">
+        <p className="text-[7px] uppercase tracking-[0.12em] text-zinc-500 sm:text-[8px]">
+          Text message
+        </p>
+        <p className="mt-1 text-[9px] leading-relaxed text-zinc-200 sm:text-[10px]">
           {event.text}
         </p>
-        <p
-          className={`mt-1 text-[8px] text-zinc-600 ${
-            fromFlowPilot ? "text-left" : "text-right"
+      </div>
+    );
+  }
+
+  // A transcript line, not a chat bubble: speaker label above, both sides left
+  // aligned. Bubbles would read as texting, which is the wrong product.
+  const isFlowPilot = event.speaker === "flowpilot";
+
+  return (
+    <div>
+      <p
+        className={`text-[7px] uppercase tracking-[0.14em] sm:text-[8px] ${
+          isFlowPilot ? "text-white/70" : "text-zinc-600"
+        }`}
+      >
+        {isFlowPilot ? "FlowPilot" : "Caller"}
+      </p>
+      <p
+        className={`mt-0.5 text-[9px] leading-relaxed sm:text-[10px] ${
+          isFlowPilot ? "text-white" : "text-zinc-400"
+        }`}
+      >
+        {event.text}
+      </p>
+    </div>
+  );
+}
+
+function CallHeader({ live }: { live: boolean }) {
+  return (
+    <div className="flex-none border-b border-white/10 px-2 py-1.5">
+      <div className="flex items-center gap-1.5">
+        <span
+          aria-hidden="true"
+          className={`h-1.5 w-1.5 rounded-full ${
+            live ? "bg-emerald-400" : "bg-zinc-600"
           }`}
-        >
-          {event.time}
+        />
+        <p className="text-[9px] font-semibold text-white sm:text-[10px]">
+          O&apos;Brien Plumbing
         </p>
       </div>
+      <p className="text-[7px] text-zinc-600 sm:text-[8px]">
+        {live ? "Call in progress" : "Call ended"}
+      </p>
     </div>
   );
 }
 
 function Device({
   label,
-  title,
-  subtitle,
+  header,
   events,
 }: {
   label: string;
-  title: string;
-  subtitle: string;
+  header: React.ReactNode;
   events: ConversationEvent[];
 }) {
   return (
@@ -105,13 +137,8 @@ function Device({
       </p>
       <PhoneFrame className="h-[300px] sm:h-[380px] lg:h-[420px]">
         <div className="flex h-full flex-col">
-          <div className="flex-none border-b border-white/10 px-2 py-1.5">
-            <p className="text-[9px] font-semibold text-white sm:text-[10px]">
-              {title}
-            </p>
-            <p className="text-[7px] text-zinc-600 sm:text-[8px]">{subtitle}</p>
-          </div>
-          <div className="min-h-0 flex-1 space-y-2 overflow-hidden p-2">
+          {header}
+          <div className="min-h-0 flex-1 space-y-2.5 overflow-hidden p-2">
             {events.map((event, i) => (
               <div key={`${event.kind}-${i}`} className="fp-rise-in">
                 <EventCard event={event} />
@@ -144,19 +171,28 @@ export default function ConversationDemo() {
   const latest = revealed[revealed.length - 1];
   const finished = shown >= conversation.length;
 
+  const callEnded =
+    reduceMotion ||
+    revealed.some((event) => event.kind === "confirmation-sms");
+
   return (
     <div>
       <div className="mx-auto grid max-w-md grid-cols-2 gap-3 sm:max-w-xl sm:gap-5">
         <Device
           label="Customer's phone"
-          title="O'Brien Plumbing"
-          subtitle="Messages"
+          header={<CallHeader live={!callEnded} />}
           events={revealed.filter((event) => event.device === "customer")}
         />
         <Device
           label="Your phone"
-          title="FlowPilot"
-          subtitle="Job alerts"
+          header={
+            <div className="flex-none border-b border-white/10 px-2 py-1.5">
+              <p className="text-[9px] font-semibold text-white sm:text-[10px]">
+                FlowPilot
+              </p>
+              <p className="text-[7px] text-zinc-600 sm:text-[8px]">Job alerts</p>
+            </div>
+          }
           events={revealed.filter((event) => event.device === "you")}
         />
       </div>

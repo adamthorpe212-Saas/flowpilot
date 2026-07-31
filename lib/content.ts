@@ -9,7 +9,7 @@ export const lifecycleStages: LifecycleStage[] = [
   {
     number: "02",
     title: "FlowPilot answers",
-    text: "Responds in seconds.",
+    text: "Picks up and talks to them.",
   },
   {
     number: "03",
@@ -24,9 +24,14 @@ export const lifecycleStages: LifecycleStage[] = [
 ];
 
 /**
- * FlowPilot hands the job over rather than booking it — the closing message
+ * FlowPilot hands the job over rather than booking it — the closing line here
  * and the "sent to you" stage above have to keep saying the same thing, or the
- * site promises a calendar integration the product doesn't have.
+ * site promises a calendar integration the product does not have.
+ *
+ * The closing beat is a one-way confirmation text. Ireland has no inbound-SMS
+ * numbers available (docs/DECISIONS.md D6), so the caller cannot reply to it —
+ * but outbound A2P is well supported, and it is what gives both sides a written
+ * record of an address that was only ever spoken aloud.
  */
 export const conversation: ConversationEvent[] = [
   {
@@ -37,32 +42,44 @@ export const conversation: ConversationEvent[] = [
     name: "John Murphy",
   },
   {
-    kind: "message-in",
+    kind: "speech",
     device: "customer",
+    speaker: "flowpilot",
     time: "4:02",
-    caption: "FlowPilot answers in 14 seconds.",
-    text: "Sorry we missed your call — what's the problem and where are you?",
+    caption: "It answers on the second ring.",
+    text: "Hello, O'Brien Plumbing — sorry we missed you. What's the problem?",
   },
   {
-    kind: "message-out",
+    kind: "speech",
     device: "customer",
+    speaker: "caller",
     time: "4:03",
-    caption: "John explains. No form, no hold music.",
-    text: "Burst pipe under the kitchen sink in Raheny. Water everywhere",
+    caption: "John explains. No menus, no hold music.",
+    text: "There's a pipe burst under my kitchen sink, water everywhere.",
   },
   {
-    kind: "message-in",
+    kind: "speech",
     device: "customer",
+    speaker: "flowpilot",
     time: "4:03",
-    caption: "It reads the urgency and sets expectations.",
-    text: "That sounds urgent. I've passed this straight to Dave — he'll ring you back shortly.",
+    caption: "It hears the urgency and asks what matters.",
+    text: "That sounds urgent. Whereabouts are you?",
   },
   {
-    kind: "message-out",
+    kind: "speech",
     device: "customer",
+    speaker: "caller",
+    time: "4:03",
+    caption: "One question, one answer.",
+    text: "Raheny, Dublin 5.",
+  },
+  {
+    kind: "speech",
+    device: "customer",
+    speaker: "flowpilot",
     time: "4:04",
-    caption: "Customer's happy. Still hasn't spoken to you.",
-    text: "Perfect, thanks",
+    caption: "It sets expectations without promising a time.",
+    text: "Got it. I'll pass this straight to Dave — he'll ring you back shortly.",
   },
   {
     kind: "job",
@@ -73,5 +90,12 @@ export const conversation: ConversationEvent[] = [
     location: "Raheny, Dublin",
     urgency: "High",
     contact: "087 xxx xxxx",
+  },
+  {
+    kind: "confirmation-sms",
+    device: "customer",
+    time: "4:04",
+    caption: "And John gets it in writing, so nothing's misheard.",
+    text: "O'Brien Plumbing: burst pipe, Raheny. Dave will call you shortly.",
   },
 ];

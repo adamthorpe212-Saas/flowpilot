@@ -21,6 +21,7 @@ declare
   service_count integer;
   emergency_count integer;
   rule_count integer;
+  rule_limit_enforced boolean := false;
 begin
   -- The bootstrap trigger should create a profile and default questions.
   insert into public.business (name, plan)
@@ -151,6 +152,52 @@ begin
     raise exception 'FAIL: authenticated can rewrite captured lead details';
   end if;
   raise notice 'OK: lead details are read-only to customers';
+
+  -- Shared-fate protections. Outbound SMS uses one registered sender ID for
+  -- the whole platform, so one customer's abuse would cost every customer the
+  -- feature.
+  begin
+    update public.business_profile
+    set confirmation_sms_template = 'Click here now https://not-a-real-bank.example'
+    where business_id = test_business_id;
+
+    raise exception 'FAIL: a link was accepted in the confirmation template';
+  exception
+    when check_violation then
+      raise notice 'OK: links are rejected in the confirmation template';
+  end;
+
+  begin
+    update public.business_profile
+    set confirmation_sms_template = repeat('x', 400)
+    where business_id = test_business_id;
+
+    raise exception 'FAIL: an over-long confirmation template was accepted';
+  exception
+    when check_violation then
+      raise notice 'OK: confirmation template length is capped';
+  end;
+
+  /*
+   * A flag rather than raising FAIL inside the block. The limit trigger raises
+   * a plain exception, which is the same SQLSTATE a `raise exception 'FAIL'`
+   * produces — so catching it here would swallow the failure message and
+   * report a pass either way.
+   */
+  begin
+    -- One rule already exists from the replacement test above.
+    perform public.replace_sms_notification(test_business_id, '+353873333333');
+    insert into public.notification_rule (business_id, channel, destination)
+    select test_business_id, 'sms', '+35387400000' || generate_series(1, 8);
+  exception
+    when raise_exception then
+      rule_limit_enforced := true;
+  end;
+
+  if not rule_limit_enforced then
+    raise exception 'FAIL: unlimited notification rules were accepted';
+  end if;
+  raise notice 'OK: notification rules are capped per business';
 
   raise notice 'ALL CHECKS PASSED';
 end;

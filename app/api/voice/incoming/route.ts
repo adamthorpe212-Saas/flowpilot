@@ -3,6 +3,7 @@ import { siteUrl } from "@/lib/env";
 import { isWithinOpeningHours } from "@/lib/hours";
 import { openingLine } from "@/lib/receptionist";
 import { createAdminClient } from "@/lib/supabase/server";
+import { shouldAnswerCalls } from "@/lib/usage";
 import { loadContextForNumber } from "@/lib/voice/context";
 import { readTwilioRequest, rejected, say, twiml } from "@/lib/voice/webhook";
 
@@ -63,6 +64,21 @@ export async function POST(request: NextRequest) {
 
     return twiml(
       `<Response>${say("Great — your forwarding is working. Your receptionist is live.")}<Hangup/></Response>`,
+    );
+  }
+
+  /*
+   * A lapsed subscription stops the service, but never rudely. This is somebody
+   * else's customer on the line who has done nothing wrong — they should hear a
+   * normal "leave it with us" rather than anything about billing, which is
+   * between us and the business owner.
+   *
+   * Going over the plan's call allowance deliberately does NOT stop service:
+   * the pricing page promises we never cut anyone off mid-month.
+   */
+  if (!shouldAnswerCalls(business)) {
+    return twiml(
+      `<Response>${say(`Thanks for calling ${business.name}. We can't take your call right now, but we've got your number and we'll ring you back.`)}<Hangup/></Response>`,
     );
   }
 

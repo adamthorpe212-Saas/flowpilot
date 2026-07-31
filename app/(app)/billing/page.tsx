@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getCurrentBusiness } from "@/lib/auth";
 import { formatPrice, getPlan, PLANS, TRIAL_DAYS } from "@/lib/plans";
+import { getUsage } from "@/lib/usage";
 import BillingActions from "./BillingActions";
 
 export const metadata: Metadata = {
@@ -50,6 +51,7 @@ export default async function BillingPage({
   const plan = getPlan(business.plan);
   const status = STATUS_COPY[business.subscription_status] ?? STATUS_COPY.incomplete;
   const hasSubscription = Boolean(business.stripe_subscription_id);
+  const usage = await getUsage(business);
 
   return (
     <div className="mx-auto max-w-2xl">
@@ -92,6 +94,46 @@ export default async function BillingPage({
         </div>
 
         <p className="mt-4 text-sm leading-6 text-zinc-400">{status.detail}</p>
+
+        <div className="mt-6 border-t border-white/10 pt-5">
+          <div className="flex items-baseline justify-between gap-4">
+            <p className="text-sm text-zinc-400">Calls answered this month</p>
+            <p className="text-sm font-medium">
+              {usage.used}
+              <span className="text-zinc-600"> / {usage.allowance}</span>
+            </p>
+          </div>
+
+          <div
+            role="progressbar"
+            aria-valuenow={usage.used}
+            aria-valuemin={0}
+            aria-valuemax={usage.allowance}
+            aria-label="Calls answered this month"
+            className="mt-3 h-1.5 overflow-hidden rounded-full bg-white/10"
+          >
+            <div
+              className={`h-full rounded-full transition-all ${
+                usage.overLimit
+                  ? "bg-amber-400"
+                  : usage.nearingLimit
+                    ? "bg-amber-300"
+                    : "bg-white"
+              }`}
+              style={{
+                width: `${Math.min(100, Math.round((usage.used / usage.allowance) * 100))}%`,
+              }}
+            />
+          </div>
+
+          {(usage.nearingLimit || usage.overLimit) && (
+            <p className="mt-3 text-sm leading-6 text-amber-200/80">
+              {usage.overLimit
+                ? "You're over your plan's calls this month. We'll keep answering — nothing stops — but a bigger plan would suit you better."
+                : "You're getting close to your plan's calls for this month."}
+            </p>
+          )}
+        </div>
 
         <BillingActions
           currentPlan={business.plan}

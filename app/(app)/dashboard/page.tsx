@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { getCurrentBusiness } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { shouldAnswerCalls } from "@/lib/usage";
 import type { Lead } from "@/types/database";
 
 export const metadata: Metadata = {
@@ -35,7 +36,16 @@ export default async function DashboardPage() {
     .limit(50);
 
   const leads = (data ?? []) as Lead[];
-  const isLive = Boolean(business?.phone_number && business?.forwarding_verified_at);
+
+  // Setup being finished is not the same as the receptionist actually
+  // answering. A lapsed subscription declines calls, and showing a green badge
+  // while that happens would be the worst kind of dashboard: reassuring and
+  // wrong.
+  const setupDone = Boolean(
+    business?.phone_number && business?.forwarding_verified_at,
+  );
+  const isLive = setupDone && business ? shouldAnswerCalls(business) : false;
+  const suspended = setupDone && !isLive;
 
   return (
     <div>
@@ -51,23 +61,31 @@ export default async function DashboardPage() {
           className={`rounded-full border px-3 py-1.5 text-xs ${
             isLive
               ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
-              : "border-amber-500/30 bg-amber-500/10 text-amber-200"
+              : suspended
+                ? "border-red-500/30 bg-red-500/10 text-red-200"
+                : "border-amber-500/30 bg-amber-500/10 text-amber-200"
           }`}
         >
-          {isLive ? "Receptionist live" : "Setup not finished"}
+          {isLive
+            ? "Receptionist live"
+            : suspended
+              ? "Not answering"
+              : "Setup not finished"}
         </span>
       </div>
 
       {!isLive && (
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
           <p className="text-sm text-zinc-300">
-            Your receptionist isn&apos;t answering calls yet.
+            {suspended
+              ? "Your subscription has lapsed, so calls aren't being answered."
+              : "Your receptionist isn't answering calls yet."}
           </p>
           <Link
-            href="/onboarding"
+            href={suspended ? "/billing" : "/onboarding"}
             className="mt-4 inline-block rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-zinc-200"
           >
-            Finish setup
+            {suspended ? "Sort out billing" : "Finish setup"}
           </Link>
         </div>
       )}

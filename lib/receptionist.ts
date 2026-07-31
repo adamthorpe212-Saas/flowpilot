@@ -107,8 +107,13 @@ function toMessages(transcript: TranscriptTurn[]) {
   }));
 }
 
-/** Pulls the JSON object out of a reply, tolerating stray prose around it. */
-function parseReply(raw: string): ReceptionistReply | null {
+/**
+ * Pulls the JSON object out of a reply, tolerating stray prose around it.
+ *
+ * Exported for testing: this is the boundary where an unexpected model
+ * response would otherwise become a caller hearing nothing.
+ */
+export function parseReply(raw: string): ReceptionistReply | null {
   const start = raw.indexOf("{");
   const end = raw.lastIndexOf("}");
   if (start === -1 || end === -1) return null;

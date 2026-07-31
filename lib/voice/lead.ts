@@ -20,19 +20,20 @@ const LEAD_COLUMNS = new Set([
  * mid-sentence — and a partial lead with a phone number is far more use to a
  * tradesperson than no record that anyone ever rang.
  */
-export async function upsertLeadFromCapture(options: {
-  businessId: string;
-  callId: string;
-  callerNumber: string;
-  serviceArea: string[];
-  captured: Record<string, string>;
-  existingLeadId: string | null;
-}): Promise<string | null> {
-  const supabase = createAdminClient();
-
+/**
+ * Turns what the model understood into lead columns.
+ *
+ * Pure and exported separately from the database write so it can be tested
+ * directly — this is where a model returning something unexpected would
+ * otherwise quietly corrupt a lead.
+ */
+export function mapCaptureToLeadFields(
+  captured: Record<string, string>,
+  serviceArea: string[],
+): Record<string, unknown> {
   const update: Record<string, unknown> = {};
 
-  for (const [key, value] of Object.entries(options.captured)) {
+  for (const [key, value] of Object.entries(captured)) {
     if (typeof value !== "string" || !value.trim()) continue;
 
     if (LEAD_COLUMNS.has(key)) {
@@ -44,12 +45,27 @@ export async function upsertLeadFromCapture(options: {
   }
 
   // Flagged, never used to refuse the caller — the business may well travel.
-  if (typeof update.location === "string" && options.serviceArea.length > 0) {
+  if (typeof update.location === "string" && serviceArea.length > 0) {
     const location = (update.location as string).toLowerCase();
-    update.out_of_area = !options.serviceArea.some((area) =>
+    update.out_of_area = !serviceArea.some((area) =>
       location.includes(area.toLowerCase()),
     );
   }
+
+  return update;
+}
+
+export async function upsertLeadFromCapture(options: {
+  businessId: string;
+  callId: string;
+  callerNumber: string;
+  serviceArea: string[];
+  captured: Record<string, string>;
+  existingLeadId: string | null;
+}): Promise<string | null> {
+  const supabase = createAdminClient();
+
+  const update = mapCaptureToLeadFields(options.captured, options.serviceArea);
 
   if (options.existingLeadId) {
     if (Object.keys(update).length === 0) return options.existingLeadId;

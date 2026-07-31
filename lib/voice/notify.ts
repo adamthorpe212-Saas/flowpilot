@@ -4,8 +4,13 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { sendSms } from "@/lib/twilio";
 import type { Business, BusinessProfile, Lead } from "@/types/database";
 
-/** Fills {{placeholders}} in a template, leaving nothing visible if unknown. */
-function render(template: string, values: Record<string, string>): string {
+/**
+ * Fills {{placeholders}} in a template, leaving nothing visible if unknown.
+ *
+ * Exported for testing — this text is sent to a customer, so a missing value
+ * leaking a raw `{{job_type}}` into their inbox is a real failure.
+ */
+export function render(template: string, values: Record<string, string>): string {
   return template
     .replace(/\{\{(\w+)\}\}/g, (_match, key: string) => values[key] ?? "")
     .replace(/\s+/g, " ")

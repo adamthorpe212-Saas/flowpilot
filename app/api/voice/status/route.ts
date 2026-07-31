@@ -36,20 +36,43 @@ export async function POST(request: NextRequest) {
 
   const call = callRow as Call;
 
-  const alreadyFinalised = call.status === "completed" && call.ended_at;
-
   await supabase
     .from("call")
     .update({
-      status: callStatus === "completed" ? "completed" : "failed",
+      // A call that reached the end of the conversation is already marked
+      // completed by the turn handler; only overwrite that if Twilio reports
+      // something worse, so a completed call is not downgraded by a late
+      // callback reporting the leg status.
+      status:
+        call.status === "completed"
+          ? "completed"
+          : callStatus === "completed"
+            ? "completed"
+            : "failed",
       ended_at: call.ended_at ?? new Date().toISOString(),
       duration_seconds: Number.isFinite(duration) ? duration : null,
     })
     .eq("id", call.id);
 
-  // Twilio can retry a status callback. Notifying twice would text the customer
-  // and the owner again for the same job, so the work below runs once only.
-  if (alreadyFinalised) return NextResponse.json({ ok: true });
+  /*
+   * Claim the right to notify, atomically.
+   *
+   * Twilio retries status callbacks, and texting a customer and an owner twice
+   * about the same job erodes trust in the whole product. Reading notified_at
+   * and then writing it would leave a race between concurrent retries; a
+   * conditional update that only matches while the column is still null means
+   * exactly one caller can win.
+   */
+  const { data: claimed } = await supabase
+    .from("call")
+    .update({ notified_at: new Date().toISOString() })
+    .eq("id", call.id)
+    .is("notified_at", null)
+    .select("id");
+
+  if (!claimed || claimed.length === 0) {
+    return NextResponse.json({ ok: true });
+  }
 
   const [{ data: business }, { data: profile }, { data: lead }] =
     await Promise.all([

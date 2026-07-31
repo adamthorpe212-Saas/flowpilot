@@ -143,6 +143,8 @@ export type Call = {
   recording_url: string | null;
   transcript: TranscriptTurn[];
   status: CallStatus;
+  /** Set once the confirmation SMS and owner alert have been sent. */
+  notified_at: string | null;
   created_at: string;
 };
 

@@ -223,6 +223,20 @@ paying customer — so verify it shows a successful delivery before trusting it.
 
 ## E. End-to-end check
 
+**Before you start: open `/settings/diagnostics`.**
+
+It checks every external service and reports what is connected and what is not,
+without ever showing a secret value. Almost every way this product fails looks
+identical from outside — a phone that rings out, a text that never arrives — so
+starting here turns "why isn't this working" into a named cause.
+
+It also shows the exact webhook URLs to paste into Twilio and Stripe, built from
+the same site URL that signature verification uses. If they look wrong there,
+they are wrong everywhere.
+
+Green on everything before you place a call, and the rest of this section should
+mostly just work.
+
 Use a real Irish mobile you can answer.
 
 1. Sign up on the deployed site and complete onboarding.

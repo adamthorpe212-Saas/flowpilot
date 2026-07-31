@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getCurrentBusiness } from "@/lib/auth";
+import {
+  LEAD_VIEWS,
+  resolveView,
+  STATUS_LABELS,
+  STATUS_STYLES,
+} from "@/lib/lead-views";
 import { createClient } from "@/lib/supabase/server";
 import { shouldAnswerCalls } from "@/lib/usage";
 import type { Lead } from "@/types/database";
@@ -25,15 +31,32 @@ function formatWhen(value: string) {
   }).format(new Date(value));
 }
 
-export default async function DashboardPage() {
+export default async function DashboardPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ view?: string }>;
+}) {
+  const { view: requested } = await searchParams;
+  const view = resolveView(requested);
+
   const business = await getCurrentBusiness();
   const supabase = await createClient();
 
-  const { data } = await supabase
+  let query = supabase
     .from("lead")
     .select("*")
     .order("created_at", { ascending: false })
     .limit(50);
+
+  if (view.statuses) query = query.in("status", view.statuses);
+
+  const [{ data }, { count: todoCount }] = await Promise.all([
+    query,
+    supabase
+      .from("lead")
+      .select("id", { count: "exact", head: true })
+      .in("status", LEAD_VIEWS[0].statuses ?? []),
+  ]);
 
   const leads = (data ?? []) as Lead[];
 
@@ -53,7 +76,9 @@ export default async function DashboardPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Leads</h1>
           <p className="mt-1 text-sm text-zinc-500">
-            Every call your receptionist has taken.
+            {todoCount
+              ? `${todoCount} waiting on you.`
+              : "Every call your receptionist has taken."}
           </p>
         </div>
 
@@ -90,16 +115,35 @@ export default async function DashboardPage() {
         </div>
       )}
 
+      <nav aria-label="Filter leads" className="mt-8 flex flex-wrap gap-2">
+        {LEAD_VIEWS.map((option) => (
+          <Link
+            key={option.slug}
+            href={`/dashboard?view=${option.slug}`}
+            aria-current={option.slug === view.slug ? "page" : undefined}
+            className={`rounded-full border px-4 py-2 text-sm transition ${
+              option.slug === view.slug
+                ? "border-white bg-white text-black"
+                : "border-white/15 text-zinc-400 hover:border-white/30 hover:text-white"
+            }`}
+          >
+            {option.label}
+          </Link>
+        ))}
+      </nav>
+
       {leads.length === 0 ? (
-        <div className="mt-8 rounded-2xl border border-dashed border-white/15 px-6 py-16 text-center">
-          <h2 className="text-base font-medium text-zinc-300">No calls yet</h2>
-          <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-zinc-500">
-            When someone rings and you can&apos;t pick up, the job will land
-            here — with what they need and where they are.
-          </p>
+        <div className="mt-6 rounded-2xl border border-dashed border-white/15 px-6 py-16 text-center">
+          <h2 className="text-base font-medium text-zinc-300">{view.empty}</h2>
+          {view.slug === "all" && (
+            <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-zinc-500">
+              When someone rings and you can&apos;t pick up, the job will land
+              here — with what they need and where they are.
+            </p>
+          )}
         </div>
       ) : (
-        <ul className="mt-8 space-y-3">
+        <ul className="mt-6 space-y-3">
           {leads.map((lead) => (
             <li key={lead.id}>
               <Link
@@ -120,14 +164,19 @@ export default async function DashboardPage() {
                     </p>
                   </div>
 
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <span
-                      className={`rounded-full border px-2.5 py-1 text-xs capitalize ${
-                        URGENCY_STYLES[lead.urgency] ?? URGENCY_STYLES.normal
-                      }`}
+                      className={`rounded-full border px-2.5 py-1 text-xs ${STATUS_STYLES[lead.status]}`}
                     >
-                      {lead.urgency}
+                      {STATUS_LABELS[lead.status]}
                     </span>
+                    {lead.urgency === "high" && (
+                      <span
+                        className={`rounded-full border px-2.5 py-1 text-xs ${URGENCY_STYLES.high}`}
+                      >
+                        Urgent
+                      </span>
+                    )}
                     <span className="text-xs text-zinc-600">
                       {formatWhen(lead.created_at)}
                     </span>

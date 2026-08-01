@@ -203,9 +203,18 @@ begin
 end;
 $$;
 
--- Should return no rows: everything above is about to be rolled back.
+rollback;
+
+/*
+ * Verification runs AFTER the rollback, not before.
+ *
+ * Inside the transaction the test data is obviously still there — the rollback
+ * has not happened yet — so a check placed above would report "left data
+ * behind" every single time, whether or not anything was actually wrong. It did
+ * exactly that, and looked alarming for no reason.
+ *
+ * Expected: no rows.
+ */
 select 'smoke test left data behind' as problem, id, name
 from public.business
 where name = 'Smoke Test Plumbing';
-
-rollback;

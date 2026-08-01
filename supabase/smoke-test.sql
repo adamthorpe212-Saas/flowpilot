@@ -206,15 +206,25 @@ $$;
 rollback;
 
 /*
- * Verification runs AFTER the rollback, not before.
+ * The verdict, as a query result rather than a notice.
  *
- * Inside the transaction the test data is obviously still there — the rollback
- * has not happened yet — so a check placed above would report "left data
- * behind" every single time, whether or not anything was actually wrong. It did
- * exactly that, and looked alarming for no reason.
+ * Supabase's SQL editor does not display `raise notice` output, so every OK
+ * message above is invisible there — the test could pass perfectly and look
+ * like it had done nothing at all. Only rows come back, so the result has to be
+ * a row.
  *
- * Expected: no rows.
+ * Any check that fails raises an exception instead, which the editor shows in
+ * red with the reason. So there are exactly two outcomes: a red error naming
+ * what broke, or the green row below.
+ *
+ * This also runs after the rollback rather than before it, so it reads
+ * committed state — inside the transaction the test data is obviously still
+ * present, and checking there reported a problem on every clean run.
  */
-select 'smoke test left data behind' as problem, id, name
+select
+  case
+    when count(*) = 0 then 'ALL CHECKS PASSED — database is ready'
+    else 'PROBLEM: smoke test data was left behind'
+  end as result
 from public.business
 where name = 'Smoke Test Plumbing';

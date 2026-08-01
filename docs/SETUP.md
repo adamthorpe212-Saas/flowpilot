@@ -37,8 +37,7 @@ Paste and run `supabase/smoke-test.sql`. It creates a business, exercises the
 database functions, checks the results and rolls everything back — so it is
 safe to run and leaves nothing behind.
 
-Expect a series of `OK:` notices ending in `ALL CHECKS PASSED`, and no rows from
-the final query.
+Expect a single row reading **ALL CHECKS PASSED — database is ready**.
 
 This is not optional belt-and-braces. `npm run validate:sql` cannot check inside
 plpgsql function bodies — to that parser a function body is one string literal,

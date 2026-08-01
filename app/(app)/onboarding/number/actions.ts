@@ -46,9 +46,12 @@ export async function provisionNumber(
   }
 
   if (!isTwilioConfigured()) {
+    // Says only what is true. The previous wording promised an email that
+    // nothing sends — a small lie, but the kind that costs trust exactly when
+    // a customer is deciding whether this product is real.
     return {
       error:
-        "Phone numbers aren't connected yet. We'll email you the moment yours is ready.",
+        "Phone numbers aren't switched on yet. Everything else is set up — this is the last piece.",
     };
   }
 

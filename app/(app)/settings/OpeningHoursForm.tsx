@@ -2,10 +2,10 @@
 
 import { useActionState, useState } from "react";
 import {
-  DAYS,
   saveOpeningHours,
   type HoursState,
 } from "@/app/(app)/settings/hours-actions";
+import { DAYS } from "@/app/(app)/settings/hours-config";
 import FormError from "@/components/ui/FormError";
 import SubmitButton from "@/components/ui/SubmitButton";
 import type { OpeningHours, OutOfHoursBehaviour } from "@/types/database";

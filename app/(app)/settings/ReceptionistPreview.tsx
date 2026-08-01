@@ -1,11 +1,11 @@
 "use client";
 
 import { useActionState } from "react";
+import { previewReply } from "@/app/(app)/settings/preview-actions";
 import {
   EMPTY_PREVIEW,
-  previewReply,
   type PreviewState,
-} from "@/app/(app)/settings/preview-actions";
+} from "@/app/(app)/settings/preview-state";
 import FormError from "@/components/ui/FormError";
 import SubmitButton from "@/components/ui/SubmitButton";
 

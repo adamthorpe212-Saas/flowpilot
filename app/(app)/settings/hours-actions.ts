@@ -3,19 +3,10 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentBusiness } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { DAYS } from "@/app/(app)/settings/hours-config";
 import type { OpeningHours, OutOfHoursBehaviour } from "@/types/database";
 
 export type HoursState = { error: string | null; saved?: boolean };
-
-export const DAYS = [
-  { key: "mon", label: "Monday" },
-  { key: "tue", label: "Tuesday" },
-  { key: "wed", label: "Wednesday" },
-  { key: "thu", label: "Thursday" },
-  { key: "fri", label: "Friday" },
-  { key: "sat", label: "Saturday" },
-  { key: "sun", label: "Sunday" },
-] as const;
 
 const BEHAVIOURS: OutOfHoursBehaviour[] = [
   "answer_and_notify",

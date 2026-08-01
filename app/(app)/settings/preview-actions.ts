@@ -3,28 +3,13 @@
 import { getCurrentBusiness } from "@/lib/auth";
 import { isModelConfigured, nextReply, openingLine } from "@/lib/receptionist";
 import { createClient } from "@/lib/supabase/server";
+import type { PreviewState, PreviewTurn } from "@/app/(app)/settings/preview-state";
 import type {
   BusinessProfile,
   QualificationQuestion,
   Service,
   TranscriptTurn,
 } from "@/types/database";
-
-export type PreviewTurn = { role: "assistant" | "caller"; text: string };
-
-export type PreviewState = {
-  error: string | null;
-  turns: PreviewTurn[];
-  captured: Record<string, string>;
-  complete: boolean;
-};
-
-export const EMPTY_PREVIEW: PreviewState = {
-  error: null,
-  turns: [],
-  captured: {},
-  complete: false,
-};
 
 /**
  * Runs the real qualification engine against the business's real configuration,

@@ -46,9 +46,8 @@ vi.mock("@/lib/supabase/server", () => ({
   }),
 }));
 
-const { previewReply, EMPTY_PREVIEW } = await import(
-  "@/app/(app)/settings/preview-actions"
-);
+const { previewReply } = await import("@/app/(app)/settings/preview-actions");
+const { EMPTY_PREVIEW } = await import("@/app/(app)/settings/preview-state");
 
 function form(said: string): FormData {
   const data = new FormData();

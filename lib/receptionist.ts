@@ -1,5 +1,6 @@
 import "server-only";
 
+import { AI_DISCLOSURE } from "@/lib/disclosure";
 import type {
   BusinessProfile,
   QualificationQuestion,
@@ -39,6 +40,15 @@ export type ReceptionistReply = {
   captured: Record<string, string>;
   /** True once there is enough to hand over — the call should close. */
   complete: boolean;
+  /**
+   * True when this is a holding line rather than a real answer, because the
+   * model could not be reached or could not be understood.
+   *
+   * Callers must treat this differently from a normal reply: nothing was
+   * captured, the caller has not been qualified, and claiming otherwise turns a
+   * transient outage into a lost customer who believes their details were taken.
+   */
+  degraded: boolean;
 };
 
 function buildSystemPrompt(context: ReceptionistContext): string {
@@ -129,11 +139,19 @@ export function parseReply(raw: string): ReceptionistReply | null {
           ? parsed.captured
           : {},
       complete: parsed.complete === true,
+      degraded: false,
     };
   } catch {
     return null;
   }
 }
+
+/** Worth trying again: rate limits, overloads and upstream wobbles. */
+function isTransient(status: number): boolean {
+  return status === 408 || status === 429 || status >= 500;
+}
+
+const RETRY_DELAY_MS = 400;
 
 export async function nextReply(
   context: ReceptionistContext,
@@ -141,51 +159,96 @@ export async function nextReply(
 ): Promise<ReceptionistReply> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
 
-  // Never leave a caller listening to silence. A configuration failure has to
-  // degrade into something a human would still find acceptable to hear.
+  /*
+   * Never leave a caller listening to silence — but never end their call
+   * either.
+   *
+   * `complete` stays false on purpose. The person on the line has a burst pipe
+   * and no idea anything is wrong; hanging up on them because our model
+   * returned a 429 turns a two-second hiccup into a customer the business never
+   * hears from again, and hands the tradesperson a lead with nothing in it. The
+   * caller keeps talking, the next turn retries, and it usually recovers. Where
+   * a genuine end is needed, the caller of this function decides that — see the
+   * consecutive-degradation limit in the voice route.
+   */
   const fallback: ReceptionistReply = {
     speech: context.profile.fallback,
     captured: {},
-    complete: true,
+    complete: false,
+    degraded: true,
   };
 
   if (!apiKey) return fallback;
 
-  try {
-    const response = await fetch(API_URL, {
-      method: "POST",
-      headers: {
-        "content-type": "application/json",
-        "x-api-key": apiKey,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        max_tokens: 300,
-        system: buildSystemPrompt(context),
-        messages: toMessages(transcript),
-      }),
-    });
+  const body = JSON.stringify({
+    model: MODEL,
+    max_tokens: 300,
+    system: buildSystemPrompt(context),
+    messages: toMessages(transcript),
+  });
 
-    if (!response.ok) {
-      console.error("Model request failed", response.status, await response.text());
+  /*
+   * One retry, not more. A caller is holding the line, so the budget for
+   * recovery is a fraction of a second — long enough to ride out an overloaded
+   * response, short enough that nobody notices the pause. Anything worse than
+   * that is better handled by keeping the conversation alive than by making
+   * someone wait.
+   */
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const response = await fetch(API_URL, {
+        method: "POST",
+        headers: {
+          "content-type": "application/json",
+          "x-api-key": apiKey,
+          "anthropic-version": "2023-06-01",
+        },
+        body,
+      });
+
+      if (!response.ok) {
+        const detail = await response.text();
+        console.error("Model request failed", response.status, detail);
+
+        if (isTransient(response.status) && attempt === 0) {
+          await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+          continue;
+        }
+        return fallback;
+      }
+
+      const data = await response.json();
+      const text = data?.content?.[0]?.text;
+      if (typeof text !== "string") return fallback;
+
+      return parseReply(text) ?? fallback;
+    } catch (error) {
+      console.error("Model request threw", error);
+      if (attempt === 0) {
+        await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
+        continue;
+      }
       return fallback;
     }
-
-    const data = await response.json();
-    const text = data?.content?.[0]?.text;
-    if (typeof text !== "string") return fallback;
-
-    return parseReply(text) ?? fallback;
-  } catch (error) {
-    console.error("Model request threw", error);
-    return fallback;
   }
+
+  return fallback;
 }
 
+/**
+ * The disclosure leads, and the business's own greeting follows.
+ *
+ * Order matters twice over. The caller should be told before they start
+ * talking, not after they have already described their emergency. And greetings
+ * are free text that usually end in a question — appending after one would
+ * either bury the disclosure past the prompt or leave the call ending on a
+ * statement, so leading with it is the only composition that works for every
+ * greeting a business might write.
+ */
 export function openingLine(context: ReceptionistContext): string {
-  return (
-    context.profile.greeting ??
-    `Hello, ${context.businessName}. Sorry we missed your call. What can I help you with?`
-  );
+  const greeting =
+    context.profile.greeting?.trim() ||
+    `Hello, ${context.businessName}. Sorry we missed your call. What can I help you with?`;
+
+  return `${AI_DISCLOSURE} ${greeting}`;
 }

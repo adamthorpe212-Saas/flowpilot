@@ -4,8 +4,13 @@ import { useEffect, useRef, useState } from "react";
 
 type Turn = { role: "assistant" | "caller"; text: string };
 
+/*
+ * Must match what openingLine() actually produces on a live call, disclosure
+ * and all. A demo that opens more smoothly than the real thing is a demo that
+ * sells a product we do not ship.
+ */
 const GREETING =
-  "Hello, O'Brien Plumbing — sorry we missed you. What's the problem?";
+  "This is an automated assistant, and I'll take notes. Hello, O'Brien Plumbing — sorry we missed you. What's the problem?";
 
 const OPENERS = [
   "My boiler has burst",
@@ -77,8 +82,15 @@ export default function LiveDemo() {
   }, [turns, thinking]);
 
   const lastAssistant = [...turns].reverse().find((t) => t.role === "assistant");
-  const started = turns.some((turn) => turn.role === "caller");
-  const suggestions = started
+
+  /*
+   * "Started" means the receptionist has actually asked something, not merely
+   * that the visitor has typed. If a turn failed, the only assistant line is
+   * still the greeting — offering "Yes / No, that's everything" as replies to
+   * "What's the problem?" would look broken on top of already having failed.
+   */
+  const answered = turns.filter((turn) => turn.role === "assistant").length > 1;
+  const suggestions = answered
     ? suggestFor(lastAssistant?.text ?? "")
     : OPENERS;
 
@@ -102,6 +114,15 @@ export default function LiveDemo() {
       const data = await response.json();
 
       if (!response.ok) {
+        /*
+         * Take the failed turn back out of the thread.
+         *
+         * Leaving it would send it again on the retry, so the receptionist
+         * would receive "My boiler has burst" twice and answer the duplicate —
+         * a second failure caused entirely by the first.
+         */
+        setTurns(turns);
+        setDraft(message);
         setError(data.error ?? "Something went wrong. Try again.");
         return;
       }
@@ -130,7 +151,7 @@ export default function LiveDemo() {
             aria-hidden="true"
             className={`h-1.5 w-1.5 rounded-full ${complete ? "bg-zinc-600" : "bg-emerald-400"}`}
           />
-          <span className="text-xs text-zinc-500">
+          <span className="text-xs text-zinc-400">
             O&apos;Brien Plumbing ·{" "}
             {complete ? "call ended" : "call in progress"}
           </span>
@@ -145,7 +166,7 @@ export default function LiveDemo() {
             <div key={index} className="fp-rise-in">
               <p
                 className={`text-[10px] uppercase tracking-[0.14em] ${
-                  turn.role === "assistant" ? "text-white/55" : "text-zinc-600"
+                  turn.role === "assistant" ? "text-white/55" : "text-zinc-500"
                 }`}
               >
                 {turn.role === "assistant" ? "FlowPilot" : "Caller"}
@@ -165,19 +186,19 @@ export default function LiveDemo() {
               <p className="text-[10px] uppercase tracking-[0.14em] text-white/55">
                 FlowPilot
               </p>
-              <p className="mt-1 text-sm text-zinc-600">thinking…</p>
+              <p className="mt-1 text-sm text-zinc-500">thinking…</p>
             </div>
           )}
         </div>
       </div>
 
       <div className="rounded-2xl border border-white/12 bg-white/[0.02] p-5">
-        <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">
+        <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-400">
           Job record
         </p>
 
         {rows.length === 0 ? (
-          <p className="mt-3 text-xs leading-5 text-zinc-600">
+          <p className="mt-3 text-xs leading-5 text-zinc-500">
             Nothing captured yet. It fills in as the caller talks.
           </p>
         ) : (
@@ -191,7 +212,7 @@ export default function LiveDemo() {
                   ✓
                 </span>
                 <span className="min-w-0">
-                  <span className="block text-[9px] uppercase tracking-[0.1em] text-zinc-600">
+                  <span className="block text-[9px] uppercase tracking-[0.1em] text-zinc-500">
                     {row.label}
                   </span>
                   <span className="block text-xs text-white">{row.value}</span>
@@ -204,7 +225,7 @@ export default function LiveDemo() {
         {complete && (
           <div className="mt-4 border-t border-white/8 pt-3">
             <p className="text-xs text-emerald-300">Sent to Dave&apos;s phone</p>
-            <p className="mt-1 text-[11px] text-zinc-600">
+            <p className="mt-1 text-[11px] text-zinc-500">
               He rings back knowing the job before he dials.
             </p>
           </div>
@@ -233,10 +254,10 @@ export default function LiveDemo() {
               <input
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
-                placeholder={started ? "Say something else…" : "My boiler has burst"}
+                placeholder={answered ? "Say something else…" : "My boiler has burst"}
                 aria-label="What a caller might say"
                 maxLength={300}
-                className="flex-1 rounded-full border border-white/15 bg-white/[0.05] px-5 py-3 text-sm text-white placeholder:text-zinc-600 transition focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/10"
+                className="flex-1 rounded-full border border-white/15 bg-white/[0.05] px-5 py-3 text-sm text-white placeholder:text-zinc-500 transition focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/10"
               />
               <button
                 type="submit"
@@ -254,7 +275,9 @@ export default function LiveDemo() {
                   type="button"
                   onClick={() => send(suggestion)}
                   disabled={thinking}
-                  className="rounded-full border border-white/15 px-3.5 py-1.5 text-xs text-zinc-400 transition hover:border-white/30 hover:text-white disabled:opacity-40"
+                  // 44px tall on phones, where these are the main way the demo
+                  // gets driven; back to compact once there is a mouse.
+                  className="flex min-h-11 items-center rounded-full border border-white/15 px-4 text-xs text-zinc-400 transition hover:border-white/30 hover:text-white disabled:opacity-40 sm:min-h-0 sm:px-3.5 sm:py-1.5"
                 >
                   {suggestion}
                 </button>

@@ -3,6 +3,7 @@ import "server-only";
 import { isEmailConfigured } from "@/lib/email";
 import { siteUrl } from "@/lib/env";
 import { PLANS } from "@/lib/plans";
+import { retentionPolicy } from "@/lib/retention";
 import { createAdminClient } from "@/lib/supabase/server";
 
 /**
@@ -166,16 +167,173 @@ function checkEmail(): Check {
   };
 }
 
-function checkModel(): Check {
-  const hasKey = present(process.env.ANTHROPIC_API_KEY);
+/**
+ * Actually calls the model rather than checking that a key exists.
+ *
+ * A present key proves nothing. A key with no credit, a revoked key and a
+ * mistyped model name all look identical to `present()`, and all three leave
+ * every caller hearing the fallback line while this page cheerfully reports OK.
+ * That is the exact failure this page exists to catch, so it is worth one real
+ * request to catch it.
+ */
+async function checkModel(): Promise<Check> {
+  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const model = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-5";
+
+  if (!present(apiKey)) {
+    return {
+      name: "Qualification model",
+      status: "fail",
+      detail: "No API key — the receptionist will answer but only take a message",
+      fix: "console.anthropic.com → ANTHROPIC_API_KEY",
+    };
+  }
+
+  try {
+    const response = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        "x-api-key": apiKey as string,
+        "anthropic-version": "2023-06-01",
+      },
+      // The smallest request that still proves key, credit and model name.
+      body: JSON.stringify({
+        model,
+        max_tokens: 1,
+        messages: [{ role: "user", content: "hi" }],
+      }),
+      signal: AbortSignal.timeout(8000),
+    });
+
+    if (response.ok) {
+      return {
+        name: "Qualification model",
+        status: "ok",
+        detail: `Answered a test request (${model})`,
+      };
+    }
+
+    const body = await response.text();
+
+    /*
+     * The three that actually happen, told apart by their message rather than
+     * their status — an expired key and an empty balance both arrive as a 4xx,
+     * and sending someone to Billing over a dead key wastes the trip.
+     */
+    const diagnosis = /credit balance is too low/i.test(body)
+      ? {
+          detail:
+            "The Anthropic account is out of credit. Every call falls back to taking a message.",
+          fix: "console.anthropic.com → Plans & Billing → add credit",
+        }
+      : response.status === 401 || /authentication_error|invalid x-api-key|API key is invalid/i.test(body)
+        ? {
+            detail:
+              "Anthropic rejected the API key. Keys that were created as temporary expire, and an expired key looks exactly like a working one from here.",
+            fix: "console.anthropic.com → API keys → create a key, then set ANTHROPIC_API_KEY",
+          }
+        : response.status === 404
+          ? {
+              detail: `The model "${model}" was not recognised.`,
+              fix: "Check ANTHROPIC_MODEL, or unset it to use the default.",
+            }
+          : {
+              detail: `Anthropic returned ${response.status}.`,
+              fix: "console.anthropic.com → check the key, the model name and the balance",
+            };
+
+    return {
+      name: "Qualification model",
+      status: "fail",
+      ...diagnosis,
+    };
+  } catch (error) {
+    return {
+      name: "Qualification model",
+      status: "fail",
+      detail:
+        error instanceof Error
+          ? `Could not reach Anthropic: ${error.message}`
+          : "Could not reach Anthropic",
+      fix: "Check outbound network access from the deployment.",
+    };
+  }
+}
+
+/**
+ * The public demo's spend ceiling.
+ *
+ * withinRateLimit() deliberately fails open when this table is missing, so an
+ * unapplied migration turns a public endpoint into an uncapped one — and the
+ * first symptom is a bill. Silent by design in the request path, so it has to
+ * be loud here.
+ */
+async function checkDemoRateLimit(): Promise<Check> {
+  try {
+    const supabase = createAdminClient();
+    const { error } = await supabase
+      .from("demo_usage")
+      .select("ip_hash", { count: "exact", head: true });
+
+    if (error?.code === "42P01") {
+      return {
+        name: "Demo rate limit",
+        status: "fail",
+        detail:
+          "The demo_usage table is missing, so the public demo has no per-visitor cap. Anyone can run it as often as they like, at your cost.",
+        fix: "Apply supabase/migrations/20260731120800_demo_usage.sql — do this before adding Anthropic credit.",
+      };
+    }
+
+    if (error) {
+      return {
+        name: "Demo rate limit",
+        status: "warn",
+        detail: error.message,
+        fix: "Check the demo_usage table and its policies.",
+      };
+    }
+
+    return {
+      name: "Demo rate limit",
+      status: "ok",
+      detail: "The public demo is capped per visitor",
+    };
+  } catch (error) {
+    return {
+      name: "Demo rate limit",
+      status: "warn",
+      detail: error instanceof Error ? error.message : "Could not check",
+    };
+  }
+}
+
+/**
+ * Whether callers' details are ever aged out.
+ *
+ * A privacy job that is off by default is the right default and the easiest
+ * thing in the product to forget, so it reports as a warning rather than
+ * staying quiet. Not a failure: nothing is broken, and calls keep working —
+ * but "we keep every transcript forever" is not a position to hold by
+ * accident.
+ */
+function checkRetention(): Check {
+  const policy = retentionPolicy();
+
+  if (!policy.enabled) {
+    return {
+      name: "Caller data retention",
+      status: "warn",
+      detail: policy.reason,
+      fix: "Pick a period, set RETENTION_DAYS — see docs/DATA-PROCESSING.md",
+    };
+  }
 
   return {
-    name: "Qualification model",
-    status: hasKey ? "ok" : "fail",
-    detail: hasKey
-      ? `Configured (${process.env.ANTHROPIC_MODEL ?? "claude-sonnet-5"})`
-      : "No API key — the receptionist will answer but only take a message",
-    fix: hasKey ? undefined : "console.anthropic.com → ANTHROPIC_API_KEY",
+    name: "Caller data retention",
+    status: "ok",
+    detail: `Names, addresses and transcripts are erased after ${policy.days} days`,
   };
 }
 
@@ -259,14 +417,21 @@ export type Diagnostics = {
 export async function runDiagnostics(
   requestOrigin: string | null,
 ): Promise<Diagnostics> {
-  const [supabase, twilio] = await Promise.all([checkSupabase(), checkTwilio()]);
+  const [supabase, twilio, model, demoLimit] = await Promise.all([
+    checkSupabase(),
+    checkTwilio(),
+    checkModel(),
+    checkDemoRateLimit(),
+  ]);
 
   const checks: Check[] = [
     checkSiteUrl(requestOrigin),
     ...supabase,
     ...twilio,
     checkEmail(),
-    checkModel(),
+    checkRetention(),
+    model,
+    demoLimit,
     ...checkStripe(),
   ];
 

@@ -21,7 +21,7 @@ export default function StageScreen({ stage }: { stage: number }) {
           </svg>
         </div>
         <p className="mt-3 text-[11px] font-semibold text-white">John Murphy</p>
-        <p className="mt-0.5 text-[9px] text-zinc-500">Missed · now</p>
+        <p className="mt-0.5 text-[9px] text-zinc-400">Missed · now</p>
       </div>
     );
   }
@@ -63,7 +63,7 @@ export default function StageScreen({ stage }: { stage: number }) {
             ["Urgent", "Yes"],
           ].map(([label, value]) => (
             <div key={label} className="flex justify-between gap-2">
-              <dt className="text-zinc-500">{label}</dt>
+              <dt className="text-zinc-400">{label}</dt>
               <dd>{value}</dd>
             </div>
           ))}
@@ -75,13 +75,13 @@ export default function StageScreen({ stage }: { stage: number }) {
   return (
     <div className="px-2.5 pt-8">
       <div className="rounded-xl bg-white p-2.5">
-        <p className="text-[8px] uppercase tracking-[0.12em] text-zinc-500">
+        <p className="text-[8px] uppercase tracking-[0.12em] text-zinc-400">
           New job
         </p>
         <p className="mt-1 text-[10px] font-semibold text-zinc-900">
           Burst pipe · Raheny
         </p>
-        <p className="mt-0.5 text-[9px] text-zinc-500">John Murphy</p>
+        <p className="mt-0.5 text-[9px] text-zinc-400">John Murphy</p>
       </div>
     </div>
   );

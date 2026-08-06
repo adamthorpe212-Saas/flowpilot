@@ -101,16 +101,16 @@ export default function ServicesForm({
             }
           }}
           onBlur={() => add(draft)}
-          className="mt-2 w-full rounded-xl border border-white/15 bg-white/[0.04] px-4 py-3 text-[15px] text-white placeholder:text-zinc-600 transition focus:border-white/40 focus:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-white/10"
+          className="mt-2 w-full rounded-xl border border-white/15 bg-white/[0.04] px-4 py-3 text-[15px] text-white placeholder:text-zinc-500 transition focus:border-white/40 focus:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-white/10"
         />
-        <p id="service-draft-hint" className="mt-2 text-xs text-zinc-500">
+        <p id="service-draft-hint" className="mt-2 text-xs text-zinc-400">
           Type a service and press Enter. Use the words your customers would.
         </p>
       </div>
 
       {services.length > 0 && (
         <fieldset className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
-          <legend className="px-1 text-xs uppercase tracking-[0.14em] text-zinc-500">
+          <legend className="px-1 text-xs uppercase tracking-[0.14em] text-zinc-400">
             Which can be emergencies?
           </legend>
           <ul className="mt-2 divide-y divide-white/5">
@@ -132,7 +132,7 @@ export default function ServicesForm({
                 <button
                   type="button"
                   onClick={() => remove(service)}
-                  className="flex-none text-xs text-zinc-600 transition hover:text-white"
+                  className="flex-none text-xs text-zinc-500 transition hover:text-white"
                 >
                   Remove
                   <span className="sr-only"> {service}</span>
@@ -140,7 +140,7 @@ export default function ServicesForm({
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-xs text-zinc-500">
+          <p className="mt-3 text-xs text-zinc-400">
             Emergencies get flagged as urgent and alert you straight away, even
             out of hours.
           </p>

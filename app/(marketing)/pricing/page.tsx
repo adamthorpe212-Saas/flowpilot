@@ -63,7 +63,7 @@ export default function PricingPage() {
               )}
 
               <h2 className="text-lg font-semibold">{plan.name}</h2>
-              <p className="mt-1 min-h-[2.5rem] text-sm leading-5 text-zinc-500">
+              <p className="mt-1 min-h-[2.5rem] text-sm leading-5 text-zinc-400">
                 {plan.tagline}
               </p>
 
@@ -71,7 +71,7 @@ export default function PricingPage() {
                 <span className="text-4xl font-semibold tracking-tight">
                   {formatPrice(plan)}
                 </span>
-                <span className="text-sm text-zinc-500">/month</span>
+                <span className="text-sm text-zinc-400">/month</span>
               </p>
 
               <Link
@@ -96,7 +96,7 @@ export default function PricingPage() {
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      className="mt-0.5 h-4 w-4 flex-none text-zinc-500"
+                      className="mt-0.5 h-4 w-4 flex-none text-zinc-400"
                     >
                       <path d="m4 10 4 4 8-8" />
                     </svg>
@@ -108,7 +108,7 @@ export default function PricingPage() {
           ))}
         </div>
 
-        <p className="mx-auto mt-8 max-w-2xl text-center text-xs text-zinc-600">
+        <p className="mx-auto mt-8 max-w-2xl text-center text-xs text-zinc-500">
           Prices exclude VAT. Your Irish number and all calls are included —
           there are no per-minute charges on top.
         </p>

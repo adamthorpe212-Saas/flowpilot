@@ -70,11 +70,11 @@ export default function TagInput({
           }
         }}
         onBlur={() => commit(draft)}
-        className="mt-2 w-full rounded-xl border border-white/15 bg-white/[0.04] px-4 py-3 text-[15px] text-white placeholder:text-zinc-600 transition focus:border-white/40 focus:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-white/10"
+        className="mt-2 w-full rounded-xl border border-white/15 bg-white/[0.04] px-4 py-3 text-[15px] text-white placeholder:text-zinc-500 transition focus:border-white/40 focus:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-white/10"
       />
 
       {hint && (
-        <p id={`${name}-hint`} className="mt-2 text-xs text-zinc-500">
+        <p id={`${name}-hint`} className="mt-2 text-xs text-zinc-400">
           {hint}
         </p>
       )}
@@ -93,7 +93,7 @@ export default function TagInput({
                 {tag}
                 <span
                   aria-hidden="true"
-                  className="text-zinc-500 transition group-hover:text-white"
+                  className="text-zinc-400 transition group-hover:text-white"
                 >
                   ×
                 </span>

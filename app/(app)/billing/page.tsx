@@ -56,7 +56,7 @@ export default async function BillingPage({
   return (
     <div className="mx-auto max-w-2xl">
       <h1 className="text-2xl font-semibold tracking-tight">Billing</h1>
-      <p className="mt-1 text-sm text-zinc-500">
+      <p className="mt-1 text-sm text-zinc-400">
         Your plan, your card, and anything you need to change.
       </p>
 
@@ -83,7 +83,7 @@ export default async function BillingPage({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-lg font-semibold">{plan.name}</p>
-            <p className="mt-1 text-sm text-zinc-500">
+            <p className="mt-1 text-sm text-zinc-400">
               {formatPrice(plan)}/month · up to {plan.callAllowance} answered
               calls
             </p>
@@ -100,7 +100,7 @@ export default async function BillingPage({
             <p className="text-sm text-zinc-400">Calls answered this month</p>
             <p className="text-sm font-medium">
               {usage.used}
-              <span className="text-zinc-600"> / {usage.allowance}</span>
+              <span className="text-zinc-500"> / {usage.allowance}</span>
             </p>
           </div>
 
@@ -153,7 +153,7 @@ export default async function BillingPage({
                 >
                   <div>
                     <p className="font-medium">{candidate.name}</p>
-                    <p className="mt-1 text-sm text-zinc-500">
+                    <p className="mt-1 text-sm text-zinc-400">
                       {formatPrice(candidate)}/month · {candidate.callAllowance}{" "}
                       calls
                     </p>
@@ -170,7 +170,7 @@ export default async function BillingPage({
         </section>
       )}
 
-      <p className="mt-8 text-xs text-zinc-600">
+      <p className="mt-8 text-xs text-zinc-500">
         {TRIAL_DAYS} days free on any plan. Prices exclude VAT. Cancel any time —
         your receptionist keeps answering until the end of the month you&apos;ve
         paid for.

@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 const URGENCY_STYLES: Record<string, string> = {
   high: "border-red-500/30 bg-red-500/10 text-red-200",
   normal: "border-white/15 bg-white/5 text-zinc-300",
-  low: "border-white/10 bg-white/[0.03] text-zinc-500",
+  low: "border-white/10 bg-white/[0.03] text-zinc-400",
 };
 
 function formatWhen(value: string) {
@@ -84,7 +84,7 @@ export default async function DashboardPage({
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Leads</h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <p className="mt-1 text-sm text-zinc-400">
             {todoCount
               ? `${todoCount} waiting on you.`
               : "Every call your receptionist has taken."}
@@ -164,7 +164,7 @@ export default async function DashboardPage({
         <div className="mt-6 rounded-2xl border border-dashed border-white/15 px-6 py-16 text-center">
           <h2 className="text-base font-medium text-zinc-300">{view.empty}</h2>
           {view.slug === "all" && (
-            <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-zinc-500">
+            <p className="mx-auto mt-2 max-w-sm text-sm leading-6 text-zinc-400">
               When someone rings and you can&apos;t pick up, the job will land
               here — with what they need and where they are.
             </p>
@@ -183,10 +183,10 @@ export default async function DashboardPage({
                     <p className="font-medium">
                       {lead.job_type ?? "Enquiry"}
                       {lead.location ? (
-                        <span className="text-zinc-500"> · {lead.location}</span>
+                        <span className="text-zinc-400"> · {lead.location}</span>
                       ) : null}
                     </p>
-                    <p className="mt-1 text-sm text-zinc-500">
+                    <p className="mt-1 text-sm text-zinc-400">
                       {lead.caller_name ?? "Unknown caller"} ·{" "}
                       {lead.caller_number}
                     </p>
@@ -205,7 +205,7 @@ export default async function DashboardPage({
                         Urgent
                       </span>
                     )}
-                    <span className="text-xs text-zinc-600">
+                    <span className="text-xs text-zinc-500">
                       {formatWhen(lead.created_at)}
                     </span>
                   </div>

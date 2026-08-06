@@ -28,7 +28,7 @@ export default async function OnboardingPage() {
       <h1 className="text-2xl font-semibold tracking-tight">
         Set up your receptionist
       </h1>
-      <p className="mt-1 text-sm text-zinc-500">
+      <p className="mt-1 text-sm text-zinc-400">
         {remaining === 0
           ? "All done. Your receptionist is answering calls."
           : `${remaining} ${remaining === 1 ? "step" : "steps"} to go — about five minutes.`}
@@ -53,7 +53,7 @@ export default async function OnboardingPage() {
                   className={`flex h-7 w-7 flex-none items-center justify-center rounded-full border text-xs ${
                     step.done
                       ? "border-emerald-500/40 bg-emerald-500/15 text-emerald-200"
-                      : "border-white/15 text-zinc-500"
+                      : "border-white/15 text-zinc-400"
                   }`}
                 >
                   {step.done ? "✓" : index + 1}
@@ -65,7 +65,7 @@ export default async function OnboardingPage() {
                   >
                     {step.title}
                   </span>
-                  <span className="mt-1 block text-sm text-zinc-500">
+                  <span className="mt-1 block text-sm text-zinc-400">
                     {step.description}
                   </span>
                 </span>

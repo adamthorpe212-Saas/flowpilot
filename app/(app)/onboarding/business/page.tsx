@@ -16,7 +16,7 @@ export default async function BusinessStepPage() {
     <div className="mx-auto max-w-lg">
       <Link
         href="/onboarding"
-        className="text-sm text-zinc-500 transition hover:text-white"
+        className="text-sm text-zinc-400 transition hover:text-white"
       >
         ← Setup
       </Link>
@@ -24,7 +24,7 @@ export default async function BusinessStepPage() {
       <h1 className="mt-4 text-2xl font-semibold tracking-tight">
         Your business
       </h1>
-      <p className="mt-2 text-sm leading-6 text-zinc-500">
+      <p className="mt-2 text-sm leading-6 text-zinc-400">
         Your receptionist uses this to introduce itself and to spot jobs outside
         your patch.
       </p>

@@ -25,7 +25,7 @@ export default async function ForwardingStepPage() {
     <div className="mx-auto max-w-lg">
       <Link
         href="/onboarding"
-        className="text-sm text-zinc-500 transition hover:text-white"
+        className="text-sm text-zinc-400 transition hover:text-white"
       >
         ← Setup
       </Link>
@@ -33,7 +33,7 @@ export default async function ForwardingStepPage() {
       <h1 className="mt-4 text-2xl font-semibold tracking-tight">
         Forward your calls
       </h1>
-      <p className="mt-2 text-sm leading-6 text-zinc-500">
+      <p className="mt-2 text-sm leading-6 text-zinc-400">
         The last step. You keep your own number — this just tells your network
         where to send calls you don&apos;t pick up.
       </p>

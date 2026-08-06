@@ -27,13 +27,13 @@ export default async function ServicesStepPage() {
     <div className="mx-auto max-w-lg">
       <Link
         href="/onboarding"
-        className="text-sm text-zinc-500 transition hover:text-white"
+        className="text-sm text-zinc-400 transition hover:text-white"
       >
         ← Setup
       </Link>
 
       <h1 className="mt-4 text-2xl font-semibold tracking-tight">What you do</h1>
-      <p className="mt-2 text-sm leading-6 text-zinc-500">
+      <p className="mt-2 text-sm leading-6 text-zinc-400">
         This is the vocabulary your receptionist listens for. A caller saying
         &ldquo;my boiler&apos;s making a noise&rdquo; gets matched against this
         list.

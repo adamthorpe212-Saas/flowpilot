@@ -31,7 +31,7 @@ export default function HowItWorks() {
     <>
       <section className="px-5 pb-4 pt-24 sm:px-6 sm:pt-28">
         <div className="mx-auto max-w-2xl text-center">
-          <p className="text-[11px] uppercase tracking-[0.2em] text-zinc-500">
+          <p className="text-[11px] uppercase tracking-[0.2em] text-zinc-400">
             The whole thing
           </p>
           <h1 className="mt-3 text-3xl font-semibold leading-[1.1] tracking-[-0.03em] sm:text-5xl">
@@ -53,7 +53,7 @@ export default function HowItWorks() {
       <section className="border-t border-white/10 px-5 py-16 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-4xl">
           <div className="text-center">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-zinc-500">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-zinc-400">
               Then what
             </p>
             <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
@@ -69,12 +69,12 @@ export default function HowItWorks() {
               >
                 <span
                   aria-hidden="true"
-                  className="flex h-7 w-7 items-center justify-center rounded-full border border-white/15 text-xs text-zinc-500"
+                  className="flex h-7 w-7 items-center justify-center rounded-full border border-white/15 text-xs text-zinc-400"
                 >
                   {index + 1}
                 </span>
                 <h3 className="mt-4 font-medium">{step.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-zinc-500">
+                <p className="mt-2 text-sm leading-6 text-zinc-400">
                   {step.detail}
                 </p>
               </li>

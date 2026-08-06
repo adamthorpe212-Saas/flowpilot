@@ -44,7 +44,7 @@ export default function NotificationRules({
                   ? formatIrishNumber(rule.destination)
                   : rule.destination}
               </p>
-              <p className="mt-0.5 text-xs text-zinc-600">
+              <p className="mt-0.5 text-xs text-zinc-500">
                 {rule.channel === "sms" ? "Text message" : "Email"}
               </p>
             </div>
@@ -59,7 +59,7 @@ export default function NotificationRules({
                     ? "Add somewhere else first — jobs have to reach someone."
                     : undefined
                 }
-                className="text-xs text-zinc-600 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-zinc-600"
+                className="text-xs text-zinc-500 transition hover:text-white disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:text-zinc-500"
               >
                 Remove
                 <span className="sr-only"> {rule.destination}</span>
@@ -115,7 +115,7 @@ export default function NotificationRules({
             channel === "email" ? "Email address" : "Mobile number"
           }
           required
-          className="w-full rounded-xl border border-white/15 bg-white/[0.04] px-4 py-3 text-[15px] text-white placeholder:text-zinc-600 transition focus:border-white/40 focus:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-white/10"
+          className="w-full rounded-xl border border-white/15 bg-white/[0.04] px-4 py-3 text-[15px] text-white placeholder:text-zinc-500 transition focus:border-white/40 focus:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-white/10"
         />
 
         {channel === "email" && !emailAvailable && (

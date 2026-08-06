@@ -52,19 +52,19 @@ export default function NumberStep({
       <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
         <ul className="space-y-3 text-sm text-zinc-400">
           <li className="flex gap-3">
-            <span aria-hidden="true" className="text-zinc-600">
+            <span aria-hidden="true" className="text-zinc-500">
               1
             </span>
             We reserve an Irish number for your business.
           </li>
           <li className="flex gap-3">
-            <span aria-hidden="true" className="text-zinc-600">
+            <span aria-hidden="true" className="text-zinc-500">
               2
             </span>
             You point your missed calls at it — takes about a minute.
           </li>
           <li className="flex gap-3">
-            <span aria-hidden="true" className="text-zinc-600">
+            <span aria-hidden="true" className="text-zinc-500">
               3
             </span>
             We ring you to check it worked.
@@ -74,7 +74,7 @@ export default function NumberStep({
 
       <SubmitButton>Get my number</SubmitButton>
 
-      <p className="text-center text-xs text-zinc-600">
+      <p className="text-center text-xs text-zinc-500">
         Included in your plan. No extra charge.
       </p>
     </form>

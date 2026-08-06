@@ -23,7 +23,7 @@ export default async function LoginPage({
 
       <LoginForm next={next} />
 
-      <p className="mt-8 text-center text-sm text-zinc-500">
+      <p className="mt-8 text-center text-sm text-zinc-400">
         Don&apos;t have an account?{" "}
         <Link href="/signup" className="text-white underline-offset-4 hover:underline">
           Get started

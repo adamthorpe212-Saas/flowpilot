@@ -2,6 +2,7 @@ import "server-only";
 
 import twilio from "twilio";
 import { siteUrl } from "@/lib/env";
+import { searchPatternForAreaCode } from "@/lib/irish-numbers";
 
 /**
  * Telephony is kept behind this module boundary deliberately — see D2 in
@@ -40,13 +41,22 @@ export type AvailableNumber = {
  * Irish numbers are Local type only — Twilio has no Irish Mobile inventory, and
  * no Irish numbers with SMS capability in either public or exclusive inventory
  * (D6). Voice is therefore the only capability worth filtering on.
+ *
+ * `areaCode` narrows the search to a geographic prefix. Twilio's own areaCode
+ * parameter does not work for Ireland — variable-length codes make it return
+ * nothing — so the prefix goes through `contains` instead, which does.
  */
 export async function findAvailableIrishNumbers(
   limit = 5,
+  areaCode?: string | null,
 ): Promise<AvailableNumber[]> {
   const numbers = await client()
     .availablePhoneNumbers("IE")
-    .local.list({ voiceEnabled: true, limit });
+    .local.list({
+      voiceEnabled: true,
+      limit,
+      ...(areaCode ? { contains: searchPatternForAreaCode(areaCode) } : {}),
+    });
 
   return numbers.map((number) => ({
     phoneNumber: number.phoneNumber,
@@ -90,6 +100,18 @@ export function isSmsConfigured(): boolean {
 }
 
 /**
+ * Gives a number back.
+ *
+ * Used to roll back a purchase that could not be attached to a business.
+ * Without it, a failure between buying and saving leaves FlowPilot paying
+ * monthly rental on a number nobody owns, discoverable only by someone
+ * reconciling the Twilio bill by hand.
+ */
+export async function releaseNumber(sid: string): Promise<void> {
+  await client().incomingPhoneNumbers(sid).remove();
+}
+
+/**
  * Outbound A2P to Irish mobiles, used for the confirmation text and the job
  * alert (D6).
  *
@@ -108,18 +130,6 @@ export function isSmsConfigured(): boolean {
  * That is acceptable for a confirmation, and no worse than the situation
  * already forced by Irish numbering.
  */
-/**
- * Gives a number back.
- *
- * Used to roll back a purchase that could not be attached to a business.
- * Without it, a failure between buying and saving leaves FlowPilot paying
- * monthly rental on a number nobody owns, discoverable only by someone
- * reconciling the Twilio bill by hand.
- */
-export async function releaseNumber(sid: string): Promise<void> {
-  await client().incomingPhoneNumbers(sid).remove();
-}
-
 export async function sendSms(options: {
   to: string;
   body: string;

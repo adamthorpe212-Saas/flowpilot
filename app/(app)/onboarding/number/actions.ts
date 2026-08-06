@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentBusiness } from "@/lib/auth";
+import { areaCodeForServiceArea } from "@/lib/irish-numbers";
 import { createAdminClient } from "@/lib/supabase/server";
 import { shouldAnswerCalls } from "@/lib/usage";
 import {
@@ -56,7 +57,24 @@ export async function provisionNumber(
   }
 
   try {
-    const available = await findAvailableIrishNumbers(1);
+    /*
+     * Match the number to where the business actually works.
+     *
+     * Twilio's Irish inventory skews rural, so an unfiltered search hands a
+     * Dublin plumber a Galway landline — and to that plumber's customers, an
+     * area code from the other side of the country reads as a call centre. The
+     * number is the most public thing FlowPilot gives a business, so it is
+     * worth a second search to get right.
+     *
+     * The fallback is deliberate rather than a failure: a working number in the
+     * wrong county still answers every call, and a business with no number at
+     * all is the only genuinely broken outcome.
+     */
+    const areaCode = areaCodeForServiceArea(business.service_area);
+
+    const local = areaCode ? await findAvailableIrishNumbers(1, areaCode) : [];
+    const available =
+      local.length > 0 ? local : await findAvailableIrishNumbers(1);
 
     if (available.length === 0) {
       return {

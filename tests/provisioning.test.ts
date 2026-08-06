@@ -8,7 +8,14 @@ import type { Business } from "@/types/database";
 
 let business: Business | null = null;
 let twilioConfigured = true;
-let availableNumbers: { phoneNumber: string; friendlyName: string; locality: string | null }[] = [];
+type Available = { phoneNumber: string; friendlyName: string; locality: string | null };
+
+/** What an unfiltered national search returns. Twilio's real one skews rural. */
+let availableNumbers: Available[] = [];
+/** What a search narrowed to the business's own area code returns. */
+let localNumbers: Available[] = [];
+/** Area codes passed to Twilio, in order, so fallback behaviour is observable. */
+const searches: (string | null)[] = [];
 let updateError: { message: string } | null = null;
 
 const purchased: string[] = [];
@@ -55,7 +62,11 @@ vi.mock("@/lib/supabase/server", () => ({
 
 vi.mock("@/lib/twilio", () => ({
   isTwilioConfigured: () => twilioConfigured,
-  findAvailableIrishNumbers: async () => availableNumbers,
+  findAvailableIrishNumbers: async (_limit?: number, areaCode?: string | null) => {
+    searches.push(areaCode ?? null);
+    if (areaCode) return localNumbers;
+    return availableNumbers;
+  },
   purchaseNumber: async (phoneNumber: string) => {
     purchased.push(phoneNumber);
     return { phoneNumber, sid: `PN-${phoneNumber}` };
@@ -74,6 +85,10 @@ beforeEach(() => {
   availableNumbers = [
     { phoneNumber: "+353870000001", friendlyName: "+353870000001", locality: "Dublin" },
   ];
+  localNumbers = [
+    { phoneNumber: "+353870000001", friendlyName: "+353870000001", locality: "Dublin" },
+  ];
+  searches.length = 0;
   updateError = null;
   purchased.length = 0;
   released.length = 0;
@@ -87,6 +102,53 @@ describe("provisionNumber", () => {
     expect(result.error).toBeNull();
     expect(result.phoneNumber).toBe("+353870000001");
     expect(purchased).toEqual(["+353870000001"]);
+  });
+
+  it("searches the business's own area code first", async () => {
+    /*
+     * Twilio's Irish inventory skews rural — an unfiltered search returns
+     * Portumna and Skibbereen long before Dublin. A Dublin plumber whose
+     * FlowPilot number is a Galway landline looks to their own customers like a
+     * call centre, so the narrowed search has to come first.
+     */
+    business = makeBusiness({ service_area: ["Raheny", "Clontarf"] });
+    localNumbers = [
+      { phoneNumber: "+35319128718", friendlyName: "+35319128718", locality: "Dublin" },
+    ];
+    availableNumbers = [
+      { phoneNumber: "+353909716004", friendlyName: "+353909716004", locality: "Portumna" },
+    ];
+
+    const result = await provisionNumber({ error: null });
+
+    expect(searches).toEqual(["01"]);
+    expect(result.phoneNumber).toBe("+35319128718");
+    expect(purchased).toEqual(["+35319128718"]);
+  });
+
+  it("falls back to any Irish number when the local area is sold out", async () => {
+    // A number in the wrong county still answers every call. No number at all
+    // is the only genuinely broken outcome, so the fallback is not a failure.
+    business = makeBusiness({ service_area: ["Kinsale"] });
+    localNumbers = [];
+    availableNumbers = [
+      { phoneNumber: "+353909716004", friendlyName: "+353909716004", locality: "Portumna" },
+    ];
+
+    const result = await provisionNumber({ error: null });
+
+    expect(searches).toEqual(["021", null]);
+    expect(result.error).toBeNull();
+    expect(purchased).toEqual(["+353909716004"]);
+  });
+
+  it("skips the narrowed search when the service area means nothing to us", async () => {
+    // No point spending a round trip on a lookup that cannot match.
+    business = makeBusiness({ service_area: ["all over"] });
+
+    await provisionNumber({ error: null });
+
+    expect(searches).toEqual([null]);
   });
 
   it("does not buy a second number for a business that has one", async () => {
@@ -158,7 +220,9 @@ describe("provisionNumber", () => {
   });
 
   it("explains itself when no numbers are free", async () => {
+    // Both searches dry: the local area and the country as a whole.
     availableNumbers = [];
+    localNumbers = [];
 
     const result = await provisionNumber({ error: null });
 

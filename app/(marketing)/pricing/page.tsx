@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Faq from "@/components/Faq";
+import { PRICING_FAQ_IDS, faqItems } from "@/lib/faq";
 import { formatPrice, PLANS, TRIAL_DAYS } from "@/lib/plans";
 
 export const metadata: Metadata = {
@@ -7,29 +9,6 @@ export const metadata: Metadata = {
   description:
     "Simple monthly pricing for an AI receptionist that answers the calls you miss. Free trial, no setup fee, cancel any time.",
 };
-
-const FAQS = [
-  {
-    question: "What counts as an answered call?",
-    answer:
-      "A call your receptionist actually picks up and handles. Calls you answer yourself never touch FlowPilot and are never counted.",
-  },
-  {
-    question: "What if I go over my calls?",
-    answer:
-      "We'll tell you before you get close, and your receptionist keeps answering — we never cut you off mid-month. If you're regularly over, we'll move you up a plan.",
-  },
-  {
-    question: "Do I need a new phone number?",
-    answer:
-      "No. You keep your number and set it to forward to FlowPilot when you can't answer. Nothing on your van, website or Google listing changes.",
-  },
-  {
-    question: "Can I cancel?",
-    answer:
-      "Any time, from your dashboard. You keep your receptionist until the end of the month you've paid for.",
-  },
-];
 
 export default function PricingPage() {
   return (
@@ -119,19 +98,9 @@ export default function PricingPage() {
           <h2 className="text-2xl font-semibold tracking-tight">
             Questions worth asking
           </h2>
-          <dl className="mt-8 space-y-6">
-            {FAQS.map((faq) => (
-              <div
-                key={faq.question}
-                className="border-b border-white/10 pb-6 last:border-0"
-              >
-                <dt className="font-medium">{faq.question}</dt>
-                <dd className="mt-2 text-sm leading-6 text-zinc-400">
-                  {faq.answer}
-                </dd>
-              </div>
-            ))}
-          </dl>
+          <div className="mt-8">
+            <Faq items={faqItems(PRICING_FAQ_IDS)} />
+          </div>
         </div>
       </section>
     </>

@@ -1,4 +1,5 @@
 import "server-only";
+import { receptionistModel } from "@/lib/receptionist";
 
 import { isEmailConfigured } from "@/lib/email";
 import { siteUrl } from "@/lib/env";
@@ -178,7 +179,12 @@ function checkEmail(): Check {
  */
 async function checkModel(): Promise<Check> {
   const apiKey = process.env.ANTHROPIC_API_KEY;
-  const model = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-5";
+  /*
+   * The receptionist's own model, not a second copy of the default. These had
+   * already drifted apart — diagnostics would happily report a model healthy
+   * while live calls used a different one, which is worse than not checking.
+   */
+  const model = receptionistModel();
 
   if (!present(apiKey)) {
     return {

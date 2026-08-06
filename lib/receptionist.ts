@@ -18,7 +18,22 @@ import type {
  * qualification system to maintain, which the roadmap explicitly warns about.
  */
 
-const MODEL = process.env.ANTHROPIC_MODEL ?? "claude-sonnet-5";
+/*
+ * Haiku, because on a phone call latency *is* quality.
+ *
+ * Measured against this exact prompt: Sonnet 5 averaged 3470ms a turn, Haiku
+ * 1256ms. Three and a half seconds of silence on a live call reads as a dropped
+ * connection — people say "hello?" and start talking over the reply. Disabling
+ * Sonnet's extended thinking made no material difference (3426ms), so the cost
+ * is the model, not the reasoning mode.
+ *
+ * The task is narrow — ask the next question, pull a few fields out of what was
+ * said — and Haiku handles it without a drop in the questions it asks. Override
+ * with ANTHROPIC_MODEL if that ever stops being true.
+ */
+export function receptionistModel(): string {
+  return process.env.ANTHROPIC_MODEL ?? "claude-haiku-4-5-20251001";
+}
 const API_URL = "https://api.anthropic.com/v1/messages";
 
 export function isModelConfigured(): boolean {
@@ -111,10 +126,34 @@ function buildSystemPrompt(context: ReceptionistContext): string {
 }
 
 function toMessages(transcript: TranscriptTurn[]) {
-  return transcript.map((turn) => ({
-    role: turn.role === "assistant" ? ("assistant" as const) : ("user" as const),
-    content: turn.text,
-  }));
+  return transcript.map((turn) => {
+    if (turn.role !== "assistant") {
+      return { role: "user" as const, content: turn.text };
+    }
+
+    /*
+     * Assistant turns go back as the JSON they originally were, not as the
+     * bare speech we kept.
+     *
+     * The transcript stores what the caller heard, which is the speech alone.
+     * Feeding that back made the model's own visible history look like plain
+     * prose, so from the second turn onwards it answered in plain prose too —
+     * and a reply with no JSON in it fails to parse, drops to the fallback,
+     * and ends the call. Every real conversation broke on turn two.
+     *
+     * Only the shape needs to be right here. The captured fields from earlier
+     * turns are already held by the caller of nextReply(), so re-stating them
+     * would be duplicating state we do not own.
+     */
+    return {
+      role: "assistant" as const,
+      content: JSON.stringify({
+        speech: turn.text,
+        captured: {},
+        complete: false,
+      }),
+    };
+  });
 }
 
 /**
@@ -181,7 +220,7 @@ export async function nextReply(
   if (!apiKey) return fallback;
 
   const body = JSON.stringify({
-    model: MODEL,
+    model: receptionistModel(),
     max_tokens: 300,
     system: buildSystemPrompt(context),
     messages: toMessages(transcript),
@@ -218,10 +257,41 @@ export async function nextReply(
       }
 
       const data = await response.json();
-      const text = data?.content?.[0]?.text;
-      if (typeof text !== "string") return fallback;
 
-      return parseReply(text) ?? fallback;
+      /*
+       * Find the text block rather than assuming it is first.
+       *
+       * Current models return a thinking block ahead of their answer, so
+       * content[0] has no .text at all — which sent every single call to the
+       * fallback line and made a working receptionist look broken. It surfaced
+       * only against a live key, because the fallback is deliberately
+       * indistinguishable from a polite non-answer.
+       */
+      const text = Array.isArray(data?.content)
+        ? data.content.find(
+            (block: { type?: string; text?: unknown }) =>
+              block?.type === "text" && typeof block.text === "string",
+          )?.text
+        : undefined;
+
+      if (typeof text !== "string") {
+        console.error(
+          "Model returned no text block",
+          JSON.stringify(data?.content?.map((b: { type?: string }) => b?.type)),
+        );
+        return fallback;
+      }
+
+      const reply = parseReply(text);
+      if (!reply) {
+        // Silent until now, which is what made a live parse failure look
+        // identical to a model outage. The raw text is the only thing that
+        // says which of the two you are actually looking at.
+        console.error("Model reply could not be parsed", JSON.stringify(text));
+        return fallback;
+      }
+
+      return reply;
     } catch (error) {
       console.error("Model request threw", error);
       if (attempt === 0) {

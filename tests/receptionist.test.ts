@@ -111,7 +111,7 @@ describe("nextReply when the model misbehaves", () => {
         new Response(
           JSON.stringify({
             content: [
-              { text: '{"speech":"Whereabouts are you?","captured":{"job_type":"Boiler"},"complete":false}' },
+              { type: 'text', text: '{"speech":"Whereabouts are you?","captured":{"job_type":"Boiler"},"complete":false}' },
             ],
           }),
           { status: 200 },
@@ -147,7 +147,7 @@ describe("nextReply when the model misbehaves", () => {
       .mockRejectedValueOnce(new Error("socket hang up"))
       .mockResolvedValueOnce(
         new Response(
-          JSON.stringify({ content: [{ text: '{"speech":"Go on.","complete":false}' }] }),
+          JSON.stringify({ content: [{ type: 'text', text: '{"speech":"Go on.","complete":false}' }] }),
           { status: 200 },
         ),
       );
@@ -176,6 +176,94 @@ describe("nextReply when the model misbehaves", () => {
  * is written down and kept. These tests exist so that removing it takes a
  * deliberate act rather than a tidy-up of the greeting.
  */
+describe("talking to the real API shape", () => {
+  const context = {
+    businessName: "O'Brien Plumbing",
+    serviceArea: ["Raheny"],
+    profile: {
+      business_id: "b1",
+      greeting: "Hello",
+      tone: "Friendly",
+      must_not: [],
+      fallback: "I'll take your details and have someone come back to you.",
+      closing_line: "Dave will ring you back.",
+      confirmation_sms_template: "{{business_name}}",
+      max_call_seconds: 180,
+      opening_hours: {},
+      out_of_hours_behaviour: "answer_and_notify" as const,
+      updated_at: "2026-08-06T00:00:00Z",
+    },
+    services: [],
+    questions: [],
+  };
+
+  beforeEach(() => {
+    process.env.ANTHROPIC_API_KEY = "test-key";
+  });
+
+  it("finds the answer when a thinking block comes first", async () => {
+    /*
+     * Found live, not here. Current models put a thinking block ahead of their
+     * answer, so reading content[0].text got undefined and sent every single
+     * call to the fallback line — a receptionist that appeared to work and
+     * never captured a job.
+     */
+    vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          content: [
+            { type: "thinking", thinking: "The caller has a leak…" },
+            { type: "text", text: '{"speech":"Whereabouts are you?","captured":{},"complete":false}' },
+          ],
+        }),
+        { status: 200 },
+      ),
+    );
+
+    const reply = await nextReply(context, [
+      { role: "caller", text: "Water through the ceiling", at: "2026-08-06T00:00:00Z" },
+    ]);
+
+    expect(reply.speech).toBe("Whereabouts are you?");
+    expect(reply.degraded).toBe(false);
+  });
+
+  it("sends earlier assistant turns back as JSON, not bare speech", async () => {
+    /*
+     * The turn-two bug. The transcript stores what the caller heard — the
+     * speech alone — and feeding that straight back made the model's own
+     * history look like plain prose, so it answered in prose from the second
+     * turn onwards. Prose does not parse, so every real conversation died
+     * after one exchange.
+     */
+    const fetchSpy = vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
+      new Response(
+        JSON.stringify({
+          content: [
+            { type: "text", text: '{"speech":"And your name?","captured":{},"complete":false}' },
+          ],
+        }),
+        { status: 200 },
+      ),
+    );
+
+    await nextReply(context, [
+      { role: "caller", text: "Water through the ceiling", at: "2026-08-06T00:00:00Z" },
+      { role: "assistant", text: "Whereabouts are you?", at: "2026-08-06T00:00:01Z" },
+      { role: "caller", text: "Glasnevin", at: "2026-08-06T00:00:02Z" },
+    ]);
+
+    // Last call, not first: the spy accumulates across tests in this file.
+    const sent = JSON.parse(String(fetchSpy.mock.calls.at(-1)?.[1]?.body));
+    const assistantTurn = sent.messages.find(
+      (message: { role: string }) => message.role === "assistant",
+    );
+
+    expect(() => JSON.parse(assistantTurn.content)).not.toThrow();
+    expect(JSON.parse(assistantTurn.content).speech).toBe("Whereabouts are you?");
+  });
+});
+
 describe("openingLine", () => {
   function contextWith(greeting: string | null) {
     return {

@@ -76,6 +76,7 @@ function mockModel(replies: { speech: string; captured?: Record<string, string>;
         json: async () => ({
           content: [
             {
+              type: "text",
               text: JSON.stringify({
                 speech: next.speech,
                 captured: next.captured ?? {},

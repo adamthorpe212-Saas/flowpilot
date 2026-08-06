@@ -91,6 +91,22 @@ And from console.anthropic.com:
 
 - `ANTHROPIC_API_KEY`
 
+> **Apply the migrations before you add Anthropic credit, not after.**
+>
+> The public demo on the marketing site calls the model on every message. Its
+> per-visitor cap lives in the `demo_usage` table, and `withinRateLimit()` fails
+> *open* when that table is missing — a marketing page that silently stops
+> working is worse than a briefly uncapped one. Add credit to an account whose
+> migrations have not been applied and the first thing you have is an uncapped
+> public endpoint spending your money. `/settings/diagnostics` reports this as
+> **Demo rate limit — Broken** if it happens.
+
+> **Temporary API keys expire.** A key created with an expiry looks identical to
+> a working one in `.env.local`, and the only symptom is every caller hearing
+> "I'll take your details and have someone come back to you". The diagnostics
+> page now calls the model for real and tells an expired key apart from an empty
+> balance, because the fix for each is in a different part of the console.
+
 ### A4. Check it works
 
 ```bash
@@ -292,18 +308,44 @@ reading the Twilio invoice line by line.
 
 ## Known gaps
 
+**No privacy policy, terms, or data processing agreement — this blocks launch.**
+FlowPilot processes personal data belonging to members of the public who never
+signed up: their name, phone number, home address and what is wrong with it.
+That makes FlowPilot a processor acting for each business, and an Article 28
+contract is a legal requirement rather than paperwork. Stripe will also expect
+published terms before approving a live account. `docs/DATA-PROCESSING.md` is
+the factual inventory a solicitor needs to draft these — what is collected,
+where it goes, and the five gaps that need a decision rather than code. Callers
+are told they are speaking to a machine and that notes are taken (D9); nothing
+else is in place.
+
+**Caller data is kept forever until you choose a retention period.** The nightly
+purge is built and wired up, but deliberately does nothing until `RETENTION_DAYS`
+is set in Vercel — the right period is a decision about the business, not one to
+default. Set it to a whole number of days (minimum 30) and anything older is
+redacted: transcript, caller number, and the lead with the name and address. The
+call row survives so billed usage stays honest. Diagnostics warns while it is
+unset. See `docs/DATA-PROCESSING.md`.
+
 **Call allowances are counted but not capped.** Usage is tracked and shown on
 the billing page with a nudge toward a bigger plan, but nothing stops a customer
 going over. That is deliberate — the pricing page promises "we never cut you off
 mid-month" — though it does mean a Starter customer could take Business-level
 volume indefinitely without paying for it. Revisit if anyone actually does.
 
-**Nothing has run against a real database or phone line.** 60 tests pass,
-including eleven that drive the real webhook handlers through a whole simulated
-call with fakes only at the database, Twilio and model boundaries. That found
-one bug that would otherwise have shipped silently — notifications never being
-sent for completed calls. But the first genuine run through section E is still
-where remaining bugs will surface.
+**Nothing has run against a real phone line.** 200 tests pass, including a set
+that drives the real webhook handlers through a whole simulated call with fakes
+only at the database, Twilio and model boundaries. Those have caught several
+bugs that would otherwise have shipped silently — notifications never sent for
+completed calls, and a model failure hanging up on a live caller. But the first
+genuine run through section E is still where remaining bugs will surface.
+
+**The Twilio account is still a trial account.** Trial accounts can only call
+numbers you have verified in advance, and Twilio prepends its own recorded
+message to every call. Neither is acceptable in front of a customer, so this has
+to be upgraded before the first paying signup — not before testing. Verified
+against the API on 2026-08-06, along with the fact that Irish voice numbers are
+available in all 44 area codes at $1.80/month.
 
 **Voice is turn-based.** Twilio `<Gather>` rather than ConversationRelay, so
 there is a pause between the caller finishing and the reply, and no barge-in.

@@ -1,6 +1,7 @@
 import "server-only";
 
 import { isEmailConfigured, sendEmail } from "@/lib/email";
+import { jobAlert, render } from "@/lib/messages";
 import { createAdminClient } from "@/lib/supabase/server";
 import { isSmsConfigured, sendSms } from "@/lib/twilio";
 import type {
@@ -10,27 +11,20 @@ import type {
   NotificationRule,
 } from "@/types/database";
 
-/** Fills {{placeholders}} in a template, leaving nothing visible if unknown. */
-export function render(
-  template: string,
-  values: Record<string, string>,
-): string {
-  return template
-    .replace(/\{\{(\w+)\}\}/g, (_match, key: string) => values[key] ?? "")
-    .replace(/\s+/g, " ")
-    .replace(/\s+([.,])/g, "$1")
-    .trim();
-}
+/*
+ * Wording lives in lib/messages.ts so the marketing site can show a customer
+ * the actual text they will receive. Re-exported because this has been the
+ * import site since before that split.
+ */
+export { render };
 
 function jobSummary(lead: Lead, urgent: boolean): string {
-  return [
-    urgent ? "URGENT — new job" : "New job",
-    lead.job_type ?? "Enquiry",
-    lead.location ?? "",
-    lead.caller_number,
-  ]
-    .filter(Boolean)
-    .join(" · ");
+  return jobAlert({
+    urgent,
+    jobType: lead.job_type,
+    location: lead.location,
+    callerNumber: lead.caller_number,
+  });
 }
 
 function jobEmailBody(lead: Lead, business: Business): string {

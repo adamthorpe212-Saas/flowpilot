@@ -60,13 +60,34 @@ export default function VoicemailComparison() {
 
   return (
     <div>
+      {/*
+        Loud until it has been used once, quiet forever after.
+
+        The whole section is inert until somebody presses this, so before the
+        first play it is the most important thing on the screen and is styled
+        like it — solid fill, the same treatment as the site's primary calls to
+        action. Once it has played, the phones carry the argument and a second
+        white button would only compete with "Get started" further down.
+      */}
       <div className="flex justify-center">
         <button
           type="button"
           onClick={play}
-          className="flex min-h-11 items-center rounded-full border border-white/20 px-6 text-sm text-white transition hover:border-white/40 hover:bg-white/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+          className={
+            started
+              ? "flex min-h-11 items-center gap-2 rounded-full border border-white/20 px-6 text-sm text-zinc-300 transition hover:border-white/40 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
+              : "fp-attention flex min-h-12 items-center gap-2.5 rounded-full bg-white px-7 text-[15px] font-semibold text-black transition hover:bg-zinc-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+          }
         >
-          {finished ? "Play it again" : "Someone rings while you're under a sink"}
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 24 24"
+            fill="currentColor"
+            className={started ? "h-3.5 w-3.5" : "h-4 w-4"}
+          >
+            <path d="M8 5.5v13l11-6.5z" />
+          </svg>
+          {started ? "Play it again" : "Play the same call both ways"}
         </button>
       </div>
 
@@ -78,11 +99,23 @@ export default function VoicemailComparison() {
             : ""}
       </p>
 
+      {/*
+        Captions are withheld until the sequence finishes.
+
+        They name what the two phones just showed, so printing them up front
+        hands over the conclusion before the demonstration has earned it — and
+        leaves nothing for pressing the button to reveal. Held back, they land
+        as the payoff.
+
+        The space they will occupy is reserved from the start, so arriving text
+        does not shove the section downwards while someone is watching it.
+      */}
       <div className="mt-10 grid gap-6 sm:grid-cols-2 sm:gap-8">
         <Panel
           title="With voicemail"
           tone="dim"
           caption="You ring back blind, whenever you're next free. He rang two other plumbers while he waited."
+          showCaption={finished}
         >
           <VoicemailScreen step={step} />
         </Panel>
@@ -91,6 +124,7 @@ export default function VoicemailComparison() {
           title="With FlowPilot"
           tone="bright"
           caption="You ring back knowing the job, the address and that it's urgent — or you don't ring at all, because it's already booked."
+          showCaption={finished}
         >
           <CapturedScreen step={step} />
         </Panel>
@@ -103,11 +137,13 @@ function Panel({
   title,
   tone,
   caption,
+  showCaption,
   children,
 }: {
   title: string;
   tone: "dim" | "bright";
   caption: string;
+  showCaption: boolean;
   children: React.ReactNode;
 }) {
   return (
@@ -121,12 +157,21 @@ function Panel({
       </p>
 
       <div className="mt-5">
-        <PhoneFrame className="h-[330px] w-[172px]">{children}</PhoneFrame>
+        <PhoneFrame className="h-[300px] w-[172px]">{children}</PhoneFrame>
       </div>
 
-      <p className="mt-5 max-w-[15rem] text-center text-xs leading-5 text-zinc-400">
-        {caption}
-      </p>
+      {/*
+        Reserved, not conditional. Rendering nothing until the end would let the
+        phones sit lower and jump up when the text arrives, and min-height on a
+        container that is empty most of the time is cheaper than measuring.
+      */}
+      <div className="mt-5 min-h-[3.75rem] max-w-[15rem]">
+        {showCaption && (
+          <p className="fp-rise-in text-center text-xs leading-5 text-zinc-400">
+            {caption}
+          </p>
+        )}
+      </div>
     </div>
   );
 }

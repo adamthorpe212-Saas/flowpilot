@@ -142,6 +142,22 @@ searching with `smsEnabled: true` returns zero results across both Local and any
 other type. `AvailablePhoneNumbers/IE/Mobile` 404s — there is no Irish mobile
 inventory to search. The console reading was correct.
 
+*The way out, found 2026-08-06 — a UK mobile.*
+UK **mobile** numbers (`+447…`) return `{"SMS":true,"voice":true}` with
+`addressRequirements: "none"` — no bundle, no address, no ComReg registration,
+buyable immediately. UK *local* numbers are voice-only like Ireland's, which is
+why an earlier check missed this.
+
+This does **not** change what customers are given. An Irish tradesperson's
+callers are Irish; a `+44` number costs them more to ring and reads as a call
+centre, which is the same trust failure D7 exists to prevent. The UK mobile is a
+FlowPilot-owned sender and test line: it carries the confirmation texts and job
+alerts that Irish numbers cannot, and it makes the pipeline testable end to end
+before the Irish bundle clears. Unlike an alphanumeric sender it can also
+receive replies, which leaves the door open to two-way SMS later.
+
+Unverified: UK→Irish A2P deliverability. Test before depending on it.
+
 This does **not** yet mean Irish two-way SMS is impossible — only that Twilio
 does not sell it self-serve. Early signals suggest it exists elsewhere: DIDWW
 sells Irish virtual numbers with voice and SMS, and Irish long codes are

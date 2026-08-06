@@ -142,22 +142,64 @@ Site URL and Redirect URLs to the deployed domain.
 
 ## C. Twilio
 
-### C1. Regulatory bundle — start this first, it takes days
+### C0. Upgrade off the trial account — nothing works for real until this is done
+
+**Fastest path to a real call:** upgrade, then buy one **UK mobile** (`+447…`).
+It needs no regulatory bundle and no address, so it is available the moment the
+card is added — which means the whole pipeline can be tested end to end while
+the Irish bundle in C1 is still being vetted. Point it at the same webhooks as
+C4. It doubles as the SMS sender in C2.
+
+Irish numbers remain what customers actually ring. The UK mobile is a testing
+and sending number held by FlowPilot, never handed to a customer.
+
+
+The account is currently **Trial**. A trial account can only call numbers you
+have verified in advance and plays a Twilio message before every call, so it
+cannot answer a customer's phone. Console → **Billing → Upgrade**.
+
+Nothing else in section C is worth starting until this is done.
+
+### C1. Regulatory bundle — start this next, it takes days
 
 Twilio Console → **Phone Numbers → Regulatory Compliance → Bundles**. Create a
-Business bundle for **Ireland / Local**, in FlowPilot's name with FlowPilot's
-Irish address.
+Business bundle for **Ireland / Local**.
 
-Two things still need confirming with Twilio support, and they decide how far
-onboarding can be automated:
+Verified against the API on 2026-08-06, the regulation
+(`Ireland: Local - Business`) asks for exactly these:
 
-1. Can numbers stay allocated to FlowPilot and be used *on behalf of* each
-   customer, without breaching their prohibition on sub-assigning Irish numbers?
-2. Does one bundle in your name cover every number you buy, or is an end-user
-   bundle required per customer business?
+| Field | Value |
+| --- | --- |
+| Business name | Your registered company name |
+| Business website | The FlowPilot URL |
+| Business registration number | Your CRO number, e.g. `123456` |
+| Authorised representative | First name, last name, contact email — must be a senior person responsible for phone numbers |
+| Business classification | `INDEPENDENT_SOFTWARE_VENDOR` |
+| Is this number assigned to the end customer? | `YES` |
 
-If the answer to (2) is per-customer, provisioning gains a document-upload step
-and stops being instant. See D2 in `docs/DECISIONS.md`.
+Those last two are not a judgement call. Twilio's own definitions describe an
+ISV as a business that "uses this phone number in a product that you sell to
+your customers", and sub-assignment as "where an ISV assigns the phone number to
+their end customer". That is exactly what FlowPilot does, and the field offering
+`YES` is what tells us the model is anticipated rather than prohibited.
+
+You also need a **Proof of Address** document. Twilio's wording: "Must include
+Eircode and be within locality or region covered by the phone number's prefix; a
+PO Box is not acceptable."
+
+**Ask Twilio compliance this before buying the first number**, because the
+answer decides whether onboarding has to collect a business address:
+
+> We are an ISV provisioning Irish local numbers on behalf of Irish business
+> customers (`is_subassigned = YES`). Must the Address attached at purchase be
+> the end customer's own business address in the number's locality, or does a
+> single ISV Address on the bundle permit purchasing across all Irish area
+> codes?
+
+- **Single address covers everything** — nothing changes, provisioning stays
+  instant, and onboarding keeps its current fields.
+- **Per-customer address** — onboarding gains a business address with Eircode,
+  and provisioning creates a Twilio Address per customer before purchase.
 
 Once approved, add to Vercel:
 
@@ -165,6 +207,10 @@ Once approved, add to Vercel:
 - `TWILIO_BUNDLE_SID`
 
 Provisioning passes both through when present and works without them in test.
+
+Numbers themselves are $1.80/month with $0.010/minute inbound, and inventory
+exists in all 44 Irish area codes — provisioning picks one matching the area the
+business works in (D7).
 
 ### C2. SMS sender — also start early, ComReg registration takes time
 
@@ -178,10 +224,26 @@ via Twilio Console → **Messaging → Sender IDs**, or the
 Unregistered sender IDs are delivered to Irish phones labelled **"Likely Scam"**,
 which is worse than not sending at all.
 
+**A UK mobile is the faster route, and probably the better one.** Verified
+against the API on 2026-08-06: UK *mobile* numbers (`+447…`) carry voice **and
+two-way SMS**, with `addressRequirements: none` — no regulatory bundle, no
+address, no ComReg registration. One of these bought in FlowPilot's own account
+can send every confirmation and job alert, and unlike an alphanumeric sender it
+can receive replies.
+
+This is a FlowPilot-owned sender, not a customer-facing number — customers still
+ring an Irish local number. Do not be tempted to give a customer a UK number as
+their receptionist: their callers are Irish, and a `+44` costs them more and
+reads as a call centre.
+
+Unverified: deliverability of UK→Irish mobile A2P traffic. Send a real test
+message before depending on it.
+
 Then set one of these in Vercel:
 
 - `TWILIO_MESSAGING_SERVICE_SID` — preferred; Twilio picks the sender
-- `TWILIO_SMS_SENDER_ID` — the registered alphanumeric ID
+- `TWILIO_SMS_SENDER_ID` — a `+447…` number, or the registered alphanumeric ID.
+  Despite the name it is passed straight through as `from`, so either works.
 
 There is one sender for all customers, because ComReg registration is
 per-organisation and cannot be automated per business. The message body names
@@ -333,7 +395,7 @@ going over. That is deliberate — the pricing page promises "we never cut you o
 mid-month" — though it does mean a Starter customer could take Business-level
 volume indefinitely without paying for it. Revisit if anyone actually does.
 
-**Nothing has run against a real phone line.** 200 tests pass, including a set
+**Nothing has run against a real phone line.** 227 tests pass, including a set
 that drives the real webhook handlers through a whole simulated call with fakes
 only at the database, Twilio and model boundaries. Those have caught several
 bugs that would otherwise have shipped silently — notifications never sent for

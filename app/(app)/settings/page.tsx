@@ -74,6 +74,7 @@ export default async function SettingsPage() {
           emergency={services
             .filter((service) => service.emergency_eligible)
             .map((service) => service.name)}
+          industryLabel={business.industry_label}
           submitLabel="Save changes"
         />
       </section>

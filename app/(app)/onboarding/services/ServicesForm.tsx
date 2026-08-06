@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { saveServices, type SaveState } from "@/app/(app)/onboarding/actions";
 import FormError from "@/components/ui/FormError";
 import SubmitButton from "@/components/ui/SubmitButton";
+import { tradeFor, withSuggestions, type TradeService } from "@/lib/trades";
 
 const INITIAL: SaveState = { error: null };
 
@@ -16,11 +17,13 @@ const INITIAL: SaveState = { error: null };
 export default function ServicesForm({
   services: initialServices,
   emergency: initialEmergency,
+  industryLabel = null,
   next,
   submitLabel = "Save and continue",
 }: {
   services: string[];
   emergency: string[];
+  industryLabel?: string | null;
   next?: string;
   submitLabel?: string;
 }) {
@@ -28,6 +31,27 @@ export default function ServicesForm({
   const [services, setServices] = useState<string[]>(initialServices);
   const [emergency, setEmergency] = useState<string[]>(initialEmergency);
   const [draft, setDraft] = useState("");
+
+  const trade = tradeFor(industryLabel);
+
+  const unusedSuggestions = (trade?.services ?? []).filter(
+    (suggestion) =>
+      !services.some(
+        (service) => service.toLowerCase() === suggestion.name.toLowerCase(),
+      ),
+  );
+
+  /*
+   * Both paths go through withSuggestions() so the emergency flags cannot
+   * disagree depending on whether somebody tapped one chip or "add all". The
+   * transition is tested in tests/trades.test.ts — this page is behind login
+   * and cannot be exercised in a browser during development.
+   */
+  function apply(additions: readonly TradeService[]) {
+    const next = withSuggestions({ services, emergency }, additions);
+    setServices(next.services);
+    setEmergency(next.emergency);
+  }
 
   function add(raw: string) {
     const additions = raw
@@ -107,6 +131,43 @@ export default function ServicesForm({
           Type a service and press Enter. Use the words your customers would.
         </p>
       </div>
+
+      {/*
+        Suggestions, from what they told us they do on the previous step.
+        Offered rather than applied: a plumber who does not touch oil boilers
+        should not find one on their list because we assumed it. Each one still
+        has to be tapped, and anything already added disappears from the row so
+        the remaining chips are always things worth pressing.
+      */}
+      {trade && unusedSuggestions.length > 0 && (
+        <div>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className="text-xs text-zinc-400">
+              Common for a {trade.noun} — tap to add
+            </p>
+            <button
+              type="button"
+              onClick={() => apply(unusedSuggestions)}
+              className="text-xs text-zinc-300 underline underline-offset-4 transition hover:text-white"
+            >
+              Add all {unusedSuggestions.length}
+            </button>
+          </div>
+
+          <div className="mt-2 flex flex-wrap gap-2">
+            {unusedSuggestions.map((suggestion) => (
+              <button
+                key={suggestion.name}
+                type="button"
+                onClick={() => apply([suggestion])}
+                className="min-h-11 rounded-full border border-white/15 px-3.5 text-xs text-zinc-300 transition hover:border-white/35 hover:text-white"
+              >
+                + {suggestion.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {services.length > 0 && (
         <fieldset className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">

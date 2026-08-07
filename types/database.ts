@@ -142,7 +142,10 @@ export type Call = {
   started_at: string;
   ended_at: string | null;
   duration_seconds: number | null;
-  recording_url: string | null;
+  /**
+   * Transcribed, never recorded. Twilio's speech recognition hands back text;
+   * no audio is captured or stored anywhere. See docs/DATA-PROCESSING.md.
+   */
   transcript: TranscriptTurn[];
   status: CallStatus;
   /** Set once the confirmation SMS and owner alert have been sent. */

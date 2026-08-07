@@ -1,6 +1,10 @@
 import Link from "next/link";
+import Faq from "@/components/Faq";
 import LifecycleRing from "@/components/LifecycleRing";
 import LiveDemo from "@/components/LiveDemo";
+import VoicemailComparison from "@/components/VoicemailComparison";
+import { HOME_FAQ_IDS, faqItems } from "@/lib/faq";
+import { PLANS, TRIAL_DAYS, formatPrice } from "@/lib/plans";
 
 export default function Home() {
   return (
@@ -24,7 +28,7 @@ export default function Home() {
       <section className="border-t border-white/10 px-5 py-16 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-4xl">
           <div className="text-center">
-            <p className="text-[11px] uppercase tracking-[0.2em] text-zinc-500">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-zinc-400">
               See it in action
             </p>
             <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-4xl">
@@ -40,10 +44,48 @@ export default function Home() {
             <LiveDemo />
           </div>
 
-          <p className="mx-auto mt-8 max-w-lg text-center text-xs leading-5 text-zinc-600">
+          <p className="mx-auto mt-8 max-w-lg text-center text-xs leading-5 text-zinc-500">
             Every question it asks is yours to change — services, wording, what
             it must never say.
           </p>
+        </div>
+      </section>
+
+      <section className="border-t border-white/10 px-5 py-16 sm:px-6 sm:py-20">
+        <div className="mx-auto max-w-4xl">
+          <div className="text-center">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-zinc-500">
+              But I already have voicemail
+            </p>
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-4xl">
+              So does every plumber he rang after you.
+            </h2>
+            <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-zinc-400 sm:text-base sm:leading-7">
+              Same call, same moment, both ways. Watch what each one leaves you
+              with.
+            </p>
+          </div>
+
+          <div className="mt-12">
+            <VoicemailComparison />
+          </div>
+        </div>
+      </section>
+
+      <section className="border-t border-white/10 px-5 py-16 sm:px-6 sm:py-20">
+        <div className="mx-auto max-w-2xl">
+          <div className="text-center">
+            <p className="text-[11px] uppercase tracking-[0.2em] text-zinc-500">
+              Before you ask
+            </p>
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight sm:text-3xl">
+              The things every tradesperson asks us.
+            </h2>
+          </div>
+
+          <div className="mt-10">
+            <Faq items={faqItems(HOME_FAQ_IDS)} />
+          </div>
         </div>
       </section>
 
@@ -60,8 +102,18 @@ export default function Home() {
             href="/signup"
             className="mt-8 inline-block rounded-full bg-white px-7 py-3.5 text-sm font-semibold text-black transition hover:bg-zinc-200 sm:text-base"
           >
-            Get started
+            Start free for {TRIAL_DAYS} days
           </Link>
+          {/*
+            The price belongs next to the button, not a click away on the
+            pricing page. Someone who has just watched the demo is as convinced
+            as they will ever be, and sending them off to find out what it costs
+            is the easiest place on the site to lose them.
+          */}
+          <p className="mt-4 text-xs leading-5 text-zinc-500">
+            No card to start. {formatPrice(PLANS[0])} a month after that, and you
+            can cancel any time.
+          </p>
         </div>
       </section>
     </>

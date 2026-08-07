@@ -25,7 +25,7 @@ export default function Navbar() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:h-20 sm:px-6">
         <Link
           href="/"
-          className="text-lg font-semibold tracking-tight sm:text-xl"
+          className="inline-flex items-center py-2 text-lg font-semibold tracking-tight sm:text-xl"
           onClick={() => setOpen(false)}
         >
           FlowPilot
@@ -63,7 +63,7 @@ export default function Navbar() {
           aria-expanded={open}
           aria-controls="mobile-nav"
           aria-label={open ? "Close menu" : "Open menu"}
-          className="flex h-10 w-10 items-center justify-center rounded-full border border-white/15 text-white transition hover:bg-white/5 md:hidden"
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-white/15 text-white transition hover:bg-white/5 md:hidden"
         >
           <svg
             aria-hidden="true"

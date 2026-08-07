@@ -71,10 +71,36 @@ body {
   transform-origin: center;
 }
 
+/*
+ * Draws the eye to a control the page is waiting on.
+ *
+ * A halo that expands and fades, rather than moving the button itself —
+ * anything that changes the button's own size or position makes it harder to
+ * hit, which is the opposite of the point. Runs three times and stops: a
+ * control that pulses forever stops reading as "press me" and starts reading as
+ * a fault.
+ */
+@keyframes fp-attention {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.35);
+  }
+  70% {
+    box-shadow: 0 0 0 14px rgba(255, 255, 255, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 255, 255, 0);
+  }
+}
+
+.fp-attention {
+  animation: fp-attention 2s ease-out 3;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .fp-fade-in,
   .fp-rise-in,
-  .fp-wave-bar {
+  .fp-wave-bar,
+  .fp-attention {
     animation: none;
   }
 }

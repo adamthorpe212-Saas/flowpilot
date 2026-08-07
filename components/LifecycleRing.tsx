@@ -115,19 +115,30 @@ export default function LifecycleRing() {
 
           return (
             <div key={stage.number}>
+              {/*
+                The button is a 44px touch target; the marker inside it stays
+                small. Sizing the button to the dot would meet the letter of the
+                design and leave a 24px tap area on the ring — the main way the
+                product explains itself on a phone, aimed at people using one
+                outdoors, one-handed, often in gloves.
+              */}
               <button
                 type="button"
                 onClick={() => jumpTo(i)}
                 aria-label={`${stage.title} — ${stage.text}`}
                 aria-current={isActive ? "step" : undefined}
                 style={{ left: `${node.x}%`, top: `${node.y}%` }}
-                className={`absolute z-10 flex h-6 w-6 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border text-[9px] transition-colors duration-300 lg:h-7 lg:w-7 lg:text-[10px] ${
-                  isActive
-                    ? "border-white bg-white text-black"
-                    : "border-white/25 bg-black text-zinc-500 hover:border-white/50 hover:text-zinc-300"
-                }`}
+                className="absolute z-10 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60"
               >
-                {stage.number}
+                <span
+                  className={`flex h-6 w-6 items-center justify-center rounded-full border text-[9px] transition-colors duration-300 lg:h-7 lg:w-7 lg:text-[10px] ${
+                    isActive
+                      ? "border-white bg-white text-black"
+                      : "border-white/25 bg-black text-zinc-400 hover:border-white/50 hover:text-white"
+                  }`}
+                >
+                  {stage.number}
+                </span>
               </button>
 
               <span
@@ -138,7 +149,7 @@ export default function LifecycleRing() {
                   transform: `translate(calc(-50% + ${node.label.x}px), calc(-50% + ${node.label.y}px))`,
                 }}
                 className={`absolute hidden w-[120px] text-center text-xs transition-colors duration-300 lg:block ${
-                  isActive ? "text-white" : "text-zinc-500"
+                  isActive ? "text-white" : "text-zinc-400"
                 }`}
               >
                 {stage.title}
@@ -162,7 +173,7 @@ export default function LifecycleRing() {
 
       <div aria-live="polite" className="mt-5 text-center lg:hidden">
         <p className="text-sm font-semibold text-white">{active.title}</p>
-        <p className="mt-1 text-xs text-zinc-500">{active.text}</p>
+        <p className="mt-1 text-xs text-zinc-400">{active.text}</p>
       </div>
     </div>
   );

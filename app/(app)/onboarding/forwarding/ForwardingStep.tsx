@@ -129,11 +129,21 @@ export default function ForwardingStep({
         </form>
       </section>
 
-      <section className={mobile ? "" : "pointer-events-none opacity-40"}>
+      {/*
+        `inert`, not `pointer-events-none`.
+
+        Dimming and killing pointer events stops a mouse and nothing else: a
+        keyboard user could still tab into "Dial it now" and fire a test call
+        from a step that looks plainly disabled, and a screen reader would read
+        the whole thing out as though it were available. `inert` takes the
+        subtree out of the focus order and the accessibility tree, which is what
+        "not yet" actually means.
+      */}
+      <section inert={!mobile} className={mobile ? "" : "opacity-40"}>
         <h2 className="text-sm font-medium text-zinc-300">
           2. Turn on forwarding
         </h2>
-        <p className="mt-2 text-sm leading-6 text-zinc-500">
+        <p className="mt-2 text-sm leading-6 text-zinc-400">
           On the phone you want forwarded, dial this. It takes a second and your
           network confirms it.
         </p>
@@ -153,7 +163,7 @@ export default function ForwardingStep({
             <CopyButton value={code} label="Copy code" />
           </div>
 
-          <p className="mt-4 text-center text-xs leading-5 text-zinc-600">
+          <p className="mt-4 text-center text-xs leading-5 text-zinc-500">
             On iPhone, tapping may not work — some codes have to be typed into
             the keypad by hand. Copy it and dial it like a phone number.
           </p>
@@ -163,12 +173,12 @@ export default function ForwardingStep({
           <summary className="cursor-pointer text-sm text-zinc-400">
             Works on Vodafone, Three and Eir — and how to undo it
           </summary>
-          <p className="mt-3 text-sm leading-6 text-zinc-500">
+          <p className="mt-3 text-sm leading-6 text-zinc-400">
             This is a standard network code, so it works the same on all Irish
             networks. It only affects calls you don&apos;t answer — anything you
             pick up never touches FlowPilot.
           </p>
-          <p className="mt-3 text-sm leading-6 text-zinc-500">
+          <p className="mt-3 text-sm leading-6 text-zinc-400">
             To turn it off at any time, dial{" "}
             <span className="font-mono text-zinc-300">
               {CANCEL_FORWARDING_CODE}
@@ -178,9 +188,9 @@ export default function ForwardingStep({
         </details>
       </section>
 
-      <section className={mobile ? "" : "pointer-events-none opacity-40"}>
+      <section inert={!mobile} className={mobile ? "" : "opacity-40"}>
         <h2 className="text-sm font-medium text-zinc-300">3. Test it</h2>
-        <p className="mt-2 text-sm leading-6 text-zinc-500">
+        <p className="mt-2 text-sm leading-6 text-zinc-400">
           We&apos;ll ring your phone. Don&apos;t answer — let it ring out, and
           we&apos;ll confirm the call reached us.
         </p>

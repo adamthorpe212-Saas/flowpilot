@@ -96,6 +96,21 @@ export async function previewReply(
 
   const reply = await nextReply(context, transcript);
 
+  /*
+   * Say so, rather than showing the holding line as if it were the answer.
+   *
+   * This preview is where a business checks its own wording before trusting the
+   * receptionist with real customers. Presenting a fallback as a normal reply
+   * would send them off editing a prompt that was never the problem.
+   */
+  if (reply.degraded) {
+    return {
+      ...previous,
+      turns: withCaller,
+      error: "Couldn't reach the receptionist just then. Try that again.",
+    };
+  }
+
   return {
     error: null,
     turns: [...withCaller, { role: "assistant", text: reply.speech }],

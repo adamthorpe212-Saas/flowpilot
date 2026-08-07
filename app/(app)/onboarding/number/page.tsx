@@ -16,7 +16,7 @@ export default async function NumberStepPage() {
     <div className="mx-auto max-w-lg">
       <Link
         href="/onboarding"
-        className="text-sm text-zinc-500 transition hover:text-white"
+        className="text-sm text-zinc-400 transition hover:text-white"
       >
         ← Setup
       </Link>
@@ -24,7 +24,7 @@ export default async function NumberStepPage() {
       <h1 className="mt-4 text-2xl font-semibold tracking-tight">
         Your FlowPilot number
       </h1>
-      <p className="mt-2 text-sm leading-6 text-zinc-500">
+      <p className="mt-2 text-sm leading-6 text-zinc-400">
         An Irish number that answers when you can&apos;t. You keep your own
         number — nothing on your van or website changes.
       </p>

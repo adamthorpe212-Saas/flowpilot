@@ -71,7 +71,7 @@ export default function OpeningHoursForm({
         />
         <span>
           <span className="block font-medium">Answer any time</span>
-          <span className="mt-1 block text-sm leading-6 text-zinc-500">
+          <span className="mt-1 block text-sm leading-6 text-zinc-400">
             Evenings, weekends, holidays — every call gets picked up. This is
             what most trades want, and it&apos;s what people are ringing you for.
           </span>
@@ -81,7 +81,7 @@ export default function OpeningHoursForm({
       {!alwaysOpen && (
         <>
           <fieldset className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
-            <legend className="px-1 text-xs uppercase tracking-[0.14em] text-zinc-500">
+            <legend className="px-1 text-xs uppercase tracking-[0.14em] text-zinc-400">
               When you&apos;re open
             </legend>
 
@@ -113,7 +113,7 @@ export default function OpeningHoursForm({
                         aria-label={`${day.label} opens`}
                         className="rounded-lg border border-white/15 bg-white/[0.04] px-3 py-1.5 text-white [color-scheme:dark]"
                       />
-                      <span className="text-zinc-600">to</span>
+                      <span className="text-zinc-500">to</span>
                       <input
                         type="time"
                         name={`${day.key}_to`}
@@ -129,7 +129,7 @@ export default function OpeningHoursForm({
           </fieldset>
 
           <fieldset className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
-            <legend className="px-1 text-xs uppercase tracking-[0.14em] text-zinc-500">
+            <legend className="px-1 text-xs uppercase tracking-[0.14em] text-zinc-400">
               Outside those hours
             </legend>
 
@@ -150,7 +150,7 @@ export default function OpeningHoursForm({
                     <span className="block text-sm text-zinc-200">
                       {option.label}
                     </span>
-                    <span className="mt-0.5 block text-sm text-zinc-500">
+                    <span className="mt-0.5 block text-sm text-zinc-400">
                       {option.detail}
                     </span>
                   </span>

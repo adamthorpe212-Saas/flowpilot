@@ -16,6 +16,15 @@ const MAX_TURNS = 12;
 const MAX_SILENCES = 2;
 
 /**
+ * How many failed model turns in a row before closing the call.
+ *
+ * A single failure must never end a call — see nextReply. But if the model is
+ * genuinely unreachable, repeating a holding line at somebody is worse than
+ * telling them the truth and letting them go.
+ */
+const MAX_DEGRADED = 2;
+
+/**
  * One turn of the conversation.
  *
  * Twilio posts the caller's transcribed speech here; the reply is what to say
@@ -30,6 +39,13 @@ export async function POST(request: NextRequest) {
   const callSid = params.CallSid ?? "";
   const spoken = (params.SpeechResult ?? "").trim();
   const silences = Number(request.nextUrl.searchParams.get("silences") ?? "0");
+
+  // Carried in the Gather action URL rather than the call row, for the same
+  // reason silences are: it is per-call state that stops mattering the moment
+  // the call ends, so it is not worth a column or a write.
+  const degradedRuns = Number(
+    request.nextUrl.searchParams.get("degraded") ?? "0",
+  );
 
   const supabase = createAdminClient();
 
@@ -134,12 +150,43 @@ export async function POST(request: NextRequest) {
     (turn) => turn.role === "assistant",
   ).length;
 
-  const finished = reply.complete || turnCount >= MAX_TURNS;
+  const runs = reply.degraded ? degradedRuns + 1 : 0;
+  const exhausted = runs >= MAX_DEGRADED;
 
   await supabase
     .from("call")
     .update({ transcript: withAssistant })
     .eq("id", call.id);
+
+  /*
+   * The model is not coming back. Close, but do not pretend this worked.
+   *
+   * The normal closing line promises a callback about a job we understood, and
+   * saying that here would be a lie the caller only discovers when nobody rings
+   * about the right thing. The lead is left unqualified on purpose so it shows
+   * up as needing a human, rather than sitting in the dashboard looking done.
+   */
+  if (exhausted) {
+    await supabase
+      .from("call")
+      .update({ status: "completed", ended_at: new Date().toISOString() })
+      .eq("id", call.id);
+
+    console.error("Call closed after repeated model failures", {
+      callId: call.id,
+      businessId: business.id,
+    });
+
+    return twiml(
+      `<Response>` +
+        say(
+          "Sorry — I'm having trouble taking your details just now. We have your number and we'll ring you straight back.",
+        ) +
+        `<Hangup/></Response>`,
+    );
+  }
+
+  const finished = reply.complete || turnCount >= MAX_TURNS;
 
   if (finished) {
     await supabase
@@ -160,9 +207,11 @@ export async function POST(request: NextRequest) {
     return twiml(`<Response>${say(reply.speech)}<Hangup/></Response>`);
   }
 
+  const action = `${siteUrl()}/api/voice/turn${runs > 0 ? `?degraded=${runs}` : ""}`;
+
   return twiml(
     `<Response>` +
-      `<Gather input="speech" action="${siteUrl()}/api/voice/turn" method="POST" ` +
+      `<Gather input="speech" action="${action}" method="POST" ` +
       `speechTimeout="auto" timeout="4" language="en-IE" actionOnEmptyResult="true">` +
       say(reply.speech) +
       `</Gather>` +

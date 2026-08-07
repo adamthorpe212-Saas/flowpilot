@@ -53,7 +53,7 @@ export default async function SettingsPage() {
   return (
     <div className="mx-auto max-w-lg">
       <h1 className="text-2xl font-semibold tracking-tight">Settings</h1>
-      <p className="mt-1 text-sm text-zinc-500">
+      <p className="mt-1 text-sm text-zinc-400">
         Change what your receptionist knows and how it sounds.
       </p>
 
@@ -74,13 +74,14 @@ export default async function SettingsPage() {
           emergency={services
             .filter((service) => service.emergency_eligible)
             .map((service) => service.name)}
+          industryLabel={business.industry_label}
           submitLabel="Save changes"
         />
       </section>
 
       <section className="mt-14 border-t border-white/10 pt-10">
         <h2 className="text-sm font-medium text-zinc-300">Try it out</h2>
-        <p className="mt-2 text-sm leading-6 text-zinc-500">
+        <p className="mt-2 text-sm leading-6 text-zinc-400">
           See how your receptionist handles a call, without needing a phone.
         </p>
         <ReceptionistPreview />
@@ -88,7 +89,7 @@ export default async function SettingsPage() {
 
       <section className="mt-14 border-t border-white/10 pt-10">
         <h2 className="text-sm font-medium text-zinc-300">How it sounds</h2>
-        <p className="mt-2 text-sm leading-6 text-zinc-500">
+        <p className="mt-2 text-sm leading-6 text-zinc-400">
           What your receptionist says, and what it must never say.
         </p>
         {profile && (
@@ -112,11 +113,11 @@ export default async function SettingsPage() {
         <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
           {business.phone_number ? (
             <>
-              <p className="text-sm text-zinc-500">Calls are answered on</p>
+              <p className="text-sm text-zinc-400">Calls are answered on</p>
               <p className="mt-1 text-lg font-semibold">
                 {formatIrishNumber(business.phone_number)}
               </p>
-              <p className="mt-3 text-sm leading-6 text-zinc-500">
+              <p className="mt-3 text-sm leading-6 text-zinc-400">
                 {business.forwarding_verified_at
                   ? "Forwarding is confirmed working."
                   : "Forwarding hasn't been confirmed yet."}
@@ -148,7 +149,7 @@ export default async function SettingsPage() {
 
       <section className="mt-14 border-t border-white/10 pt-10">
         <h2 className="text-sm font-medium text-zinc-300">Where jobs go</h2>
-        <p className="mt-2 text-sm leading-6 text-zinc-500">
+        <p className="mt-2 text-sm leading-6 text-zinc-400">
           Every qualified job is sent to everyone here.
         </p>
 
@@ -157,7 +158,7 @@ export default async function SettingsPage() {
 
       <section className="mt-14 border-t border-white/10 pt-10">
         <h2 className="text-sm font-medium text-zinc-300">Something not working?</h2>
-        <p className="mt-2 text-sm leading-6 text-zinc-500">
+        <p className="mt-2 text-sm leading-6 text-zinc-400">
           Check what&apos;s connected and what isn&apos;t.
         </p>
         <Link

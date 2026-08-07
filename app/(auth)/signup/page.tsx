@@ -32,7 +32,7 @@ export default async function SignupPage({
       <div className="mt-6 flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.03] px-4 py-3">
         <div>
           <p className="text-sm font-medium">{plan.name}</p>
-          <p className="text-xs text-zinc-500">
+          <p className="text-xs text-zinc-400">
             {formatPrice(plan)}/month after your trial
           </p>
         </div>
@@ -46,7 +46,7 @@ export default async function SignupPage({
 
       <SignupForm plan={planId} />
 
-      <p className="mt-8 text-center text-sm text-zinc-500">
+      <p className="mt-8 text-center text-sm text-zinc-400">
         Already have an account?{" "}
         <Link href="/login" className="text-white underline-offset-4 hover:underline">
           Sign in

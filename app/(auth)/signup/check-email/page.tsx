@@ -33,7 +33,7 @@ export default function CheckEmailPage() {
         you&apos;ll be straight into setting up your receptionist.
       </p>
 
-      <p className="mt-8 text-sm text-zinc-500">
+      <p className="mt-8 text-sm text-zinc-400">
         Wrong address?{" "}
         <Link href="/signup" className="text-white underline-offset-4 hover:underline">
           Start again

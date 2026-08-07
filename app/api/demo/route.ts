@@ -104,6 +104,25 @@ export async function POST(request: NextRequest) {
 
   const reply = await nextReply(DEMO_CONTEXT, transcript);
 
+  /*
+   * A degraded reply is reported as an error, not as a conversation.
+   *
+   * This demo exists to answer "does this actually work". Showing a visitor the
+   * holding line and then a "job captured" panel with nothing in it answers
+   * that question with a demonstrable no — and the claim is false besides. An
+   * honest "we're having trouble" costs far less trust than a demo caught
+   * lying.
+   */
+  if (reply.degraded) {
+    return NextResponse.json(
+      {
+        error:
+          "The demo is having a moment — give it another go shortly. Your receptionist wouldn't miss the call.",
+      },
+      { status: 503 },
+    );
+  }
+
   return NextResponse.json({
     speech: reply.speech,
     captured: reply.captured,

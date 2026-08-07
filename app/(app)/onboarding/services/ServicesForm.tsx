@@ -4,6 +4,7 @@ import { useActionState, useState } from "react";
 import { saveServices, type SaveState } from "@/app/(app)/onboarding/actions";
 import FormError from "@/components/ui/FormError";
 import SubmitButton from "@/components/ui/SubmitButton";
+import { tradeFor, withSuggestions, type TradeService } from "@/lib/trades";
 
 const INITIAL: SaveState = { error: null };
 
@@ -16,11 +17,13 @@ const INITIAL: SaveState = { error: null };
 export default function ServicesForm({
   services: initialServices,
   emergency: initialEmergency,
+  industryLabel = null,
   next,
   submitLabel = "Save and continue",
 }: {
   services: string[];
   emergency: string[];
+  industryLabel?: string | null;
   next?: string;
   submitLabel?: string;
 }) {
@@ -28,6 +31,27 @@ export default function ServicesForm({
   const [services, setServices] = useState<string[]>(initialServices);
   const [emergency, setEmergency] = useState<string[]>(initialEmergency);
   const [draft, setDraft] = useState("");
+
+  const trade = tradeFor(industryLabel);
+
+  const unusedSuggestions = (trade?.services ?? []).filter(
+    (suggestion) =>
+      !services.some(
+        (service) => service.toLowerCase() === suggestion.name.toLowerCase(),
+      ),
+  );
+
+  /*
+   * Both paths go through withSuggestions() so the emergency flags cannot
+   * disagree depending on whether somebody tapped one chip or "add all". The
+   * transition is tested in tests/trades.test.ts — this page is behind login
+   * and cannot be exercised in a browser during development.
+   */
+  function apply(additions: readonly TradeService[]) {
+    const next = withSuggestions({ services, emergency }, additions);
+    setServices(next.services);
+    setEmergency(next.emergency);
+  }
 
   function add(raw: string) {
     const additions = raw
@@ -101,16 +125,53 @@ export default function ServicesForm({
             }
           }}
           onBlur={() => add(draft)}
-          className="mt-2 w-full rounded-xl border border-white/15 bg-white/[0.04] px-4 py-3 text-[15px] text-white placeholder:text-zinc-600 transition focus:border-white/40 focus:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-white/10"
+          className="mt-2 w-full rounded-xl border border-white/15 bg-white/[0.04] px-4 py-3 text-[15px] text-white placeholder:text-zinc-500 transition focus:border-white/40 focus:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-white/10"
         />
-        <p id="service-draft-hint" className="mt-2 text-xs text-zinc-500">
+        <p id="service-draft-hint" className="mt-2 text-xs text-zinc-400">
           Type a service and press Enter. Use the words your customers would.
         </p>
       </div>
 
+      {/*
+        Suggestions, from what they told us they do on the previous step.
+        Offered rather than applied: a plumber who does not touch oil boilers
+        should not find one on their list because we assumed it. Each one still
+        has to be tapped, and anything already added disappears from the row so
+        the remaining chips are always things worth pressing.
+      */}
+      {trade && unusedSuggestions.length > 0 && (
+        <div>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <p className="text-xs text-zinc-400">
+              Common for a {trade.noun} — tap to add
+            </p>
+            <button
+              type="button"
+              onClick={() => apply(unusedSuggestions)}
+              className="text-xs text-zinc-300 underline underline-offset-4 transition hover:text-white"
+            >
+              Add all {unusedSuggestions.length}
+            </button>
+          </div>
+
+          <div className="mt-2 flex flex-wrap gap-2">
+            {unusedSuggestions.map((suggestion) => (
+              <button
+                key={suggestion.name}
+                type="button"
+                onClick={() => apply([suggestion])}
+                className="min-h-11 rounded-full border border-white/15 px-3.5 text-xs text-zinc-300 transition hover:border-white/35 hover:text-white"
+              >
+                + {suggestion.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {services.length > 0 && (
         <fieldset className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
-          <legend className="px-1 text-xs uppercase tracking-[0.14em] text-zinc-500">
+          <legend className="px-1 text-xs uppercase tracking-[0.14em] text-zinc-400">
             Which can be emergencies?
           </legend>
           <ul className="mt-2 divide-y divide-white/5">
@@ -132,7 +193,7 @@ export default function ServicesForm({
                 <button
                   type="button"
                   onClick={() => remove(service)}
-                  className="flex-none text-xs text-zinc-600 transition hover:text-white"
+                  className="flex-none text-xs text-zinc-500 transition hover:text-white"
                 >
                   Remove
                   <span className="sr-only"> {service}</span>
@@ -140,7 +201,7 @@ export default function ServicesForm({
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-xs text-zinc-500">
+          <p className="mt-3 text-xs text-zinc-400">
             Emergencies get flagged as urgent and alert you straight away, even
             out of hours.
           </p>

@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import Faq from "@/components/Faq";
+import { PRICING_FAQ_IDS, faqItems } from "@/lib/faq";
 import { formatPrice, PLANS, TRIAL_DAYS } from "@/lib/plans";
 
 export const metadata: Metadata = {
@@ -7,29 +9,6 @@ export const metadata: Metadata = {
   description:
     "Simple monthly pricing for an AI receptionist that answers the calls you miss. Free trial, no setup fee, cancel any time.",
 };
-
-const FAQS = [
-  {
-    question: "What counts as an answered call?",
-    answer:
-      "A call your receptionist actually picks up and handles. Calls you answer yourself never touch FlowPilot and are never counted.",
-  },
-  {
-    question: "What if I go over my calls?",
-    answer:
-      "We'll tell you before you get close, and your receptionist keeps answering — we never cut you off mid-month. If you're regularly over, we'll move you up a plan.",
-  },
-  {
-    question: "Do I need a new phone number?",
-    answer:
-      "No. You keep your number and set it to forward to FlowPilot when you can't answer. Nothing on your van, website or Google listing changes.",
-  },
-  {
-    question: "Can I cancel?",
-    answer:
-      "Any time, from your dashboard. You keep your receptionist until the end of the month you've paid for.",
-  },
-];
 
 export default function PricingPage() {
   return (
@@ -63,7 +42,7 @@ export default function PricingPage() {
               )}
 
               <h2 className="text-lg font-semibold">{plan.name}</h2>
-              <p className="mt-1 min-h-[2.5rem] text-sm leading-5 text-zinc-500">
+              <p className="mt-1 min-h-[2.5rem] text-sm leading-5 text-zinc-400">
                 {plan.tagline}
               </p>
 
@@ -71,7 +50,7 @@ export default function PricingPage() {
                 <span className="text-4xl font-semibold tracking-tight">
                   {formatPrice(plan)}
                 </span>
-                <span className="text-sm text-zinc-500">/month</span>
+                <span className="text-sm text-zinc-400">/month</span>
               </p>
 
               <Link
@@ -96,7 +75,7 @@ export default function PricingPage() {
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      className="mt-0.5 h-4 w-4 flex-none text-zinc-500"
+                      className="mt-0.5 h-4 w-4 flex-none text-zinc-400"
                     >
                       <path d="m4 10 4 4 8-8" />
                     </svg>
@@ -108,7 +87,7 @@ export default function PricingPage() {
           ))}
         </div>
 
-        <p className="mx-auto mt-8 max-w-2xl text-center text-xs text-zinc-600">
+        <p className="mx-auto mt-8 max-w-2xl text-center text-xs text-zinc-500">
           Prices exclude VAT. Your Irish number and all calls are included —
           there are no per-minute charges on top.
         </p>
@@ -119,19 +98,9 @@ export default function PricingPage() {
           <h2 className="text-2xl font-semibold tracking-tight">
             Questions worth asking
           </h2>
-          <dl className="mt-8 space-y-6">
-            {FAQS.map((faq) => (
-              <div
-                key={faq.question}
-                className="border-b border-white/10 pb-6 last:border-0"
-              >
-                <dt className="font-medium">{faq.question}</dt>
-                <dd className="mt-2 text-sm leading-6 text-zinc-400">
-                  {faq.answer}
-                </dd>
-              </div>
-            ))}
-          </dl>
+          <div className="mt-8">
+            <Faq items={faqItems(PRICING_FAQ_IDS)} />
+          </div>
         </div>
       </section>
     </>

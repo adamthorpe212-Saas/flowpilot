@@ -76,6 +76,7 @@ function mockModel(replies: { speech: string; captured?: Record<string, string>;
         json: async () => ({
           content: [
             {
+              type: "text",
               text: JSON.stringify({
                 speech: next.speech,
                 captured: next.captured ?? {},
@@ -626,5 +627,150 @@ describe("after the call", () => {
 
     expect(tables.call[0].status).toBe("failed");
     expect(tables.call[0].ended_at).toBeTruthy();
+  });
+});
+
+/**
+ * What a caller experiences when our model is down.
+ *
+ * This is the path that quietly loses customers: the person on the line has a
+ * real emergency and no idea anything is wrong on our side.
+ */
+describe("a call while the model is failing", () => {
+  /** Every model request fails, as it would during an outage or a billing lapse. */
+  function mockModelOutage() {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => ({ ok: false, status: 503, text: async () => "unavailable" }) as unknown as Response),
+    );
+  }
+
+  async function startCall() {
+    await incoming(
+      twilioRequest("/api/voice/incoming", {
+        CallSid: "CA1",
+        From: CALLER_NUMBER,
+        To: FLOWPILOT_NUMBER,
+      }),
+    );
+  }
+
+  it("keeps the caller on the line instead of hanging up on them", async () => {
+    /*
+     * The defect this covers: a single failed model call used to end the call.
+     * A customer with a burst pipe heard one apologetic line and a dial tone,
+     * and the business got a lead with nothing in it.
+     */
+    await startCall();
+    mockModelOutage();
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const first = await twimlOf(
+      await turn(
+        twilioRequest("/api/voice/turn", {
+          CallSid: "CA1",
+          SpeechResult: "There's water pouring through my ceiling",
+        }),
+      ),
+    );
+
+    expect(first).toContain("<Gather");
+    expect(first).not.toContain("<Hangup/>");
+    expect(tables.call[0].status).not.toBe("completed");
+
+    errors.mockRestore();
+  });
+
+  it("recovers mid-call when the model comes back", async () => {
+    await startCall();
+    mockModelOutage();
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await turn(
+      twilioRequest("/api/voice/turn", {
+        CallSid: "CA1",
+        SpeechResult: "There's water pouring through my ceiling",
+      }),
+    );
+
+    // The outage passes. The caller never knew.
+    mockModel([
+      { speech: "That sounds urgent. Whereabouts are you?", captured: { job_type: "Leak", urgency: "high" } },
+    ]);
+
+    const second = await twimlOf(
+      await turn(
+        twilioRequest("/api/voice/turn?degraded=1", {
+          CallSid: "CA1",
+          SpeechResult: "It's coming through the kitchen ceiling",
+        }),
+      ),
+    );
+
+    expect(second).toContain("Whereabouts are you?");
+    expect(second).toContain("<Gather");
+    expect(tables.lead[0].job_type).toBe("Leak");
+
+    errors.mockRestore();
+  });
+
+  it("closes honestly once the model has failed twice, without claiming the job was taken", async () => {
+    await startCall();
+    mockModelOutage();
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await turn(
+      twilioRequest("/api/voice/turn", {
+        CallSid: "CA1",
+        SpeechResult: "There's water pouring through my ceiling",
+      }),
+    );
+
+    const second = await twimlOf(
+      await turn(
+        twilioRequest("/api/voice/turn?degraded=1", {
+          CallSid: "CA1",
+          SpeechResult: "Are you still there?",
+        }),
+      ),
+    );
+
+    expect(second).toContain("<Hangup/>");
+    // The promise made has to be one we can keep: we have their number, and
+    // that is all we are claiming.
+    expect(second).toContain("ring you straight back");
+    expect(second).not.toContain("someone will be in touch");
+
+    // Nothing is marked qualified — a human still has to deal with this.
+    for (const lead of tables.lead) expect(lead.status).not.toBe("qualified");
+
+    errors.mockRestore();
+  });
+});
+
+describe("what a caller is told before they speak", () => {
+  it("discloses the assistant in the first thing said on a real call", async () => {
+    /*
+     * End to end through the actual webhook, not just the helper: this is the
+     * only place that proves the words reach a phone. A caller has to know they
+     * are talking to a machine, and that what they say is written down, before
+     * they describe their emergency.
+     */
+    const response = await twimlOf(
+      await incoming(
+        twilioRequest("/api/voice/incoming", {
+          CallSid: "CA1",
+          From: CALLER_NUMBER,
+          To: FLOWPILOT_NUMBER,
+        }),
+      ),
+    );
+
+    expect(response).toContain("automated assistant");
+    expect(response).toContain("notes");
+
+    // And it is kept, so the business can show what its customer was told.
+    const transcript = tables.call[0].transcript as { role: string; text: string }[];
+    expect(transcript[0].text).toContain("automated assistant");
   });
 });

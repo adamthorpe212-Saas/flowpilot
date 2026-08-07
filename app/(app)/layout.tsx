@@ -34,7 +34,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
           </div>
 
           <div className="flex items-center gap-4">
-            <span className="hidden max-w-[16ch] truncate text-sm text-zinc-500 sm:block">
+            <span className="hidden max-w-[16ch] truncate text-sm text-zinc-400 sm:block">
               {business.name}
             </span>
             <form action={signOut}>

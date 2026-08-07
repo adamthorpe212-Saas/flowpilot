@@ -1,11 +1,17 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import { EXAMPLE_CAPTURED, EXAMPLE_TURNS } from "@/lib/demo-example";
 
 type Turn = { role: "assistant" | "caller"; text: string };
 
+/*
+ * Must match what openingLine() actually produces on a live call, disclosure
+ * and all. A demo that opens more smoothly than the real thing is a demo that
+ * sells a product we do not ship.
+ */
 const GREETING =
-  "Hello, O'Brien Plumbing — sorry we missed you. What's the problem?";
+  "This is an automated assistant, and I'll take notes. Hello, O'Brien Plumbing — sorry we missed you. What's the problem?";
 
 const OPENERS = [
   "My boiler has burst",
@@ -65,6 +71,7 @@ export default function LiveDemo() {
   const [thinking, setThinking] = useState(false);
   const [complete, setComplete] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [unavailable, setUnavailable] = useState(false);
 
   const threadRef = useRef<HTMLDivElement>(null);
 
@@ -77,8 +84,15 @@ export default function LiveDemo() {
   }, [turns, thinking]);
 
   const lastAssistant = [...turns].reverse().find((t) => t.role === "assistant");
-  const started = turns.some((turn) => turn.role === "caller");
-  const suggestions = started
+
+  /*
+   * "Started" means the receptionist has actually asked something, not merely
+   * that the visitor has typed. If a turn failed, the only assistant line is
+   * still the greeting — offering "Yes / No, that's everything" as replies to
+   * "What's the problem?" would look broken on top of already having failed.
+   */
+  const answered = turns.filter((turn) => turn.role === "assistant").length > 1;
+  const suggestions = answered
     ? suggestFor(lastAssistant?.text ?? "")
     : OPENERS;
 
@@ -102,6 +116,32 @@ export default function LiveDemo() {
       const data = await response.json();
 
       if (!response.ok) {
+        /*
+         * Take the failed turn back out of the thread.
+         *
+         * Leaving it would send it again on the retry, so the receptionist
+         * would receive "My boiler has burst" twice and answer the duplicate —
+         * a second failure caused entirely by the first.
+         */
+        setTurns(turns);
+        setDraft(message);
+
+        /*
+         * 503 means the receptionist itself is unreachable, not that this
+         * particular message failed — retrying will fail the same way.
+         *
+         * Falling back to the worked example rather than leaving an error box
+         * where the proof should be. Somebody who typed a message and got
+         * nothing has been given less than if we had never invited them to
+         * try, and this section carries most of the argument for the product.
+         * Labelled as an example, because pretending it is live would be
+         * exactly the dishonesty the live demo exists to avoid.
+         */
+        if (response.status === 503) {
+          setUnavailable(true);
+          return;
+        }
+
         setError(data.error ?? "Something went wrong. Try again.");
         return;
       }
@@ -116,10 +156,18 @@ export default function LiveDemo() {
     }
   }
 
-  const rows = FIELD_ORDER.filter((key) => captured[key]).map((key) => ({
+  /*
+   * What is on screen, which is the live conversation until the receptionist
+   * becomes unreachable and the worked example takes over.
+   */
+  const shownTurns = unavailable ? EXAMPLE_TURNS : turns;
+  const shownCaptured = unavailable ? EXAMPLE_CAPTURED : captured;
+  const ended = unavailable || complete;
+
+  const rows = FIELD_ORDER.filter((key) => shownCaptured[key]).map((key) => ({
     key,
     label: FIELD_LABELS[key],
-    value: captured[key],
+    value: shownCaptured[key],
   }));
 
   return (
@@ -128,11 +176,15 @@ export default function LiveDemo() {
         <div className="flex flex-none items-center gap-2 border-b border-white/8 pb-3">
           <span
             aria-hidden="true"
-            className={`h-1.5 w-1.5 rounded-full ${complete ? "bg-zinc-600" : "bg-emerald-400"}`}
+            className={`h-1.5 w-1.5 rounded-full ${ended ? "bg-zinc-600" : "bg-emerald-400"}`}
           />
-          <span className="text-xs text-zinc-500">
+          <span className="text-xs text-zinc-400">
             O&apos;Brien Plumbing ·{" "}
-            {complete ? "call ended" : "call in progress"}
+            {unavailable
+              ? "example call"
+              : complete
+                ? "call ended"
+                : "call in progress"}
           </span>
         </div>
 
@@ -141,11 +193,11 @@ export default function LiveDemo() {
           className="mt-4 flex-1 space-y-4 overflow-y-auto pr-1"
           style={{ maxHeight: "18rem" }}
         >
-          {turns.map((turn, index) => (
+          {shownTurns.map((turn, index) => (
             <div key={index} className="fp-rise-in">
               <p
                 className={`text-[10px] uppercase tracking-[0.14em] ${
-                  turn.role === "assistant" ? "text-white/55" : "text-zinc-600"
+                  turn.role === "assistant" ? "text-white/55" : "text-zinc-500"
                 }`}
               >
                 {turn.role === "assistant" ? "FlowPilot" : "Caller"}
@@ -165,19 +217,19 @@ export default function LiveDemo() {
               <p className="text-[10px] uppercase tracking-[0.14em] text-white/55">
                 FlowPilot
               </p>
-              <p className="mt-1 text-sm text-zinc-600">thinking…</p>
+              <p className="mt-1 text-sm text-zinc-500">thinking…</p>
             </div>
           )}
         </div>
       </div>
 
       <div className="rounded-2xl border border-white/12 bg-white/[0.02] p-5">
-        <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">
+        <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-400">
           Job record
         </p>
 
         {rows.length === 0 ? (
-          <p className="mt-3 text-xs leading-5 text-zinc-600">
+          <p className="mt-3 text-xs leading-5 text-zinc-500">
             Nothing captured yet. It fills in as the caller talks.
           </p>
         ) : (
@@ -191,7 +243,7 @@ export default function LiveDemo() {
                   ✓
                 </span>
                 <span className="min-w-0">
-                  <span className="block text-[9px] uppercase tracking-[0.1em] text-zinc-600">
+                  <span className="block text-[9px] uppercase tracking-[0.1em] text-zinc-500">
                     {row.label}
                   </span>
                   <span className="block text-xs text-white">{row.value}</span>
@@ -201,10 +253,10 @@ export default function LiveDemo() {
           </ul>
         )}
 
-        {complete && (
+        {ended && (
           <div className="mt-4 border-t border-white/8 pt-3">
             <p className="text-xs text-emerald-300">Sent to Dave&apos;s phone</p>
-            <p className="mt-1 text-[11px] text-zinc-600">
+            <p className="mt-1 text-[11px] text-zinc-500">
               He rings back knowing the job before he dials.
             </p>
           </div>
@@ -221,7 +273,25 @@ export default function LiveDemo() {
           </p>
         )}
 
-        {!complete ? (
+        {unavailable ? (
+          <div className="rounded-2xl border border-white/12 bg-white/[0.03] p-5 text-center">
+            <p className="text-sm text-zinc-300">
+              The live demo is having a moment, so that&apos;s a real call it
+              handled earlier rather than one you just had.
+            </p>
+            <p className="mx-auto mt-2 max-w-md text-xs leading-5 text-zinc-500">
+              Worth knowing what happens when the same thing goes wrong on a
+              live call: it keeps the caller talking, takes their details, and
+              flags the job for you. It never hangs up on them.
+            </p>
+            <a
+              href="/signup"
+              className="mt-4 inline-block rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-zinc-200"
+            >
+              Set this up for my business
+            </a>
+          </div>
+        ) : !complete ? (
           <>
             <form
               onSubmit={(event) => {
@@ -233,10 +303,10 @@ export default function LiveDemo() {
               <input
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
-                placeholder={started ? "Say something else…" : "My boiler has burst"}
+                placeholder={answered ? "Say something else…" : "My boiler has burst"}
                 aria-label="What a caller might say"
                 maxLength={300}
-                className="flex-1 rounded-full border border-white/15 bg-white/[0.05] px-5 py-3 text-sm text-white placeholder:text-zinc-600 transition focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/10"
+                className="flex-1 rounded-full border border-white/15 bg-white/[0.05] px-5 py-3 text-sm text-white placeholder:text-zinc-500 transition focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/10"
               />
               <button
                 type="submit"
@@ -254,7 +324,9 @@ export default function LiveDemo() {
                   type="button"
                   onClick={() => send(suggestion)}
                   disabled={thinking}
-                  className="rounded-full border border-white/15 px-3.5 py-1.5 text-xs text-zinc-400 transition hover:border-white/30 hover:text-white disabled:opacity-40"
+                  // 44px tall on phones, where these are the main way the demo
+                  // gets driven; back to compact once there is a mouse.
+                  className="flex min-h-11 items-center rounded-full border border-white/15 px-4 text-xs text-zinc-400 transition hover:border-white/30 hover:text-white disabled:opacity-40 sm:min-h-0 sm:px-3.5 sm:py-1.5"
                 >
                   {suggestion}
                 </button>

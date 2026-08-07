@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { siteUrl } from "@/lib/env";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -18,6 +19,13 @@ const geistMono = Geist_Mono({
  * it here would promise a calendar integration the product doesn't have.
  */
 export const metadata: Metadata = {
+  /*
+   * Without this, Next cannot turn the Open Graph image into the absolute URL
+   * that social platforms require, and the card silently renders blank — the
+   * one failure mode nobody notices, because it looks fine to whoever posted
+   * the link.
+   */
+  metadataBase: new URL(siteUrl()),
   title: "FlowPilot — The AI Receptionist for Service Businesses",
   description:
     "FlowPilot answers the calls you miss, finds out what the job is, and sends it straight to your phone — on holidays, over the weekend, or when you're busy on another site.",

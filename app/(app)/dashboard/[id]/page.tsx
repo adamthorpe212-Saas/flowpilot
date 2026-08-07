@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { updateLeadStatus } from "@/app/(app)/dashboard/actions";
+import DeleteLead from "@/app/(app)/dashboard/DeleteLead";
 import { formatIrishNumber } from "@/lib/phone";
 import { createClient } from "@/lib/supabase/server";
 import type { Call, Lead, LeadStatus } from "@/types/database";
@@ -74,7 +75,7 @@ export default async function LeadPage({
     <div className="mx-auto max-w-2xl">
       <Link
         href="/dashboard"
-        className="text-sm text-zinc-500 transition hover:text-white"
+        className="text-sm text-zinc-400 transition hover:text-white"
       >
         ← Leads
       </Link>
@@ -84,7 +85,7 @@ export default async function LeadPage({
           <h1 className="text-2xl font-semibold tracking-tight">
             {lead.job_type ?? "Enquiry"}
           </h1>
-          <p className="mt-1 text-sm text-zinc-500">
+          <p className="mt-1 text-sm text-zinc-400">
             {formatWhen(lead.created_at)}
             {duration ? ` · ${duration} call` : ""}
           </p>
@@ -109,7 +110,7 @@ export default async function LeadPage({
         className="mt-6 flex items-center justify-between gap-4 rounded-2xl border border-white/15 bg-white/[0.04] p-5 transition hover:border-white/30"
       >
         <span>
-          <span className="block text-sm text-zinc-500">Call back</span>
+          <span className="block text-sm text-zinc-400">Call back</span>
           <span className="mt-1 block text-lg font-semibold">
             {formatIrishNumber(lead.caller_number)}
           </span>
@@ -135,7 +136,7 @@ export default async function LeadPage({
         <dl className="mt-4 divide-y divide-white/5 rounded-2xl border border-white/10 bg-white/[0.02] px-5">
           {details.map(([label, value]) => (
             <div key={label} className="flex justify-between gap-4 py-4 text-sm">
-              <dt className="text-zinc-500">{label}</dt>
+              <dt className="text-zinc-400">{label}</dt>
               <dd className="text-right text-zinc-200">{value}</dd>
             </div>
           ))}
@@ -176,7 +177,7 @@ export default async function LeadPage({
               <li key={index}>
                 <p
                   className={`text-[10px] uppercase tracking-[0.14em] ${
-                    turn.role === "assistant" ? "text-white/60" : "text-zinc-600"
+                    turn.role === "assistant" ? "text-white/60" : "text-zinc-500"
                   }`}
                 >
                   {turn.role === "assistant" ? "FlowPilot" : "Caller"}
@@ -192,10 +193,19 @@ export default async function LeadPage({
             ))}
           </ol>
         ) : (
-          <p className="mt-3 rounded-2xl border border-dashed border-white/15 px-5 py-8 text-center text-sm text-zinc-500">
+          <p className="mt-3 rounded-2xl border border-dashed border-white/15 px-5 py-8 text-center text-sm text-zinc-400">
             No transcript for this one.
           </p>
         )}
+      </section>
+
+      {/*
+        Last on the page and visually quiet. It exists so a business can honour
+        a caller asking to be removed — see docs/DATA-PROCESSING.md — not as
+        part of the day-to-day flow.
+      */}
+      <section className="mt-12 border-t border-white/10 pt-6">
+        <DeleteLead leadId={lead.id} />
       </section>
     </div>
   );

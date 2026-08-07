@@ -38,13 +38,13 @@ export default async function DiagnosticsPage() {
     <div className="mx-auto max-w-2xl">
       <Link
         href="/settings"
-        className="text-sm text-zinc-500 transition hover:text-white"
+        className="text-sm text-zinc-400 transition hover:text-white"
       >
         ← Settings
       </Link>
 
       <h1 className="mt-4 text-2xl font-semibold tracking-tight">Diagnostics</h1>
-      <p className="mt-2 text-sm leading-6 text-zinc-500">
+      <p className="mt-2 text-sm leading-6 text-zinc-400">
         What&apos;s connected and what isn&apos;t. Most ways this product fails
         look identical from outside — a phone that rings out, a text that never
         arrives — so this is where to look first.
@@ -82,7 +82,7 @@ export default async function DiagnosticsPage() {
             </div>
             <p className="mt-2 text-sm leading-6 text-zinc-400">{check.detail}</p>
             {check.fix && (
-              <p className="mt-2 text-sm leading-6 text-zinc-500">{check.fix}</p>
+              <p className="mt-2 text-sm leading-6 text-zinc-400">{check.fix}</p>
             )}
           </li>
         ))}
@@ -90,7 +90,7 @@ export default async function DiagnosticsPage() {
 
       <section className="mt-10 border-t border-white/10 pt-8">
         <h2 className="text-sm font-medium text-zinc-300">Webhook URLs</h2>
-        <p className="mt-2 text-sm leading-6 text-zinc-500">
+        <p className="mt-2 text-sm leading-6 text-zinc-400">
           These are built from your configured site URL — the same value
           signature checks use. If they look wrong here, they are wrong
           everywhere.
@@ -114,7 +114,7 @@ export default async function DiagnosticsPage() {
         </ul>
       </section>
 
-      <p className="mt-8 text-xs text-zinc-600">
+      <p className="mt-8 text-xs text-zinc-500">
         No secret values are shown here — only whether each one is present and
         whether it works.
       </p>

@@ -37,7 +37,7 @@ export default function ReceptionistPreview() {
     <div className="mt-4">
       <div className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
         {state.turns.length === 0 ? (
-          <p className="text-sm leading-6 text-zinc-500">
+          <p className="text-sm leading-6 text-zinc-400">
             Type what a caller might say. Your receptionist will answer using
             your real settings — same wording, same questions, same rules as a
             live call.
@@ -48,7 +48,7 @@ export default function ReceptionistPreview() {
               <li key={index}>
                 <p
                   className={`text-[10px] uppercase tracking-[0.14em] ${
-                    turn.role === "assistant" ? "text-white/60" : "text-zinc-600"
+                    turn.role === "assistant" ? "text-white/60" : "text-zinc-500"
                   }`}
                 >
                   {turn.role === "assistant" ? "Your receptionist" : "Caller"}
@@ -67,12 +67,12 @@ export default function ReceptionistPreview() {
 
         {captured.length > 0 && (
           <dl className="mt-5 space-y-2 border-t border-white/10 pt-4 text-sm">
-            <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-600">
+            <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-500">
               Captured so far
             </p>
             {captured.map(([key, value]) => (
               <div key={key} className="flex justify-between gap-4">
-                <dt className="text-zinc-500">{FIELD_LABELS[key] ?? key}</dt>
+                <dt className="text-zinc-400">{FIELD_LABELS[key] ?? key}</dt>
                 <dd className="text-right text-zinc-200">{value}</dd>
               </div>
             ))}
@@ -99,7 +99,7 @@ export default function ReceptionistPreview() {
               : "Say something else…"
           }
           aria-label="What a caller might say"
-          className="w-full rounded-xl border border-white/15 bg-white/[0.04] px-4 py-3 text-[15px] text-white placeholder:text-zinc-600 transition focus:border-white/40 focus:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-white/10"
+          className="w-full rounded-xl border border-white/15 bg-white/[0.04] px-4 py-3 text-[15px] text-white placeholder:text-zinc-500 transition focus:border-white/40 focus:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-white/10"
         />
 
         {state.turns.length === 0 && (

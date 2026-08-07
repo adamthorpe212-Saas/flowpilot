@@ -7,12 +7,13 @@ import {
 } from "@/app/(app)/settings/voice-actions";
 import FormError from "@/components/ui/FormError";
 import SubmitButton from "@/components/ui/SubmitButton";
+import { AI_DISCLOSURE } from "@/lib/disclosure";
 import type { BusinessProfile } from "@/types/database";
 
 const INITIAL: VoiceState = { error: null };
 
 const textareaClass =
-  "mt-2 w-full rounded-xl border border-white/15 bg-white/[0.04] px-4 py-3 text-[15px] leading-6 text-white placeholder:text-zinc-600 transition focus:border-white/40 focus:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-white/10";
+  "mt-2 w-full rounded-xl border border-white/15 bg-white/[0.04] px-4 py-3 text-[15px] leading-6 text-white placeholder:text-zinc-500 transition focus:border-white/40 focus:bg-white/[0.06] focus:outline-none focus:ring-2 focus:ring-white/10";
 
 function Labelled({
   label,
@@ -29,7 +30,7 @@ function Labelled({
         {label}
         {children}
       </label>
-      <p className="mt-2 text-xs leading-5 text-zinc-500">{hint}</p>
+      <p className="mt-2 text-xs leading-5 text-zinc-400">{hint}</p>
     </div>
   );
 }
@@ -67,6 +68,23 @@ export default function VoiceForm({
           placeholder="Optional — write your own opening line"
           className={textareaClass}
         />
+
+        {/*
+          Shown here rather than buried in terms, because a business owner who
+          finds an unfamiliar sentence on their own recording assumes something
+          is broken. Naming it as deliberate, and saying why, is the difference
+          between a support ticket and a nod.
+        */}
+        <p className="mt-3 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-xs leading-5 text-zinc-400" data-testid="ai-disclosure-note">
+          Every call opens with{" "}
+          <span className="text-white">
+            &ldquo;{AI_DISCLOSURE}&rdquo;
+          </span>{" "}
+          before your greeting. That stays on: callers have to be told
+          they&apos;re speaking to a machine and that the call is written down.
+          It protects you as much as them — it&apos;s your customer who would
+          otherwise find out afterwards.
+        </p>
       </Labelled>
 
       <Labelled

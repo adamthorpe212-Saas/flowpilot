@@ -16,7 +16,8 @@ describe("mapCaptureToLeadFields", () => {
     );
 
     expect(result.job_type).toBe("Burst pipe");
-    expect(result.contact_name).toBe("John Murphy");
+    expect(result.caller_name).toBe("John Murphy");
+    expect(result).not.toHaveProperty("contact_name");
     expect(result.preferred_time).toBe("Today");
   });
 
@@ -68,5 +69,51 @@ describe("mapCaptureToLeadFields", () => {
     expect(mapCaptureToLeadFields({ location: "Cork" }, [])).not.toHaveProperty(
       "out_of_area",
     );
+  });
+});
+
+describe("capture keys are not column names", () => {
+  /*
+   * Every field understood during a call is written in one insert, so a single
+   * name that is not a real column loses the whole lead — job, address, urgency
+   * and the caller's phone number together.
+   *
+   * That is not hypothetical. `contact_name` was treated as a column, the column
+   * is `caller_name`, and every call where somebody said their name was
+   * discarded with only a log line to show for it. It survived because the only
+   * calls that worked were ones that ended before the name was asked.
+   */
+  const LEAD_TABLE_COLUMNS = new Set([
+    "caller_number",
+    "caller_name",
+    "job_type",
+    "location",
+    "preferred_time",
+    "urgency",
+    "out_of_area",
+    "captured",
+  ]);
+
+  it("only ever produces real lead columns", () => {
+    const everything = mapCaptureToLeadFields(
+      {
+        job_type: "Burst pipe",
+        location: "Raheny",
+        urgency: "high",
+        contact_name: "John Murphy",
+        preferred_time: "This afternoon",
+      },
+      AREA,
+    );
+
+    for (const key of Object.keys(everything)) {
+      expect(LEAD_TABLE_COLUMNS.has(key), `"${key}" is not a column on lead`).toBe(true);
+    }
+  });
+
+  it("puts the caller's name where the schema keeps it", () => {
+    const result = mapCaptureToLeadFields({ contact_name: "John Murphy" }, AREA);
+
+    expect(result.caller_name).toBe("John Murphy");
   });
 });

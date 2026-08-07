@@ -73,6 +73,14 @@ export function twiml(body: string): NextResponse {
  * spoken — the greeting contained "I'll", so every single call failed with a
  * generic "an application error has occurred". The document is valid XML by the
  * spec; Twilio's parser simply does not accept that entity.
+ *
+ * Correction, after a second failed call: `&apos;` was NOT what caused 13520 —
+ * a call served TwiML with a bare apostrophe and failed identically. The real
+ * cause was the voice name (see voiceName below). Escaping quotes was still
+ * wrong, and removing it is still right, but it fixed a latent problem rather
+ * than the one being chased. Kept because unnecessary escaping in element text
+ * has no upside; recorded because a comment that claims the wrong root cause is
+ * worse than no comment.
  */
 export function escapeXml(value: string): string {
   return value
@@ -81,14 +89,32 @@ export function escapeXml(value: string): string {
     .replace(/>/g, "&gt;");
 }
 
-export const VOICE = {
-  /** Irish English, so the receptionist does not sound American to Irish callers. */
-  language: "en-IE",
-  voice: "Google.en-IE-Standard-A",
-} as const;
+/**
+ * Amazon Polly's Irish English voice, so the receptionist does not sound
+ * American to Irish callers.
+ *
+ * Was `Google.en-IE-Standard-A`, which rejected every call with error 13520.
+ * Google's text-to-speech has en-US, en-GB, en-AU and en-IN but no Irish
+ * English at all, so that voice never existed — and Twilio reports an unknown
+ * voice as "Invalid text", which points the investigation at the wrong thing.
+ *
+ * Overridable without a deploy. A bad voice name is fatal to every call and the
+ * error message does not say which attribute it objected to, so being able to
+ * change it from an environment variable is worth more here than tidiness.
+ */
+export function voiceName(): string {
+  return process.env.TWILIO_VOICE ?? "Polly.Niamh";
+}
 
 export function say(text: string): string {
-  return `<Say language="${VOICE.language}" voice="${VOICE.voice}">${escapeXml(text)}</Say>`;
+  /*
+   * No `language` attribute. A named Polly voice already determines its
+   * language, and Twilio ignores the attribute in that case — so it is one more
+   * thing that can disagree with the voice for no benefit. `<Gather>` keeps its
+   * own language, which is a different setting: that one is speech recognition,
+   * where en-IE is genuinely supported and genuinely matters.
+   */
+  return `<Say voice="${voiceName()}">${escapeXml(text)}</Say>`;
 }
 
 export function rejected(): NextResponse {

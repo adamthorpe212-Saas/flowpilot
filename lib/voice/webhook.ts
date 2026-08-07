@@ -61,14 +61,24 @@ export function twiml(body: string): NextResponse {
   });
 }
 
-/** Escapes text that is being placed inside a TwiML element. */
+/**
+ * Escapes text being placed inside a TwiML element.
+ *
+ * Only `&`, `<` and `>` — deliberately not quotes or apostrophes.
+ *
+ * Two reasons, and the second one hung up on a real caller. Escaping quotes is
+ * unnecessary here: XML requires it inside attribute values, not in element
+ * text, and this is only ever used for text. And Twilio rejects `&apos;` in
+ * `<Say>` with error 13520 "Invalid text", killing the call before a word is
+ * spoken — the greeting contained "I'll", so every single call failed with a
+ * generic "an application error has occurred". The document is valid XML by the
+ * spec; Twilio's parser simply does not accept that entity.
+ */
 export function escapeXml(value: string): string {
   return value
     .replace(/&/g, "&amp;")
     .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
+    .replace(/>/g, "&gt;");
 }
 
 export const VOICE = {

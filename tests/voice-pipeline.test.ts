@@ -9,6 +9,7 @@ import {
   twimlOf,
 } from "./helpers/call-fixtures";
 import { createFakeSupabase, resetIds, type Tables } from "./helpers/fake-supabase";
+import { say } from "@/lib/voice/webhook";
 
 /**
  * Drives the real route handlers through a whole call, with fakes only at the
@@ -170,7 +171,7 @@ describe("inbound call", () => {
     const xml = await twimlOf(response);
 
     expect(xml).toContain("<Gather");
-    expect(xml).toContain("O&apos;Brien Plumbing");
+    expect(xml).toContain("O'Brien Plumbing");
     expect(xml).toContain('language="en-IE"');
 
     expect(tables.call).toHaveLength(1);
@@ -391,7 +392,7 @@ describe("silence handling", () => {
       await turn(twilioRequest("/api/voice/turn", { CallSid: "CA1", SpeechResult: "" })),
     );
     expect(first).toContain("<Gather");
-    expect(first).toContain("didn&apos;t catch that");
+    expect(first).toContain("didn't catch that");
 
     const request = twilioRequest("/api/voice/turn?silences=2", { CallSid: "CA1", SpeechResult: "" });
     const second = await twimlOf(await turn(request));
@@ -772,5 +773,32 @@ describe("what a caller is told before they speak", () => {
     // And it is kept, so the business can show what its customer was told.
     const transcript = tables.call[0].transcript as { role: string; text: string }[];
     expect(transcript[0].text).toContain("automated assistant");
+  });
+});
+
+describe("TwiML escaping", () => {
+  /*
+   * Twilio rejects &apos; in <Say> with error 13520 "Invalid text" and drops the
+   * call before a word is spoken — the caller hears "an application error has
+   * occurred". It cost a real call to find, because the document is perfectly
+   * valid XML and every local test passed.
+   *
+   * Quotes need escaping inside attribute values, not in element text, and this
+   * is only ever used for text.
+   */
+  it("never emits the entities Twilio refuses", () => {
+    const xml = say("It's Dave's \"big\" job & it costs < 5 > 2");
+
+    expect(xml).not.toContain("&apos;");
+    expect(xml).not.toContain("&quot;");
+    expect(xml).toContain("It's Dave's \"big\" job");
+  });
+
+  it("still escapes what XML genuinely requires", () => {
+    const xml = say("Tom & Jerry <plumbing>");
+
+    expect(xml).toContain("Tom &amp; Jerry");
+    expect(xml).toContain("&lt;plumbing&gt;");
+    expect(xml).not.toContain("<plumbing>");
   });
 });

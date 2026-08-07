@@ -103,18 +103,31 @@ export function escapeXml(value: string): string {
  * change it from an environment variable is worth more here than tidiness.
  */
 export function voiceName(): string {
-  return process.env.TWILIO_VOICE ?? "Polly.Niamh";
+  return (process.env.TWILIO_VOICE ?? "").trim();
 }
 
 export function say(text: string): string {
   /*
-   * No `language` attribute. A named Polly voice already determines its
-   * language, and Twilio ignores the attribute in that case — so it is one more
-   * thing that can disagree with the voice for no benefit. `<Gather>` keeps its
-   * own language, which is a different setting: that one is speech recognition,
-   * where en-IE is genuinely supported and genuinely matters.
+   * Default to no voice attribute at all, which uses Twilio's built-in voice.
+   *
+   * Two named voices were tried and both killed every call with 13520 "Say:
+   * Invalid text" — Google.en-IE-Standard-A, which does not exist because Google
+   * has no Irish English, and then Polly.Niamh, which does. Two failures with
+   * different voices and identical errors say the account cannot use custom
+   * voices at all, rather than that either name was wrong.
+   *
+   * The built-in voice is the one configuration that cannot be rejected. It
+   * sounds worse, and a receptionist that sounds plain is worth infinitely more
+   * than one that hangs up. Set TWILIO_VOICE to try a named voice again.
+   *
+   * No `language` attribute either. It is ignored whenever a named voice is
+   * set, so it only adds something able to disagree. `<Gather>` keeps its own
+   * language: that is speech recognition, where en-IE is supported and matters.
    */
-  return `<Say voice="${voiceName()}">${escapeXml(text)}</Say>`;
+  const voice = voiceName();
+  const attribute = voice ? ` voice="${voice}"` : "";
+
+  return `<Say${attribute}>${escapeXml(text)}</Say>`;
 }
 
 export function rejected(): NextResponse {

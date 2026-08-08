@@ -67,14 +67,29 @@ const WINDOW_MS = 60 * 60 * 1000;
  * of who visited the site, and an unsalted IP in a table is personal data with
  * no purpose.
  */
-function hashIp(ip: string): string {
+function hashIp(ip: string, scope: string): string {
   const salt = process.env.SUPABASE_SERVICE_ROLE_KEY ?? "flowpilot";
-  return createHash("sha256").update(`${salt}:${ip}`).digest("hex").slice(0, 32);
+  return createHash("sha256")
+    .update(`${salt}:${scope}:${ip}`)
+    .digest("hex")
+    .slice(0, 32);
 }
 
-export async function withinRateLimit(ip: string): Promise<boolean> {
+/**
+ * Requests one visitor may make in an hour, per scope.
+ *
+ * Scoped so the public demo and the product chat get their own budgets from the
+ * same table. Sharing one counter would mean somebody who tried the demo could
+ * not then ask a question, which is exactly the visitor we most want to answer.
+ * The scope is folded into the hash rather than stored as a column, so no
+ * migration is needed and the stored value still identifies nobody.
+ */
+export async function withinRateLimit(
+  ip: string,
+  scope = "demo",
+): Promise<boolean> {
   const supabase = createAdminClient();
-  const key = hashIp(ip);
+  const key = hashIp(ip, scope);
   const now = new Date();
 
   const { data: existing, error } = await supabase
@@ -94,7 +109,8 @@ export async function withinRateLimit(ip: string): Promise<boolean> {
    */
   if (error?.code === "42P01") {
     console.error(
-      "DEMO RATE LIMIT DISABLED: demo_usage table is missing. Apply the latest migration.",
+      "RATE LIMIT DISABLED: demo_usage table is missing. Apply the latest migration.",
+      { scope },
     );
     return true;
   }

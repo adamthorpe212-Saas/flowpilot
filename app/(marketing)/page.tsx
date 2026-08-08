@@ -1,4 +1,5 @@
 import Link from "next/link";
+import AskFlowPilot from "@/components/AskFlowPilot";
 import Faq from "@/components/Faq";
 import HeroShowcase from "@/components/HeroShowcase";
 import JobCard from "@/components/JobCard";
@@ -307,6 +308,10 @@ export default function Home() {
           </h2>
           <div className="mt-10">
             <Faq items={faqItems(HOME_FAQ_IDS)} />
+          </div>
+
+          <div className="mt-10">
+            <AskFlowPilot />
           </div>
         </div>
       </section>

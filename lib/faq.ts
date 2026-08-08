@@ -12,6 +12,8 @@
  * the code does not honour costs more than saying nothing.
  */
 
+import { AI_DISCLOSURE_EXAMPLE } from "@/lib/disclosure";
+
 export type FaqItem = {
   id: string;
   question: string;
@@ -29,7 +31,13 @@ const ITEMS: FaqItem[] = [
     id: "is-it-a-machine",
     question: "Will my customers know they're talking to a machine?",
     answer:
-      "Yes, because we tell them. Every call opens with \"This is an automated assistant, and I'll take notes\" before your greeting. You can't switch that off, and that's deliberate — somebody describing an emergency in their kitchen deserves to know what they're speaking to.",
+      /*
+       * Quoted from the source rather than retyped. This answer sat here still
+       * promising "This is an automated assistant, and I'll take notes" after
+       * the greeting had been rewritten — an FAQ describing words no caller
+       * hears, on the page where somebody decides whether to trust us.
+       */
+      `Yes, because we tell them. Every call opens with "${AI_DISCLOSURE_EXAMPLE}" before your own greeting. You can't switch that off, and that's deliberate — somebody describing an emergency in their kitchen deserves to know what they're speaking to.`,
   },
   {
     id: "misunderstands",
@@ -59,7 +67,7 @@ const ITEMS: FaqItem[] = [
     id: "over-allowance",
     question: "What if I go over my calls?",
     answer:
-      "We'll tell you before you get close, and your receptionist keeps answering — we never cut you off mid-month. If you're regularly over, we'll move you up a plan.",
+      "We'll tell you before you get close, and your receptionist keeps answering — we never cut you off mid-month. It's a fair-use figure, not a wall. If you're regularly well over it we'll talk to you before anything changes.",
   },
   {
     id: "time-to-live",

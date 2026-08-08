@@ -70,6 +70,31 @@ export type PurchasedNumber = {
   sid: string;
 };
 
+/**
+ * True when this particular number cannot be bought but another one might be.
+ *
+ * Irish numbers carry a locality requirement: the registered address has to sit
+ * inside the exchange area the number belongs to. Area code 01 spans Dublin
+ * city, Balbriggan, Ashbourne and a long list of villages, so a Dublin address
+ * is valid for some 01 numbers and rejected for others — Twilio only says which
+ * when you try to buy one. Treating that as a fatal error gives up on a number
+ * that was simply the wrong pick; treating it as "try the next candidate" is
+ * what actually gets a customer a number.
+ *
+ * Deliberately narrow. A missing address (21631) is a configuration fault that
+ * every candidate will hit, and retrying fifty numbers to fail fifty times
+ * helps nobody.
+ */
+export function isNumberSpecificFailure(error: unknown): boolean {
+  const code = (error as { code?: number } | null)?.code;
+
+  return (
+    code === 21615 || // no valid address for this number's locality
+    code === 21422 || // number is not available for purchase
+    code === 21421 // number is not a valid phone number
+  );
+}
+
 export async function purchaseNumber(
   phoneNumber: string,
 ): Promise<PurchasedNumber> {

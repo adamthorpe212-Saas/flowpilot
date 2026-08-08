@@ -18,6 +18,10 @@ let localNumbers: Available[] = [];
 const searches: (string | null)[] = [];
 let updateError: { message: string } | null = null;
 
+/** Numbers we asked Twilio to sell us, including the ones it refused. */
+const attempted: string[] = [];
+/** phoneNumber -> error Twilio should throw for it. */
+let rejectWith: Record<string, { code: number; message: string }> = {};
 const purchased: string[] = [];
 const released: string[] = [];
 let releaseThrows = false;
@@ -67,7 +71,12 @@ vi.mock("@/lib/twilio", () => ({
     if (areaCode) return localNumbers;
     return availableNumbers;
   },
+  isNumberSpecificFailure: (error: unknown) =>
+    [21615, 21422, 21421].includes((error as { code?: number })?.code ?? 0),
   purchaseNumber: async (phoneNumber: string) => {
+    attempted.push(phoneNumber);
+    const rejection = rejectWith[phoneNumber];
+    if (rejection) throw rejection;
     purchased.push(phoneNumber);
     return { phoneNumber, sid: `PN-${phoneNumber}` };
   },
@@ -90,6 +99,8 @@ beforeEach(() => {
   ];
   searches.length = 0;
   updateError = null;
+  attempted.length = 0;
+  rejectWith = {};
   purchased.length = 0;
   released.length = 0;
   releaseThrows = false;
@@ -237,5 +248,76 @@ describe("provisionNumber", () => {
 
     expect(result.error).toBeTruthy();
     expect(purchased).toEqual([]);
+  });
+});
+
+describe("provisionNumber and the Irish locality rule", () => {
+  /*
+   * Irish numbers require a registered address inside the exchange area the
+   * number belongs to, and an area code is far broader than an exchange: 01
+   * spans Dublin city, Balbriggan, Ashbourne and dozens of villages. Twilio only
+   * reveals which numbers a given address covers when you attempt the purchase.
+   *
+   * Found by pressing the button: a Glasnevin business was offered a Balbriggan
+   * number, Twilio refused it with 21615, and the whole step failed telling the
+   * customer to "try again in a moment" — advice that could never work.
+   */
+  const rejection = (code: number) => ({ code, message: "no valid address" });
+
+  it("moves on to the next number when one is refused on locality", async () => {
+    localNumbers = [
+      { phoneNumber: "+35318412345", friendlyName: "", locality: "Balbriggan" },
+      { phoneNumber: "+35318500001", friendlyName: "", locality: "Ashbourne" },
+      { phoneNumber: "+35319128718", friendlyName: "", locality: "Dublin" },
+    ];
+    rejectWith = {
+      "+35318412345": rejection(21615),
+      "+35318500001": rejection(21615),
+    };
+
+    const result = await provisionNumber({ error: null });
+
+    expect(attempted).toEqual(["+35318412345", "+35318500001", "+35319128718"]);
+    expect(purchased).toEqual(["+35319128718"]);
+    expect(result.error).toBeNull();
+    expect(result.phoneNumber).toBe("+35319128718");
+  });
+
+  it("stops honestly when every candidate is refused", async () => {
+    // Retrying cannot help — this needs an address covering the area, which is
+    // a decision somebody has to make. Saying "try again" would be a lie.
+    localNumbers = [
+      { phoneNumber: "+35318412345", friendlyName: "", locality: "Balbriggan" },
+      { phoneNumber: "+35318500001", friendlyName: "", locality: "Ashbourne" },
+    ];
+    rejectWith = {
+      "+35318412345": rejection(21615),
+      "+35318500001": rejection(21615),
+    };
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const result = await provisionNumber({ error: null });
+
+    expect(purchased).toEqual([]);
+    expect(result.error).toBeTruthy();
+    expect(result.error).not.toMatch(/try again/i);
+    errors.mockRestore();
+  });
+
+  it("does not grind through the list on a configuration fault", async () => {
+    // A missing address (21631) fails identically for every candidate, so
+    // fifty attempts would just be fifty identical failures.
+    localNumbers = [
+      { phoneNumber: "+35318412345", friendlyName: "", locality: "Balbriggan" },
+      { phoneNumber: "+35319128718", friendlyName: "", locality: "Dublin" },
+    ];
+    rejectWith = { "+35318412345": rejection(21631) };
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const result = await provisionNumber({ error: null });
+
+    expect(attempted).toEqual(["+35318412345"]);
+    expect(result.error).toBeTruthy();
+    errors.mockRestore();
   });
 });

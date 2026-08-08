@@ -7,12 +7,23 @@ import { createAdminClient } from "@/lib/supabase/server";
 import { shouldAnswerCalls } from "@/lib/usage";
 import {
   findAvailableIrishNumbers,
+  isNumberSpecificFailure,
   isTwilioConfigured,
   purchaseNumber,
+  type PurchasedNumber,
   releaseNumber,
 } from "@/lib/twilio";
 
 export type ProvisionState = { error: string | null; phoneNumber?: string };
+
+/**
+ * How many numbers to line up before trying to buy one.
+ *
+ * Enough that a run of wrong-exchange numbers does not exhaust the list, small
+ * enough that a genuinely unservable area fails in seconds rather than grinding
+ * through the whole inventory.
+ */
+const CANDIDATES = 10;
 
 /**
  * Buys an Irish number and attaches it to the business.
@@ -72,9 +83,11 @@ export async function provisionNumber(
      */
     const areaCode = areaCodeForServiceArea(business.service_area);
 
-    const local = areaCode ? await findAvailableIrishNumbers(1, areaCode) : [];
+    const local = areaCode
+      ? await findAvailableIrishNumbers(CANDIDATES, areaCode)
+      : [];
     const available =
-      local.length > 0 ? local : await findAvailableIrishNumbers(1);
+      local.length > 0 ? local : await findAvailableIrishNumbers(CANDIDATES);
 
     if (available.length === 0) {
       return {
@@ -83,7 +96,50 @@ export async function provisionNumber(
       };
     }
 
-    const purchased = await purchaseNumber(available[0].phoneNumber);
+    /*
+     * Try candidates in turn rather than betting everything on the first.
+     *
+     * Irish numbers carry a locality requirement, and an area code is far
+     * broader than an exchange: 01 covers Dublin city, Balbriggan, Ashbourne and
+     * dozens of villages. A Dublin address is valid for some 01 numbers and
+     * refused for others, and Twilio only says which when the purchase is
+     * attempted. Buying the first result meant a single unlucky pick — a
+     * Balbriggan exchange for a Glasnevin business — failed the whole step with
+     * "try again in a moment", which was never going to help.
+     *
+     * A refused purchase costs nothing, so working down the list is free.
+     */
+    let purchased: PurchasedNumber | null = null;
+    let lastRejection: unknown = null;
+
+    for (const candidate of available) {
+      try {
+        purchased = await purchaseNumber(candidate.phoneNumber);
+        break;
+      } catch (error) {
+        if (!isNumberSpecificFailure(error)) throw error;
+        lastRejection = error;
+      }
+    }
+
+    if (!purchased) {
+      /*
+       * Every candidate was refused on locality. Retrying changes nothing —
+       * this needs a registered address covering the area, which is a decision
+       * somebody has to make rather than a wobble that passes.
+       */
+      console.error("No candidate number could be bought for this address", {
+        businessId: business.id,
+        areaCode,
+        tried: available.length,
+        lastRejection,
+      });
+
+      return {
+        error:
+          "We couldn't get you a number for your area. We've been told and we're sorting it — you don't need to do anything.",
+      };
+    }
 
     /*
      * Admin client, deliberately.

@@ -170,10 +170,18 @@ export default async function BillingPage({
         </section>
       )}
 
+      {/*
+        Built as one string rather than an expression sitting next to text.
+        Rendered live, this line came out as "14days free on any plan" — React
+        received the number and the words as separate children with the space
+        between them gone, even though the source has it and the identical
+        pattern on the pricing page renders correctly. Rather than leave copy
+        that reads as a typo on the page where somebody is deciding whether to
+        pay, the value and its unit are now a single string, which cannot be
+        split by whitespace handling wherever it runs.
+      */}
       <p className="mt-8 text-xs text-zinc-500">
-        {TRIAL_DAYS} days free on any plan. Prices exclude VAT. Cancel any time —
-        your receptionist keeps answering until the end of the month you&apos;ve
-        paid for.
+        {`${TRIAL_DAYS} days free on any plan. Prices exclude VAT. Cancel any time — your receptionist keeps answering until the end of the month you've paid for.`}
       </p>
     </div>
   );

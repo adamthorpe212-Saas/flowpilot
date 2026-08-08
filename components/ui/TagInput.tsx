@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { addTags } from "@/lib/tags";
 
 /**
  * Comma-or-Enter separated list with a live chip preview.
@@ -26,16 +27,7 @@ export default function TagInput({
   const [draft, setDraft] = useState("");
 
   function commit(raw: string) {
-    const additions = raw
-      .split(",")
-      .map((entry) => entry.trim())
-      .filter(Boolean)
-      .filter(
-        (entry) =>
-          !tags.some((tag) => tag.toLowerCase() === entry.toLowerCase()),
-      );
-
-    if (additions.length > 0) setTags([...tags, ...additions]);
+    setTags((current) => addTags(current, raw));
     setDraft("");
   }
 
@@ -45,7 +37,21 @@ export default function TagInput({
         {label}
       </label>
 
-      <input type="hidden" name={name} value={tags.join(", ")} />
+      {/*
+        Submits what has been typed as well as what has been committed.
+
+        Someone who types an area and presses "Save and continue" without first
+        pressing Enter has plainly told us that area. Submitting only `tags`
+        lost it: the blur handler commits, but the form posts before React has
+        re-rendered this field, so the value that travelled was the one from
+        before the blur. With a single area typed that way, the server saw an
+        empty list and answered "Add at least one area you cover" — while the
+        area sat there on screen, which makes the product look broken and the
+        customer look wrong.
+
+        Folding the draft in here removes the race rather than trying to win it.
+      */}
+      <input type="hidden" name={name} value={addTags(tags, draft).join(", ")} />
 
       <input
         id={name}

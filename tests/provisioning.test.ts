@@ -115,51 +115,29 @@ describe("provisionNumber", () => {
     expect(purchased).toEqual(["+353870000001"]);
   });
 
-  it("searches the business's own area code first", async () => {
+  it("always searches the area the regulatory bundle covers", async () => {
     /*
-     * Twilio's Irish inventory skews rural — an unfiltered search returns
-     * Portumna and Skibbereen long before Dublin. A Dublin plumber whose
-     * FlowPilot number is a Galway landline looks to their own customers like a
-     * call centre, so the narrowed search has to come first.
+     * Not the customer's area. The FlowPilot number arrives by call
+     * forwarding and is never dialled or displayed, so a Cork electrician
+     * with a Dublin number loses nothing — while Twilio would refuse every
+     * Cork number outright, because the registered address is in Dublin.
      */
-    business = makeBusiness({ service_area: ["Raheny", "Clontarf"] });
-    localNumbers = [
-      { phoneNumber: "+35319128718", friendlyName: "+35319128718", locality: "Dublin" },
-    ];
-    availableNumbers = [
-      { phoneNumber: "+353909716004", friendlyName: "+353909716004", locality: "Portumna" },
-    ];
-
-    const result = await provisionNumber({ error: null });
-
-    expect(searches).toEqual(["01"]);
-    expect(result.phoneNumber).toBe("+35319128718");
-    expect(purchased).toEqual(["+35319128718"]);
-  });
-
-  it("falls back to any Irish number when the local area is sold out", async () => {
-    // A number in the wrong county still answers every call. No number at all
-    // is the only genuinely broken outcome, so the fallback is not a failure.
-    business = makeBusiness({ service_area: ["Kinsale"] });
-    localNumbers = [];
-    availableNumbers = [
-      { phoneNumber: "+353909716004", friendlyName: "+353909716004", locality: "Portumna" },
-    ];
-
-    const result = await provisionNumber({ error: null });
-
-    expect(searches).toEqual(["021", null]);
-    expect(result.error).toBeNull();
-    expect(purchased).toEqual(["+353909716004"]);
-  });
-
-  it("skips the narrowed search when the service area means nothing to us", async () => {
-    // No point spending a round trip on a lookup that cannot match.
-    business = makeBusiness({ service_area: ["all over"] });
+    business = makeBusiness({ service_area: ["Kinsale", "Cork"] });
 
     await provisionNumber({ error: null });
 
-    expect(searches).toEqual([null]);
+    expect(searches).toEqual(["01"]);
+  });
+
+  it("follows TWILIO_NUMBER_AREA when the bundle moves", async () => {
+    // The area follows the registered address, so a second bundle elsewhere
+    // must not need a code change.
+    process.env.TWILIO_NUMBER_AREA = "021";
+
+    await provisionNumber({ error: null });
+
+    expect(searches).toEqual(["021"]);
+    delete process.env.TWILIO_NUMBER_AREA;
   });
 
   it("does not buy a second number for a business that has one", async () => {

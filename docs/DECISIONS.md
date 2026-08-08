@@ -99,10 +99,10 @@ Start now (it takes weeks) but do not block build work on it — pilots are a
 handful of numbers.
 
 *ANSWERED against the live API, 2026-08-06 — Irish voice numbers are real and buyable.*
-Queried directly with FlowPilot's own credentials, not the console. All 44
-geographic area codes in `lib/irish-numbers.ts` return live inventory, Dublin
-included (`+3531*` → Dublin, Tallaght, Balbriggan). $1.80/month rental,
-$0.010/minute inbound. `addressRequirements: "local"` on every number.
+Queried directly with FlowPilot's own credentials, not the console. All 44 Irish
+geographic area codes return live inventory, Dublin included (`+3531*` → Dublin,
+Tallaght, Balbriggan). $1.80/month rental, $0.010/minute inbound.
+`addressRequirements: "local"` on every number.
 
 *ANSWERED, 2026-08-06 — sub-assignment is an anticipated case, not a prohibited one.*
 The `Ireland: Local - Business` regulation
@@ -130,9 +130,10 @@ Twilio refused. It rejects in sequence, each error hiding the next:
 3. `21649 Bundle required and not provided for country: [IE]` — and then, on top
    of a valid locality-matching address, an approved regulatory bundle.
 
-So the locality reading was the correct one, and it does mean an address covers
-only its own area. Selling nationally therefore needs a customer's own address
-on file, which is a change to onboarding rather than a question about it.
+So the locality reading was the correct one: an address covers only its own area.
+The obvious conclusion — collect every customer's address so each can have a
+local number — was then rejected, because nobody ever sees the FlowPilot number.
+See D7.
 
 The Individual regulation is materially lighter than the Business one — photo ID
 and a proof of address, no CRO number, no company. FlowPilot's first bundle
@@ -391,116 +392,48 @@ person and fumbles.
 
 ---
 
-## D7 — A customer's number matches the area they work in
+## D7 — Numbers are bought where the bundle allows, not where the customer works
 
-**Status:** Decided, implemented
+**Status:** Decided, implemented. Supersedes an earlier decision that did the opposite.
 **Phase:** 2 · provisioning
 
 **Decision**
-Provisioning searches Twilio's Irish inventory narrowed to the landline prefix
-for the first place in the business's `service_area`, and only falls back to an
-unfiltered national search if that area has nothing free.
+Provisioning searches one area code — the one FlowPilot's regulatory bundle
+covers, set by  and defaulting to Dublin. It does not
+consider where the customer works.
 
-**Why**
-Twilio's Irish inventory is heavily weighted towards small rural exchanges. An
-unfiltered search returns Portumna, Scarriff and Skibbereen long before anything
-urban — a sample of 30 contained no Dublin number at all. Buying the first
-result would have handed a Dublin plumber a Galway landline. To that plumber's
-own customers, an unfamiliar area code on a "local" tradesperson reads as a call
-centre or a scam, which attacks the one thing the product is selling. The number
-is the most public artefact FlowPilot gives a business.
+**Why the earlier decision was wrong**
+D7 originally matched the number to the business's own service area, justified
+on the grounds that "the number is the most public artefact FlowPilot gives a
+business". That is false. Calls reach FlowPilot by conditional forwarding: the
+caller dials the tradesperson's own number, and the FlowPilot number is never
+dialled, displayed or advertised. Nobody outside the product ever sees it, so a
+Cork electrician holding a Dublin number costs nothing.
 
-**How**
-`lib/irish-numbers.ts` maps counties, cities, Dublin postal districts and the
-larger suburbs to the 44 geographic area codes. Twilio's own `areaCode` search
-parameter does not work for Ireland — variable-length codes make it return
-nothing — so the prefix goes through `contains` as `+353<code without trunk 0>*`.
-All 44 codes were verified to return live inventory on 2026-08-06.
+The mistake was reasoning from an analogy — an unfamiliar area code looks like a
+call centre — without checking whether anyone was in a position to see it.
 
-**Tradeoff — accepted**
-An unrecognised service area costs one wasted round trip and falls back to a
-national search. A working number in the wrong county still answers every call;
-no number at all is the only genuinely broken outcome, so the fallback never
-blocks provisioning.
+**Why it also became actively harmful**
+Twilio requires a registered address inside the exchange area of the number
+being bought. With one Dublin bundle, searching a Cork customer's area produced
+ten guaranteed rejections followed by a national fallback that mostly failed
+too: slower, and sometimes no number at all. The feature moved from useless to
+damaging the moment the compliance requirement was understood.
 
----
+**What was removed**
+A map of counties, cities, Dublin postal districts and suburbs to the 44 Irish
+area codes, and its tests. It is in the git history if regional numbers ever
+earn their place. What survives is the candidate retry (a Dublin address covers
+some 01 exchanges and not others, so ten are tried in turn) and the trunk-zero
+search pattern, which is still needed and still easy to get silently wrong.
 
-## D8 — Legibility floor: zinc-400 for body, zinc-500 for hints
-
-**Status:** Decided, implemented
-**Phase:** ongoing · applies to every new screen
-
-**Decision**
-On the black background, `text-zinc-400` is the dimmest colour for anything a
-customer needs to read, and `text-zinc-500` the dimmest for hints and captions.
-`text-zinc-600` is not used for text at all.
-
-**Why**
-Measured in the browser against WCAG AA (4.5:1 for normal text): `zinc-400`
-scores 8.0, `zinc-500` 4.22–4.35, and `zinc-600` **2.64**. Tradespeople read
-this product on a phone, outdoors, in daylight — the population least able to
-absorb a contrast deficit, on the device where it bites hardest. The previous
-palette used `zinc-600` for form hints, captions and the footer.
-
-**Tradeoff — accepted, knowingly**
-`zinc-500` still misses AA by roughly 0.2. Closing that gap means flooring the
-whole palette at `zinc-400`, which collapses two levels of hierarchy into one
-and lightens the site noticeably. The owner chose to keep the hierarchy and
-accept a fractional miss on the dimmest tier. Revisit if a customer ever reports
-difficulty, and do not push anything below `zinc-500` in the meantime.
-
-**Related**
-Touch targets are 44px on the lifecycle ring markers, the demo suggestion chips
-and the mobile menu button — the visible dot on the ring stays 24px inside a
-44px button, so the design is unchanged and the tap area is not.
-
----
-
-## D9 — Every caller is told it is a machine, and that it takes notes
-
-**Status:** Decided, implemented
-**Phase:** 2 · applies to every call
-
-**Decision**
-`openingLine()` always leads with a fixed disclosure — *"This is an automated
-assistant, and I'll take notes."* — before the business's own greeting. It is
-not editable, not toggleable, and lives in `lib/disclosure.ts` so the settings
-screen quotes the same string the caller hears rather than a second copy of it.
-
-**Why**
-Until now a caller heard a greeting, described their emergency, and had every
-word transcribed by Twilio, sent to a model and stored indefinitely — without
-being told any of it was happening, or that they were not talking to a person.
-
-Two obligations, both live:
-- **EU AI Act, Article 50** transparency duties apply from 2 August 2026. A
-  person interacting with an AI system has to be informed of it. Ireland is in
-  scope and the date has passed.
-- **GDPR and the Irish ePrivacy Regulations** — the caller is a data subject
-  whose personal data (name, address, phone number, what is wrong with their
-  house) is captured and retained. Silence is not a lawful basis.
-
-**Why it is not configurable**
-Same reasoning as `phone_number` being revoked from customer UPDATE: the cost of
-getting it wrong falls on the caller and on FlowPilot, not on the person who
-would be turning it off. It is also in the business's own interest — their
-customer is the one who would otherwise find out afterwards, and it would be
-their reputation, not ours, that took it.
-
-**Tradeoff — accepted**
-One extra clause before somebody with water coming through the ceiling can speak.
-Kept to a single short sentence for exactly that reason; a call-centre preamble
-would not be acceptable here.
-
-**Still outstanding — needs a solicitor, not an engineer**
-This covers the spoken disclosure only. FlowPilot still has **no privacy policy,
-no terms of service, and no Article 28 data processing agreement** with the
-businesses whose callers it processes. FlowPilot is a processor acting for each
-business and a controller of its own account data; the DPA is a legal
-requirement, not a nicety, and Stripe will also expect published terms and a
-cancellation policy before a live account. The public site carries no company
-identity at all — no registered name, address or CRO number — which is both a
-disclosure requirement and the reason a stranger hesitates to enter a card.
+**Consequence for scale — accepted for now**
+One bundle covers one area, so every customer gets a Dublin number regardless of
+where they trade. The case where this shows is a customer who skips forwarding
+and publishes the FlowPilot number as their own line; that is a support
+conversation, not an architecture. Irish geographic numbers are nominally tied
+to their region, which is worth raising with Twilio, but since the number is
+never published the exposure is low.
 
 ---
 

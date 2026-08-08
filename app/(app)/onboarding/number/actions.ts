@@ -2,7 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { getCurrentBusiness } from "@/lib/auth";
-import { areaCodeForServiceArea } from "@/lib/irish-numbers";
+import { bundleAreaCode } from "@/lib/irish-numbers";
 import { createAdminClient } from "@/lib/supabase/server";
 import { shouldAnswerCalls } from "@/lib/usage";
 import {
@@ -69,25 +69,21 @@ export async function provisionNumber(
 
   try {
     /*
-     * Match the number to where the business actually works.
+     * Buy where the bundle allows, not where the customer happens to work.
      *
-     * Twilio's Irish inventory skews rural, so an unfiltered search hands a
-     * Dublin plumber a Galway landline — and to that plumber's customers, an
-     * area code from the other side of the country reads as a call centre. The
-     * number is the most public thing FlowPilot gives a business, so it is
-     * worth a second search to get right.
-     *
-     * The fallback is deliberate rather than a failure: a working number in the
-     * wrong county still answers every call, and a business with no number at
-     * all is the only genuinely broken outcome.
+     * The FlowPilot number is never dialled by anyone: calls arrive by
+     * conditional forwarding, so a caller rings the business's own number and
+     * this one stays invisible. Matching it to the customer's county was
+     * therefore solving a problem nobody has — and once the regulatory bundle
+     * existed it made things worse, because Twilio requires a registered
+     * address inside the number's own exchange area. Searching a Cork
+     * customer's area with a Dublin address meant ten guaranteed rejections
+     * before a national fallback that mostly failed too.
      */
-    const areaCode = areaCodeForServiceArea(business.service_area);
-
-    const local = areaCode
-      ? await findAvailableIrishNumbers(CANDIDATES, areaCode)
-      : [];
-    const available =
-      local.length > 0 ? local : await findAvailableIrishNumbers(CANDIDATES);
+    const available = await findAvailableIrishNumbers(
+      CANDIDATES,
+      bundleAreaCode(),
+    );
 
     if (available.length === 0) {
       return {
@@ -104,8 +100,8 @@ export async function provisionNumber(
      * dozens of villages. A Dublin address is valid for some 01 numbers and
      * refused for others, and Twilio only says which when the purchase is
      * attempted. Buying the first result meant a single unlucky pick — a
-     * Balbriggan exchange for a Glasnevin business — failed the whole step with
-     * "try again in a moment", which was never going to help.
+     * Balbriggan exchange against a Glasnevin address — failed the whole step
+     * with "try again in a moment", which was never going to help.
      *
      * A refused purchase costs nothing, so working down the list is free.
      */
@@ -130,14 +126,14 @@ export async function provisionNumber(
        */
       console.error("No candidate number could be bought for this address", {
         businessId: business.id,
-        areaCode,
+        areaCode: bundleAreaCode(),
         tried: available.length,
         lastRejection,
       });
 
       return {
         error:
-          "We couldn't get you a number for your area. We've been told and we're sorting it — you don't need to do anything.",
+          "We couldn't get you a number just now. We've been told and we're sorting it — you don't need to do anything.",
       };
     }
 

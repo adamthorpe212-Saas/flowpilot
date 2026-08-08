@@ -154,63 +154,77 @@ Irish numbers remain what customers actually ring. The UK mobile is a testing
 and sending number held by FlowPilot, never handed to a customer.
 
 
-The account is currently **Trial**. A trial account can only call numbers you
-have verified in advance and plays a Twilio message before every call, so it
-cannot answer a customer's phone. Console → **Billing → Upgrade**.
+**Done, 2026-08-08.** The account is `Full` and funded. Upgrading requires a
+customer profile with photo ID before the card step — an individual profile is
+enough, and no VAT number is needed. Left here because it is the first thing a
+second account would need, and because nothing else in section C is worth
+starting until it is done.
 
-Nothing else in section C is worth starting until this is done.
+A trial account can only call numbers verified in advance and plays a Twilio
+message before every call, so it cannot answer a customer's phone.
 
-### C1. Regulatory bundle — start this next, it takes days
+### C1. Regulatory bundle — the one real blocker, allow about a week
 
-Twilio Console → **Phone Numbers → Regulatory Compliance → Bundles**. Create a
-Business bundle for **Ireland / Local**.
+Twilio Console → **Phone Numbers → Regulatory Compliance → Bundles** →
+**Create a Regulatory Bundle**, country **Ireland**, type **Local**.
 
-Verified against the API on 2026-08-06, the regulation
-(`Ireland: Local - Business`) asks for exactly these:
+Take the Local type, not Mobile. Ireland has no mobile inventory at all, so a
+mobile bundle protects nothing you can buy.
 
-| Field | Value |
-| --- | --- |
-| Business name | Your registered company name |
-| Business website | The FlowPilot URL |
-| Business registration number | Your CRO number, e.g. `123456` |
-| Authorised representative | First name, last name, contact email — must be a senior person responsible for phone numbers |
-| Business classification | `INDEPENDENT_SOFTWARE_VENDOR` |
-| Is this number assigned to the end customer? | `YES` |
+**Twilio refuses a purchase in three stages, and each error hides the next.**
+Learned by attempting one on 2026-08-08 rather than from the documentation:
 
-Those last two are not a judgement call. Twilio's own definitions describe an
-ISV as a business that "uses this phone number in a product that you sell to
-your customers", and sub-assignment as "where an ISV assigns the phone number to
-their end customer". That is exactly what FlowPilot does, and the field offering
-`YES` is what tells us the model is anticipated rather than prohibited.
+| Error | Means | Fix |
+| --- | --- | --- |
+| `21631` Phone Number Requires an Address | No Address resource exists | Create one — API, instant, no review |
+| `21615` No valid address created for: *(a list of towns)* | The Address is outside that number's exchange area | Try a different number, or register an address in that area |
+| `21649` Bundle required and not provided | Address is fine; now the bundle is missing | This section |
 
-You also need a **Proof of Address** document. Twilio's wording: "Must include
-Eircode and be within locality or region covered by the phone number's prefix; a
-PO Box is not acceptable."
+The middle one is why provisioning tries ten candidates: area code 01 spans
+Dublin city, Balbriggan and dozens of villages, and one address covers some
+exchanges but not others. Twilio only says which when you try to buy.
 
-**Ask Twilio compliance this before buying the first number**, because the
-answer decides whether onboarding has to collect a business address:
+**Choose Individual unless you have a registered company.** The two regulations
+differ sharply:
 
-> We are an ISV provisioning Irish local numbers on behalf of Irish business
-> customers (`is_subassigned = YES`). Must the Address attached at purchase be
-> the end customer's own business address in the number's locality, or does a
-> single ISV Address on the bundle permit purchasing across all Irish area
-> codes?
+| | Business | Individual |
+| --- | --- | --- |
+| Identity | Company name, website, **CRO number**, authorised representative | First name, last name, email |
+| Documents | Proof of address | **Photo ID** and proof of address |
 
-- **Single address covers everything** — nothing changes, provisioning stays
-  instant, and onboarding keeps its current fields.
-- **Per-customer address** — onboarding gains a business address with Eircode,
-  and provisioning creates a Twilio Address per customer before purchase.
+Both then ask two questions that are not judgement calls for FlowPilot:
+
+- **Business classification** — `INDEPENDENT_SOFTWARE_VENDOR`. Twilio defines it
+  as a business that "uses this phone number in a product that you sell to your
+  customers".
+- **Sub-assign to end customers** — `YES`. Defined as "where an ISV assigns the
+  phone number to their end customer". The field offering `YES` is what tells us
+  the model is anticipated rather than prohibited.
+
+Proof of address must "include Eircode and be within locality or region covered
+by the phone number's prefix; a PO Box is not acceptable". A utility bill, tax
+notice, bank statement or a licence showing the address all qualify.
+
+**The address decides which numbers you can buy, and that is the whole of it.**
+A Dublin address buys Dublin numbers. That does not restrict who you can sell
+to: the FlowPilot number arrives by call forwarding and is never dialled or
+displayed, so a Cork electrician holding a Dublin number loses nothing (D7).
+Set `TWILIO_NUMBER_AREA` to the area your bundle covers — it defaults to `01`.
+
+Identity type cannot be changed after submission, but an account may hold
+several bundles. Start Individual today; add a Business bundle when the company
+exists, which the terms and the DPA require anyway.
 
 Once approved, add to Vercel:
 
 - `TWILIO_ADDRESS_SID`
 - `TWILIO_BUNDLE_SID`
 
-Provisioning passes both through when present and works without them in test.
+Numbers are $1.80/month with $0.010/minute inbound, and inventory exists in all
+44 Irish area codes.
 
-Numbers themselves are $1.80/month with $0.010/minute inbound, and inventory
-exists in all 44 Irish area codes — provisioning picks one matching the area the
-business works in (D7).
+**Status:** `FlowPilot Ireland Local` (`BUf540f6edf1b5f4f9d3b2c5ee829fc9da`)
+submitted 2026-08-08, Individual, in review. Twilio quotes 7 days.
 
 ### C2. SMS sender — also start early, ComReg registration takes time
 
@@ -395,19 +409,28 @@ going over. That is deliberate — the pricing page promises "we never cut you o
 mid-month" — though it does mean a Starter customer could take Business-level
 volume indefinitely without paying for it. Revisit if anyone actually does.
 
-**Nothing has run against a real phone line.** 227 tests pass, including a set
-that drives the real webhook handlers through a whole simulated call with fakes
-only at the database, Twilio and model boundaries. Those have caught several
-bugs that would otherwise have shipped silently — notifications never sent for
-completed calls, and a model failure hanging up on a live caller. But the first
-genuine run through section E is still where remaining bugs will surface.
+**Real calls work; real forwarding is still unproven.** 257 tests pass, but the
+things that mattered were found by ringing the number on 2026-08-07. Three bugs
+that every test had missed: the reply was read from the wrong content block so
+every call fell to the fallback line, assistant turns were fed back in a shape
+that stopped the model replying in JSON so every call died on turn two, and
+Twilio refused a text-to-speech voice with an error naming the text rather than
+the voice. All three are fixed and a full call now runs end to end — conversation
+captured, lead stored with name and address, both texts delivered.
 
-**The Twilio account is still a trial account.** Trial accounts can only call
-numbers you have verified in advance, and Twilio prepends its own recorded
-message to every call. Neither is acceptable in front of a customer, so this has
-to be upgraded before the first paying signup — not before testing. Verified
-against the API on 2026-08-06, along with the fact that Irish voice numbers are
-available in all 44 area codes at $1.80/month.
+What has *not* run is a carrier actually forwarding a call. Section E's
+forwarding test rings the customer's mobile from the FlowPilot number and waits
+for the carrier to forward it back, which means the inbound leg arrives with
+`From` equal to `To`. Twilio blocks a number calling itself elsewhere — error
+`13225`, hit on 2026-08-07 attempting exactly that shape — so this step may need
+rethinking. It is the last untested link and the likeliest source of the next
+surprise.
+
+**Stripe is live in test mode and proven.** Three products, a webhook on four
+events, and a real subscription created through checkout that flipped the
+account to active — via the signed webhook, not the browser redirect, which is
+the distinction that matters. Switching to live keys is the remaining step, and
+Stripe will want published terms first.
 
 **Voice is turn-based.** Twilio `<Gather>` rather than ConversationRelay, so
 there is a pause between the caller finishing and the reply, and no barge-in.

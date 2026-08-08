@@ -7,7 +7,7 @@ import {
 } from "@/app/(app)/settings/voice-actions";
 import FormError from "@/components/ui/FormError";
 import SubmitButton from "@/components/ui/SubmitButton";
-import { AI_DISCLOSURE } from "@/lib/disclosure";
+import { AI_DISCLOSURE_EXAMPLE } from "@/lib/disclosure";
 import type { BusinessProfile } from "@/types/database";
 
 const INITIAL: VoiceState = { error: null };
@@ -78,7 +78,7 @@ export default function VoiceForm({
         <p className="mt-3 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-xs leading-5 text-zinc-400" data-testid="ai-disclosure-note">
           Every call opens with{" "}
           <span className="text-white">
-            &ldquo;{AI_DISCLOSURE}&rdquo;
+            &ldquo;{AI_DISCLOSURE_EXAMPLE}&rdquo;
           </span>{" "}
           before your greeting. That stays on: callers have to be told
           they&apos;re speaking to a machine and that the call is written down.

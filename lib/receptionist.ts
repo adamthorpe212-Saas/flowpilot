@@ -1,6 +1,6 @@
 import "server-only";
 
-import { AI_DISCLOSURE } from "@/lib/disclosure";
+import { aiDisclosure } from "@/lib/disclosure";
 import type {
   BusinessProfile,
   QualificationQuestion,
@@ -316,9 +316,16 @@ export async function nextReply(
  * greeting a business might write.
  */
 export function openingLine(context: ReceptionistContext): string {
+  /*
+   * The business's own words come last, so an owner who writes a greeting gets
+   * the sentence the caller is left holding — which is the one that decides
+   * what they say next. The default asks an open question rather than
+   * announcing a missed call: a caller who rang a plumber knows they rang a
+   * plumber, and "sorry we missed you" opens on an apology for something the
+   * caller has not yet complained about.
+   */
   const greeting =
-    context.profile.greeting?.trim() ||
-    `Hello, ${context.businessName}. Sorry we missed your call. What can I help you with?`;
+    context.profile.greeting?.trim() || "What can we help you with?";
 
-  return `${AI_DISCLOSURE} ${greeting}`;
+  return `${aiDisclosure(context.businessName)} ${greeting}`;
 }

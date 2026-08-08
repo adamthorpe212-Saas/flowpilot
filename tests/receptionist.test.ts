@@ -169,13 +169,6 @@ describe("nextReply when the model misbehaves", () => {
   });
 });
 
-/**
- * The disclosure is a compliance control, not copy.
- *
- * A caller has to be told they are speaking to a machine and that what they say
- * is written down and kept. These tests exist so that removing it takes a
- * deliberate act rather than a tidy-up of the greeting.
- */
 describe("talking to the real API shape", () => {
   const context = {
     businessName: "O'Brien Plumbing",
@@ -264,6 +257,13 @@ describe("talking to the real API shape", () => {
   });
 });
 
+/**
+ * The disclosure is a compliance control, not copy.
+ *
+ * A caller has to be told they are speaking to a machine and that what they say
+ * is written down and kept. These tests exist so that removing it takes a
+ * deliberate act rather than a tidy-up of the greeting.
+ */
 describe("openingLine", () => {
   function contextWith(greeting: string | null) {
     return {
@@ -289,19 +289,20 @@ describe("openingLine", () => {
 
   it("discloses the assistant before the business's own greeting", async () => {
     const { openingLine } = await import("@/lib/receptionist");
-    const { AI_DISCLOSURE } = await import("@/lib/disclosure");
-    const line = openingLine(contextWith("Hello, O'Brien Plumbing — what's up?"));
+    const line = openingLine(contextWith("Grand, what's up?"));
 
-    expect(line).toContain(AI_DISCLOSURE);
-    // Before, not after: somebody should know before they describe an emergency,
-    // and greetings usually end in a question the disclosure must not follow.
-    expect(line.indexOf(AI_DISCLOSURE)).toBe(0);
+    // Before, not after: somebody should know before they describe an
+    // emergency, and a greeting usually ends in a question that a disclosure
+    // must not follow.
+    expect(line.indexOf("automated assistant")).toBeGreaterThan(-1);
+    expect(line.indexOf("automated assistant")).toBeLessThan(
+      line.indexOf("what's up?"),
+    );
     expect(line).toContain("what's up?");
   });
 
   it("cannot be switched off by writing a custom greeting", async () => {
     const { openingLine } = await import("@/lib/receptionist");
-    const { AI_DISCLOSURE } = await import("@/lib/disclosure");
 
     for (const greeting of [
       "Dave here, go ahead.",
@@ -309,24 +310,41 @@ describe("openingLine", () => {
       "   ",
       "No robots here, you're talking to a person.",
     ]) {
-      expect(openingLine(contextWith(greeting))).toContain(AI_DISCLOSURE);
+      expect(openingLine(contextWith(greeting))).toContain(
+        "automated assistant",
+      );
     }
   });
 
   it("still discloses when no greeting is configured at all", async () => {
     const { openingLine } = await import("@/lib/receptionist");
-    const { AI_DISCLOSURE } = await import("@/lib/disclosure");
     const line = openingLine(contextWith(null));
 
-    expect(line).toContain(AI_DISCLOSURE);
+    expect(line).toContain("automated assistant");
     expect(line).toContain("O'Brien Plumbing");
   });
 
   it("says both of the things it has to say", async () => {
-    const { AI_DISCLOSURE } = await import("@/lib/disclosure");
+    const { aiDisclosure } = await import("@/lib/disclosure");
+    const line = aiDisclosure("O'Brien Plumbing").toLowerCase();
 
-    // That it is a machine, and that the call is being written down.
-    expect(AI_DISCLOSURE.toLowerCase()).toContain("automated");
-    expect(AI_DISCLOSURE.toLowerCase()).toContain("notes");
+    // That it is a machine, and that what the caller says is written down.
+    expect(line).toContain("automated");
+    expect(line).toMatch(/take your details|notes/);
+  });
+
+  it("opens like a person rather than a warning label", async () => {
+    /*
+     * The wording used to be "This is an automated assistant, and I'll take
+     * notes." — accurate, and it greeted somebody's customer like a legal
+     * notice. It has to still disclose, but a caller should not feel they have
+     * reached a machine that resents them.
+     */
+    const { aiDisclosure } = await import("@/lib/disclosure");
+    const line = aiDisclosure("O'Brien Plumbing");
+
+    expect(line.startsWith("Thanks for calling")).toBe(true);
+    expect(line).toContain("O'Brien Plumbing");
+    expect(line).not.toMatch(/^This is an automated assistant/);
   });
 });

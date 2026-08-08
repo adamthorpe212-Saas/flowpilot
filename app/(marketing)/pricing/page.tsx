@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Faq from "@/components/Faq";
 import { PRICING_FAQ_IDS, faqItems } from "@/lib/faq";
-import { formatPrice, PLANS, TRIAL_DAYS } from "@/lib/plans";
+import { formatPrice, soldPlan, TRIAL_DAYS } from "@/lib/plans";
 
 export const metadata: Metadata = {
   title: "Pricing — FlowPilot",
@@ -11,6 +11,8 @@ export const metadata: Metadata = {
 };
 
 export default function PricingPage() {
+  const plan = soldPlan();
+
   return (
     <>
       <section className="px-5 pb-4 pt-24 sm:px-6 sm:pt-28">
@@ -24,73 +26,61 @@ export default function PricingPage() {
         </div>
       </section>
 
+      {/*
+        One plan, one price. A tier table asks a tradesperson to work out which
+        version of the product they are, before they know what the product is —
+        and every tier we do not sell is a decision we have handed to somebody
+        who has no basis to make it.
+      */}
       <section className="px-5 py-10 sm:px-6 sm:py-14">
-        <div className="mx-auto grid max-w-5xl gap-4 md:grid-cols-3">
-          {PLANS.map((plan) => (
-            <div
-              key={plan.id}
-              className={`relative flex flex-col rounded-2xl border p-6 ${
-                plan.highlighted
-                  ? "border-white/35 bg-white/[0.05]"
-                  : "border-white/10 bg-white/[0.02]"
-              }`}
+        <div className="mx-auto max-w-lg">
+          <div className="rounded-3xl border border-white/15 bg-white/[0.03] p-7 sm:p-9">
+            <h2 className="text-lg font-semibold">{plan.name}</h2>
+            <p className="mt-1 text-sm leading-5 text-zinc-400">
+              {plan.tagline}
+            </p>
+
+            <p className="mt-6 flex items-baseline gap-1.5">
+              <span className="text-5xl font-semibold tracking-tight">
+                {formatPrice(plan)}
+              </span>
+              <span className="text-sm text-zinc-400">/month</span>
+            </p>
+
+            <Link
+              href={`/signup?plan=${plan.id}`}
+              className="mt-7 flex min-h-12 items-center justify-center rounded-full bg-white px-5 text-[15px] font-semibold text-black transition hover:bg-zinc-200"
             >
-              {plan.highlighted && (
-                <span className="absolute -top-3 left-6 rounded-full bg-white px-3 py-1 text-xs font-medium text-black">
-                  Most popular
-                </span>
-              )}
+              Get FlowPilot
+            </Link>
 
-              <h2 className="text-lg font-semibold">{plan.name}</h2>
-              <p className="mt-1 min-h-[2.5rem] text-sm leading-5 text-zinc-400">
-                {plan.tagline}
-              </p>
+            <ul className="mt-8 space-y-3.5 text-sm">
+              {plan.features.map((feature) => (
+                <li key={feature} className="flex gap-3 text-zinc-300">
+                  <svg
+                    aria-hidden="true"
+                    viewBox="0 0 20 20"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    className="mt-0.5 h-4 w-4 flex-none text-zinc-400"
+                  >
+                    <path d="m4 10 4 4 8-8" />
+                  </svg>
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
 
-              <p className="mt-5 flex items-baseline gap-1">
-                <span className="text-4xl font-semibold tracking-tight">
-                  {formatPrice(plan)}
-                </span>
-                <span className="text-sm text-zinc-400">/month</span>
-              </p>
-
-              <Link
-                href={`/signup?plan=${plan.id}`}
-                className={`mt-6 rounded-full px-5 py-3 text-center text-sm font-semibold transition ${
-                  plan.highlighted
-                    ? "bg-white text-black hover:bg-zinc-200"
-                    : "border border-white/20 text-white hover:bg-white/5"
-                }`}
-              >
-                Start free trial
-              </Link>
-
-              <ul className="mt-7 space-y-3 text-sm">
-                {plan.features.map((feature) => (
-                  <li key={feature} className="flex gap-3 text-zinc-300">
-                    <svg
-                      aria-hidden="true"
-                      viewBox="0 0 20 20"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="mt-0.5 h-4 w-4 flex-none text-zinc-400"
-                    >
-                      <path d="m4 10 4 4 8-8" />
-                    </svg>
-                    <span>{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          <p className="mt-6 text-center text-xs leading-5 text-zinc-400">
+            Prices exclude VAT. Your Irish number and every call are included —
+            no per-minute charges on top. Fair use is {plan.callAllowance}{" "}
+            answered calls a month, and we will never cut you off mid-month.
+          </p>
         </div>
-
-        <p className="mx-auto mt-8 max-w-2xl text-center text-xs text-zinc-500">
-          Prices exclude VAT. Your Irish number and all calls are included —
-          there are no per-minute charges on top.
-        </p>
       </section>
 
       <section className="border-t border-white/10 px-5 py-16 sm:px-6 sm:py-20">

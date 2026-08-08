@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getCurrentBusiness } from "@/lib/auth";
-import { formatPrice, getPlan, PLANS, TRIAL_DAYS } from "@/lib/plans";
+import { formatPrice, getPlan, TRIAL_DAYS } from "@/lib/plans";
 import { getUsage } from "@/lib/usage";
 import BillingActions from "./BillingActions";
 
@@ -141,35 +141,6 @@ export default async function BillingPage({
         />
       </div>
 
-      {!hasSubscription && (
-        <section className="mt-10">
-          <h2 className="text-sm font-medium text-zinc-300">Other plans</h2>
-          <ul className="mt-4 space-y-3">
-            {PLANS.filter((candidate) => candidate.id !== business.plan).map(
-              (candidate) => (
-                <li
-                  key={candidate.id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-white/10 bg-white/[0.02] p-5"
-                >
-                  <div>
-                    <p className="font-medium">{candidate.name}</p>
-                    <p className="mt-1 text-sm text-zinc-400">
-                      {formatPrice(candidate)}/month · {candidate.callAllowance}{" "}
-                      calls
-                    </p>
-                  </div>
-                  <BillingActions
-                    currentPlan={candidate.id}
-                    hasSubscription={false}
-                    compact
-                  />
-                </li>
-              ),
-            )}
-          </ul>
-        </section>
-      )}
-
       {/*
         Built as one string rather than an expression sitting next to text.
         Rendered live, this line came out as "14days free on any plan" — React
@@ -181,7 +152,7 @@ export default async function BillingPage({
         split by whitespace handling wherever it runs.
       */}
       <p className="mt-8 text-xs text-zinc-500">
-        {`${TRIAL_DAYS} days free on any plan. Prices exclude VAT. Cancel any time — your receptionist keeps answering until the end of the month you've paid for.`}
+        {`${TRIAL_DAYS} days free. Prices exclude VAT. Cancel any time — your receptionist keeps answering until the end of the month you've paid for.`}
       </p>
     </div>
   );

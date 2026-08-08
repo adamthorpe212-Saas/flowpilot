@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { getPlan, PLANS, TRIAL_DAYS, formatPrice } from "@/lib/plans";
-import type { Plan } from "@/types/database";
+import { soldPlan, TRIAL_DAYS, formatPrice } from "@/lib/plans";
 import SignupForm from "./SignupForm";
 
 export const metadata: Metadata = {
@@ -16,9 +15,14 @@ export default async function SignupPage({
 }) {
   const { plan: requested } = await searchParams;
 
-  const isKnownPlan = PLANS.some((plan) => plan.id === requested);
-  const planId = (isKnownPlan ? requested : "starter") as Plan;
-  const plan = getPlan(planId);
+  /*
+   * Only ever the plan we sell. Old links, bookmarks and shared URLs still
+   * carry ?plan=starter, and honouring one would sign somebody up to a tier
+   * that is no longer offered, at a price the rest of the site does not show.
+   */
+  void requested;
+  const plan = soldPlan();
+  const planId = plan.id;
 
   return (
     <div>

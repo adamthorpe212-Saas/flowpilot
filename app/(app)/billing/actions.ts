@@ -3,10 +3,9 @@
 import { redirect } from "next/navigation";
 import { siteUrl } from "@/lib/env";
 import { getCurrentBusiness } from "@/lib/auth";
-import { PLANS } from "@/lib/plans";
+import { soldPlan } from "@/lib/plans";
 import { trialStatus } from "@/lib/usage";
 import { isStripeConfigured, priceIdForPlan, stripe } from "@/lib/stripe";
-import type { Plan } from "@/types/database";
 
 export type BillingState = { error: string | null };
 
@@ -20,15 +19,17 @@ export type BillingState = { error: string | null };
  */
 export async function startCheckout(
   _previous: BillingState,
-  formData: FormData,
+  _formData: FormData,
 ): Promise<BillingState> {
   const business = await getCurrentBusiness();
   if (!business) return { error: "Sign in and try again." };
 
-  const requested = String(formData.get("plan") ?? "");
-  const plan = (PLANS.some((candidate) => candidate.id === requested)
-    ? requested
-    : business.plan) as Plan;
+  /*
+   * Always the plan we sell, whatever the form says. A business grandfathered
+   * onto a withdrawn tier still checks out at the price the site advertises,
+   * and no crafted request can buy a price we no longer show.
+   */
+  const plan = soldPlan().id;
 
   if (!isStripeConfigured()) {
     return {

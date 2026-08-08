@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import { siteUrl } from "@/lib/env";
-import { PLANS } from "@/lib/plans";
+import { soldPlan } from "@/lib/plans";
 import { safeInternalPath } from "@/lib/safe-redirect";
 
 export type AuthState = { error: string | null };
@@ -69,10 +69,9 @@ export async function signUp(
 ): Promise<AuthState> {
   const { email, password } = readCredentials(formData);
   const businessName = String(formData.get("business_name") ?? "").trim();
-  const rawPlan = String(formData.get("plan") ?? "");
-  const selectedPlan = PLANS.some((plan) => plan.id === rawPlan)
-    ? rawPlan
-    : "starter";
+  // The form carries a plan, but the server decides. One plan is sold, so a
+  // crafted request cannot subscribe anyone to a withdrawn tier.
+  const selectedPlan = soldPlan().id;
 
   if (!businessName) return { error: "What's your business called?" };
   if (!email) return { error: "Enter your email address." };

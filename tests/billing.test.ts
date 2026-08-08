@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { formatPrice, getPlan, PLANS } from "@/lib/plans";
+import {formatPrice, getPlan, PLANS, soldPlan } from "@/lib/plans";
 import { toSubscriptionStatus } from "@/lib/stripe";
 import { shouldAnswerCalls } from "@/lib/usage";
 import { render } from "@/lib/voice/notify";
@@ -28,21 +28,34 @@ function business(overrides: Partial<Business> = {}): Business {
 }
 
 describe("plans", () => {
-  it("exposes the three tiers with ascending prices and allowances", () => {
-    expect(PLANS.map((plan) => plan.id)).toEqual(["starter", "pro", "business"]);
-
-    for (let i = 1; i < PLANS.length; i++) {
-      expect(PLANS[i].price).toBeGreaterThan(PLANS[i - 1].price);
-      expect(PLANS[i].callAllowance).toBeGreaterThan(PLANS[i - 1].callAllowance);
-    }
+  it("sells exactly one plan", () => {
+    // A tier table asks a tradesperson to work out which version of the product
+    // they are before they know what it is. Withdrawn tiers stay defined so
+    // businesses already carrying their id still resolve.
+    expect(PLANS.filter((plan) => plan.sold)).toHaveLength(1);
+    expect(soldPlan().id).toBe("pro");
+    expect(soldPlan().price).toBe(99);
   });
 
-  it("marks exactly one plan as most popular", () => {
-    expect(PLANS.filter((plan) => plan.highlighted)).toHaveLength(1);
+  it("still resolves plans no longer sold", () => {
+    // An account on a withdrawn tier must render, not throw.
+    expect(() => getPlan("starter")).not.toThrow();
+    expect(() => getPlan("business")).not.toThrow();
+  });
+
+  it("only advertises features the product actually has", () => {
+    /*
+     * This list once promised "full call recordings", which FlowPilot has never
+     * done — calls are transcribed, never recorded. A pricing page is the worst
+     * place to overstate, so the words that would imply it are barred.
+     */
+    const copy = soldPlan().features.join(" ").toLowerCase();
+    expect(copy).not.toMatch(/recording/);
+    expect(copy).not.toMatch(/unlimited/);
   });
 
   it("formats prices as whole euro", () => {
-    expect(formatPrice(getPlan("starter"))).toBe("€49");
+    expect(formatPrice(soldPlan())).toBe("€99");
   });
 
   it("throws on an unknown plan rather than guessing", () => {

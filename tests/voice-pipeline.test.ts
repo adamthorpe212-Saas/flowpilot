@@ -767,8 +767,10 @@ describe("what a caller is told before they speak", () => {
       ),
     );
 
+    // Both obligations, in whatever words the disclosure currently uses: that
+    // it is a machine, and that what the caller says is written down.
     expect(response).toContain("automated assistant");
-    expect(response).toContain("notes");
+    expect(response).toMatch(/take your details|notes/);
 
     // And it is kept, so the business can show what its customer was told.
     const transcript = tables.call[0].transcript as { role: string; text: string }[];

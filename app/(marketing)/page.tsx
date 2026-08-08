@@ -3,7 +3,7 @@ import Faq from "@/components/Faq";
 import HeroShowcase from "@/components/HeroShowcase";
 import JobCard from "@/components/JobCard";
 import { HOME_FAQ_IDS, faqItems } from "@/lib/faq";
-import { formatPrice, soldPlan } from "@/lib/plans";
+import { formatPrice, soldPlan, TRIAL_DAYS } from "@/lib/plans";
 
 /**
  * The homepage answers four questions and then gets out of the way: what this
@@ -287,9 +287,15 @@ export default function Home() {
             </Link>
           </div>
 
+          {/*
+            The trial is mentioned, not led with. It is real — an account
+            genuinely gets this long before it is billed — and a site that stays
+            quiet about something that is happening is the one combination worth
+            avoiding. But leading on "free" invites a tradesperson to look for
+            the catch before they have understood the product.
+          */}
           <p className="mt-5 text-xs leading-5 text-zinc-400">
-            Prices exclude VAT. Cancel any time — your receptionist keeps
-            answering until the end of the month you&apos;ve paid for.
+            {`Your first ${TRIAL_DAYS} days are free. Prices exclude VAT. Cancel any time — your receptionist keeps answering until the end of the month you've paid for.`}
           </p>
         </div>
       </section>

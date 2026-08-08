@@ -115,7 +115,32 @@ supported configuration. FlowPilot files as `INDEPENDENT_SOFTWARE_VENDOR` with
 `is_subassigned = YES`. This supersedes the "open, blocks scale" note above; the
 remaining unknown is vetting outcome, not whether the model is permitted.
 
-*OPEN, 2026-08-06 — and it now decides the architecture.*
+*ANSWERED by pressing the button, 2026-08-08 — three requirements, not one.*
+The question below was resolved by attempting a real purchase and reading what
+Twilio refused. It rejects in sequence, each error hiding the next:
+
+1. `21631 Phone Number Requires an Address` — an Address resource must exist.
+   Created through the API in seconds, validated immediately, no review.
+2. `21615 No valid address created for: Balbriggan, Ashbourne, Skerries…` — that
+   Address must sit inside the exchange area of the specific number. An area
+   code is far broader than an exchange: 01 spans Dublin city, Balbriggan and
+   dozens of villages, and a Glasnevin address covers some 01 numbers and not
+   others. Twilio only says which when the purchase is attempted, which is why
+   provisioning now tries ten candidates rather than one (D7).
+3. `21649 Bundle required and not provided for country: [IE]` — and then, on top
+   of a valid locality-matching address, an approved regulatory bundle.
+
+So the locality reading was the correct one, and it does mean an address covers
+only its own area. Selling nationally therefore needs a customer's own address
+on file, which is a change to onboarding rather than a question about it.
+
+The Individual regulation is materially lighter than the Business one — photo ID
+and a proof of address, no CRO number, no company. FlowPilot's first bundle
+(`FlowPilot Ireland Local`) was submitted on that basis and is in review; Twilio
+quotes 7 days. A Business bundle follows once the company exists, which is
+needed for the terms and the DPA regardless.
+
+*Superseded — the original open question, kept for the reasoning.*
 The bundle's Proof of Address requirement reads: "Must include Eircode and be
 within locality or region covered by the phone number's prefix; a PO Box is not
 acceptable where a local address is required." Read strictly, one FlowPilot

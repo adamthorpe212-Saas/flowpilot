@@ -26,7 +26,7 @@ export default async function LoginPage({
       <p className="mt-8 text-center text-sm text-zinc-400">
         Don&apos;t have an account?{" "}
         <Link href="/signup" className="text-white underline-offset-4 hover:underline">
-          Get started
+          Get FlowPilot
         </Link>
       </p>
     </div>

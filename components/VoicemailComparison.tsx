@@ -67,7 +67,7 @@ export default function VoicemailComparison() {
         first play it is the most important thing on the screen and is styled
         like it — solid fill, the same treatment as the site's primary calls to
         action. Once it has played, the phones carry the argument and a second
-        white button would only compete with "Get started" further down.
+        white button would only compete with "Get FlowPilot" further down.
       */}
       <div className="flex justify-center">
         <button

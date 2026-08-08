@@ -53,7 +53,7 @@ export default function Navbar() {
             href="/signup"
             className="rounded-full bg-white px-5 py-2 text-sm font-medium text-black transition hover:bg-zinc-200"
           >
-            Get started
+            Get FlowPilot
           </Link>
         </div>
 
@@ -114,7 +114,7 @@ export default function Navbar() {
               onClick={() => setOpen(false)}
               className="mt-4 rounded-full bg-white px-5 py-3 text-center text-sm font-medium text-black"
             >
-              Get started
+              Get FlowPilot
             </Link>
           </nav>
         </div>

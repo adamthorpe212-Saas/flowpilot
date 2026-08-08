@@ -19,6 +19,31 @@ export default function Home() {
             receptionist has you covered.
           </p>
 
+          {/*
+            Measured on a phone: the first way to sign up was 3,928px down a
+            4,197px page — past the demo, the voicemail comparison and the FAQ.
+            Above the fold there was a logo, a menu button and four animation
+            markers, so somebody convinced by the headline had nothing to press
+            and had to go looking. The nav's "Get started" is behind the
+            hamburger at that width, which is no help either.
+
+            The price and trial length sit underneath rather than in the button.
+            This is the first thing a visitor reads, and "free" with no number
+            attached is the kind of promise that makes a tradesperson assume a
+            catch further down.
+          */}
+          <div className="mt-8 flex flex-col items-center gap-3">
+            <Link
+              href="/signup"
+              className="inline-flex min-h-12 items-center rounded-full bg-white px-7 text-[15px] font-semibold text-black transition hover:bg-zinc-200"
+            >
+              Start free for {TRIAL_DAYS} days
+            </Link>
+            <p className="text-xs text-zinc-400">
+              {`No card needed. ${formatPrice(PLANS[0])} a month after, cancel any time.`}
+            </p>
+          </div>
+
           <div className="mt-10">
             <LifecycleRing />
           </div>

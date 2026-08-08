@@ -33,6 +33,10 @@ yarn-error.log*
 # env files (can opt-in for committing if needed)
 .env*
 
+# ...except the template. It holds no values, only the list of what the app
+# needs, which is the one thing a new machine or a second person cannot guess.
+!.env.example
+
 # vercel
 .vercel
 

@@ -5,10 +5,15 @@ import { useEffect, useRef, useState } from "react";
 /**
  * The question the FAQ didn't cover.
  *
- * Sits in the page below the FAQ rather than floating in a corner. A bubble
- * that follows somebody down a page is an interruption; this is offered at the
- * point they have just finished reading answers and either have what they need
- * or do not.
+ * Sits in the page rather than floating in a corner. A bubble that follows
+ * somebody down a page is an interruption; this is offered at the point they
+ * have read what we chose to tell them and either have what they need or do
+ * not.
+ *
+ * On the homepage it now stands in for the FAQ entirely — it answers from the
+ * same source (see lib/ask.ts, which is built from lib/faq.ts and the plan), so
+ * moving the accordion to /how-it-works cost the homepage nothing except the
+ * 1,100px the accordion took up.
  */
 
 const SUGGESTIONS = [

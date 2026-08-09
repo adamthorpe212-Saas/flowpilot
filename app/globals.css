@@ -1,8 +1,14 @@
 @import "tailwindcss";
 
+/*
+ * FlowPilot is a dark product on every route — marketing, auth and the app all
+ * set `bg-black` on their own layout. The light-mode defaults that used to live
+ * here were never seen except as a white flash before hydration and a white
+ * band on overscroll, so the base is simply dark.
+ */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #000000;
+  --foreground: #ededed;
 }
 
 @theme inline {
@@ -12,17 +18,49 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /*
+   * Geist, not Arial.
+   *
+   * The font was loaded on every page and then thrown away: `next/font` put
+   * --font-geist-sans on <html>, and this rule hardcoded Arial underneath it,
+   * so the whole site paid to download a typeface it never rendered. Large
+   * headings set in Arial are the single loudest signal that a page was not
+   * designed, and no amount of layout work survives it.
+   */
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, -apple-system,
+    "Segoe UI", sans-serif;
+}
+
+::selection {
+  background: rgba(16, 185, 129, 0.3);
+}
+
+/*
+ * The hero's light source.
+ *
+ * A faint grid, masked to fade out before it reaches the edges so it reads as
+ * depth behind the headline rather than as a pattern laid over it. Flat black
+ * behind large type looks unfinished; this is the cheapest honest way to give
+ * the page a sense of space, and it costs no images and no JavaScript.
+ */
+.fp-grid {
+  background-image:
+    linear-gradient(to right, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 72px 72px;
+  -webkit-mask-image: radial-gradient(
+    ellipse 55% 60% at 50% 0%,
+    #000 10%,
+    transparent 70%
+  );
+  mask-image: radial-gradient(
+    ellipse 55% 60% at 50% 0%,
+    #000 10%,
+    transparent 70%
+  );
 }
 
 /*

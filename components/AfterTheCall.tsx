@@ -1,4 +1,4 @@
-import PhoneFrame from "@/components/PhoneFrame";
+import PhoneMessage from "@/components/PhoneMessage";
 import {
   DEFAULT_CONFIRMATION_TEMPLATE,
   jobAlert,
@@ -49,7 +49,7 @@ export default function AfterTheCall() {
         tone="bright"
         caption="Everything you need to ring back already knowing the job. No voicemail to listen to, nothing to write down."
       >
-        <Message body={toTradesperson} urgent />
+        <PhoneMessage sender="FlowPilot" body={toTradesperson} emphasis />
       </Side>
 
       <Side
@@ -57,7 +57,7 @@ export default function AfterTheCall() {
         tone="dim"
         caption="They know they have been heard, and a misheard address gets corrected before anyone drives anywhere."
       >
-        <Message body={toCustomer} />
+        <PhoneMessage sender={EXAMPLE.businessName} body={toCustomer} />
       </Side>
     </div>
   );
@@ -84,33 +84,11 @@ function Side({
         {label}
       </p>
 
-      <div className="mt-5">
-        <PhoneFrame className="h-[300px] w-[172px]">{children}</PhoneFrame>
-      </div>
+      <div className="mt-5">{children}</div>
 
       <p className="mt-5 max-w-[17rem] text-center text-xs leading-5 text-zinc-400">
         {caption}
       </p>
-    </div>
-  );
-}
-
-function Message({ body, urgent = false }: { body: string; urgent?: boolean }) {
-  return (
-    <div className="flex h-full flex-col justify-center px-3">
-      <p className="text-[9px] uppercase tracking-[0.14em] text-zinc-500">
-        {urgent ? "FlowPilot" : "O'Brien Plumbing"}
-      </p>
-      <div
-        className={`mt-2 rounded-2xl px-3 py-2.5 ${
-          urgent
-            ? "border border-white/15 bg-white/[0.07]"
-            : "border border-white/10 bg-white/[0.04]"
-        }`}
-      >
-        <p className="text-[11px] leading-[1.45] text-white">{body}</p>
-      </div>
-      <p className="mt-2 text-[9px] text-zinc-500">Delivered · just now</p>
     </div>
   );
 }

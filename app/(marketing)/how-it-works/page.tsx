@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import AfterTheCall from "@/components/AfterTheCall";
+import Faq from "@/components/Faq";
 import LiveDemo from "@/components/LiveDemo";
 import VoicemailComparison from "@/components/VoicemailComparison";
+import { HOME_FAQ_IDS, faqItems } from "@/lib/faq";
 
 export const metadata: Metadata = {
   title: "How it works — FlowPilot",
@@ -15,10 +17,11 @@ export const metadata: Metadata = {
  *
  * The homepage answers "what is this and why should I care" in one screen. This
  * one answers "but what actually happens" — the sequence, the receptionist
- * itself, and an honest comparison with the thing every tradesperson already
- * has. The richer interactive pieces live here rather than on the homepage,
- * where three of them stacked together buried the first call to action nearly
- * four thousand pixels down.
+ * itself, an honest comparison with the thing every tradesperson already has,
+ * and the objections that decide whether somebody trusts us at all. The richer
+ * interactive pieces live here rather than on the homepage, where three of them
+ * stacked together buried the first call to action nearly four thousand pixels
+ * down.
  */
 
 const SEQUENCE = [
@@ -102,7 +105,15 @@ export default function HowItWorks() {
         </ol>
       </section>
 
-      <section className="border-t border-white/10 px-5 py-20 sm:px-6 sm:py-24">
+      {/*
+        The homepage's second call to action points straight here, so the
+        heading has to clear the fixed navbar when the browser jumps to it —
+        without scroll-margin the title lands underneath it.
+      */}
+      <section
+        id="demo"
+        className="scroll-mt-24 border-t border-white/10 px-5 py-20 sm:px-6 sm:py-24"
+      >
         <div className="mx-auto max-w-4xl">
           <div className="text-center">
             <h2 className="text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
@@ -140,6 +151,23 @@ export default function HowItWorks() {
           </div>
           <div className="mt-12">
             <AfterTheCall />
+          </div>
+        </div>
+      </section>
+
+      {/*
+        Moved off the homepage, where seven accordions were the longest section
+        on the page and sat below a price somebody had already scrolled 2,900px
+        to reach. Here they're read by somebody who is already interested and
+        looking for the reason not to buy.
+      */}
+      <section className="border-t border-white/10 px-5 py-20 sm:px-6 sm:py-24">
+        <div className="mx-auto max-w-2xl">
+          <h2 className="text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
+            Questions worth asking
+          </h2>
+          <div className="mt-10">
+            <Faq items={faqItems(HOME_FAQ_IDS)} />
           </div>
         </div>
       </section>

@@ -1,63 +1,55 @@
 import Link from "next/link";
 import AskFlowPilot from "@/components/AskFlowPilot";
-import Faq from "@/components/Faq";
 import HeroShowcase from "@/components/HeroShowcase";
-import JobCard from "@/components/JobCard";
-import { HOME_FAQ_IDS, faqItems } from "@/lib/faq";
+import PhoneMessage from "@/components/PhoneMessage";
+import { jobAlert } from "@/lib/messages";
 import { formatPrice, soldPlan, TRIAL_DAYS } from "@/lib/plans";
 
 /**
- * The homepage answers four questions and then gets out of the way: what this
- * is, why it matters, how easy it is to start, and what to do next.
+ * The homepage sells. It does not explain.
  *
- * The demo and the voicemail comparison used to live here, which made the page
- * three prototypes stacked on top of each other and pushed the first way to
- * sign up 3,900px down. They now live on /how-it-works, where somebody who
- * wants to be convinced in detail can go looking for them.
+ * It had grown to eight sections and 5,270px, and three of them were making the
+ * same argument: a row of cards saying "FlowPilot answers" three times, a row of
+ * benefit cards saying it again, and a third section built around the same job
+ * record already animating in the hero. The price didn't appear until 2,900px.
+ *
+ * What's left is the shortest path a tradesperson can take from "what is this"
+ * to "I'll take it": the promise, the stakes, what lands on their phone, what it
+ * costs, and a way to ask the one question we didn't answer. Everything that
+ * explains the mechanism — the eight-step sequence, the live demo, the voicemail
+ * comparison, the FAQ — lives on /how-it-works, which is where somebody goes
+ * when they've decided they're interested and want to be convinced properly.
  */
 
 const REASSURANCES = [
-  "Keep your existing number",
-  "Set up in minutes",
+  "Keep your own number",
+  "Live in minutes",
   "Answers 24/7",
 ];
 
-const AWAY = [
-  { when: "On another job", then: "FlowPilot answers." },
-  { when: "At the weekend", then: "FlowPilot answers." },
-  { when: "On holiday", then: "FlowPilot answers." },
+/*
+ * The limits are a selling point, not small print. Every one of them is a thing
+ * a tradesperson is afraid an AI will do to their business, and saying them
+ * plainly does more for trust than another paragraph of benefits.
+ */
+const NEVERS = [
+  "Never quotes a price",
+  "Never promises a time",
+  "Never invents a service you don't offer",
 ];
 
 const BENEFITS = [
   {
-    title: "Every call answered",
-    body: "FlowPilot takes over the moment you can't get to the phone — evenings, weekends, or halfway up a ladder.",
+    title: "It answers as your business",
+    body: "By name — and it tells the caller straight away that it's an assistant taking details.",
   },
   {
-    title: "Every job qualified",
-    body: "It asks what the job is, where they are, how urgent it is and when they need you. In your business's name.",
+    title: "It finds out what the job is",
+    body: "What's wrong, where they are, how urgent it is and when suits. One question at a time, like a person would.",
   },
   {
-    title: "Everything sent to you",
-    body: "Open your phone and the job is already there, with the number to ring back.",
-  },
-];
-
-const SETUP = [
-  {
-    step: "01",
-    title: "Tell us about your business",
-    body: "Your services, the areas you cover and how you want calls handled.",
-  },
-  {
-    step: "02",
-    title: "Forward your missed calls",
-    body: "Your customers keep ringing the same number they always have. Nothing on your van changes.",
-  },
-  {
-    step: "03",
-    title: "You're live",
-    body: "FlowPilot answers what you can't, and the job lands on your phone.",
+    title: "It's on your phone before you're free",
+    body: "The moment the call ends, you get a text with the job and the number to ring back.",
   },
 ];
 
@@ -66,37 +58,80 @@ export default function Home() {
 
   return (
     <>
-      <section className="px-5 pb-16 pt-20 sm:px-6 sm:pb-20 sm:pt-24">
-        <div className="mx-auto w-full max-w-4xl">
-          <div className="text-center">
-            <h1 className="mx-auto max-w-2xl text-[2.1rem] font-semibold leading-[1.08] tracking-[-0.03em] sm:text-6xl">
-              Your business answers.
-              <br />
-              Even when you don&apos;t.
-            </h1>
+      <section className="relative overflow-hidden px-5 pb-20 pt-20 sm:px-6 sm:pb-24 sm:pt-28">
+        {/*
+          Two layers of light behind the headline, both inert to the pointer so
+          nothing here can eat a tap on the buttons underneath.
+        */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 top-0 h-[46rem] bg-[radial-gradient(ellipse_58%_46%_at_50%_-8%,rgba(16,185,129,0.16),transparent_72%)]"
+        />
+        <div
+          aria-hidden="true"
+          className="fp-grid pointer-events-none absolute inset-x-0 top-0 h-[46rem]"
+        />
 
-            <p className="mx-auto mt-5 max-w-lg text-[15px] leading-7 text-zinc-300 sm:text-lg sm:leading-8">
-              FlowPilot answers missed calls, qualifies the job and sends
-              everything straight to you — whether you&apos;re on another job, at
-              home, or away.
+        <div className="relative mx-auto w-full max-w-5xl">
+          <div className="text-center">
+            <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-4 py-1.5 text-[12px] font-medium text-zinc-300 backdrop-blur">
+              <span
+                aria-hidden="true"
+                className="h-1.5 w-1.5 rounded-full bg-emerald-400"
+              />
+              Made for Irish trades
             </p>
 
-            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            {/*
+              Sized so each sentence holds one line on a 375px phone.
+
+              At 36px they both wrapped — "Your business / answers." over "Even
+              when you / don't." — which breaks the only thing the headline is
+              doing. The two halves are a matched pair, and the second one lands
+              because it mirrors the first; split across four ragged lines there
+              is no pair left to hear. text-balance stays as the safety net for
+              anything narrower still.
+            */}
+            <h1 className="mx-auto mt-7 max-w-4xl text-balance text-[1.9rem] font-semibold leading-[1.12] tracking-[-0.035em] sm:text-6xl sm:leading-[1.04] lg:text-7xl">
+              Your business answers.
+              <br />
+              <span className="text-zinc-500">Even when you don&apos;t.</span>
+            </h1>
+
+            <p className="mx-auto mt-6 max-w-xl text-pretty text-[16px] leading-7 text-zinc-300 sm:text-lg sm:leading-8">
+              FlowPilot picks up the calls you miss, finds out what the job is,
+              and has it on your phone before you&apos;re back in the van.
+            </p>
+
+            <div className="mt-9 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link
                 href="/signup"
-                className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-white px-8 text-[15px] font-semibold text-black transition hover:bg-zinc-200 sm:w-auto"
+                className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-white px-8 text-[15px] font-semibold text-black shadow-lg shadow-emerald-500/10 transition hover:bg-zinc-200 sm:w-auto"
               >
                 Get FlowPilot
               </Link>
               <Link
-                href="/how-it-works"
-                className="inline-flex min-h-12 w-full items-center justify-center rounded-full border border-white/20 px-8 text-[15px] font-medium text-white transition hover:border-white/40 hover:bg-white/5 sm:w-auto"
+                href="/how-it-works#demo"
+                className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-white/20 px-8 text-[15px] font-medium text-white transition hover:border-white/40 hover:bg-white/5 sm:w-auto"
               >
-                See how it works
+                Hear it answer a call
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.75"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-4 w-4"
+                >
+                  <path d="M4 10h11" />
+                  <path d="m10 5 5 5-5 5" />
+                </svg>
               </Link>
             </div>
 
-            <ul className="mx-auto mt-7 flex max-w-xl flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[13px] text-zinc-400">
+            <ul className="mx-auto mt-8 flex max-w-xl flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[13px] text-zinc-400">
               {REASSURANCES.map((item) => (
                 <li key={item} className="flex items-center gap-2">
                   <svg
@@ -107,7 +142,7 @@ export default function Home() {
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="h-3.5 w-3.5 flex-none text-zinc-500"
+                    className="h-3.5 w-3.5 flex-none text-emerald-400"
                   >
                     <path d="m4 10 4 4 8-8" />
                   </svg>
@@ -117,150 +152,111 @@ export default function Home() {
             </ul>
           </div>
 
-          <div className="mt-14 sm:mt-16">
+          <div className="mt-16 sm:mt-20">
             <HeroShowcase />
           </div>
         </div>
       </section>
 
-      <section className="border-t border-white/10 px-5 py-20 sm:px-6 sm:py-24">
+      {/*
+        The stakes, stated once. This replaced two separate card sections that
+        were both circling the same idea — type alone, so the page has a moment
+        that isn't another grid of bordered boxes.
+      */}
+      <section className="border-t border-white/10 px-5 py-24 sm:px-6 sm:py-32">
         <div className="mx-auto max-w-3xl text-center">
-          <h2 className="text-3xl font-semibold leading-[1.1] tracking-[-0.02em] sm:text-4xl">
-            Switch off.
+          <h2 className="text-[2rem] font-semibold leading-[1.08] tracking-[-0.03em] sm:text-5xl">
+            The job goes to
             <br />
-            FlowPilot doesn&apos;t.
+            whoever picks up.
           </h2>
-          <p className="mx-auto mt-5 max-w-md text-[15px] leading-7 text-zinc-400">
-            On another job, over the weekend, or halfway across the world — your
-            customers still get answered.
+          <p className="mx-auto mt-6 max-w-lg text-[16px] leading-8 text-zinc-400">
+            You can&apos;t answer a phone with both hands full. FlowPilot can —
+            in your business&apos;s name, at half nine at night, on a bank
+            holiday Monday.
           </p>
 
-          <ul className="mx-auto mt-12 grid max-w-2xl gap-3 sm:grid-cols-3">
-            {AWAY.map((item) => (
-              <li
-                key={item.when}
-                className="rounded-2xl border border-white/10 bg-white/[0.02] px-5 py-6"
-              >
-                <p className="text-[11px] uppercase tracking-[0.14em] text-zinc-500">
-                  {item.when}
-                </p>
-                <p className="mt-2 text-[15px] font-medium text-white">
-                  {item.then}
-                </p>
-              </li>
+          <ul className="mx-auto mt-12 flex max-w-2xl flex-col items-center justify-center gap-3 border-t border-white/10 pt-8 text-[13px] text-zinc-400 sm:flex-row sm:gap-8">
+            {NEVERS.map((never) => (
+              <li key={never}>{never}</li>
             ))}
           </ul>
         </div>
       </section>
 
-      <section className="border-t border-white/10 px-5 py-20 sm:px-6 sm:py-24">
-        <div className="mx-auto max-w-5xl">
-          <ul className="grid gap-4 md:grid-cols-3">
-            {BENEFITS.map((benefit) => (
-              <li
-                key={benefit.title}
-                className="rounded-2xl border border-white/10 bg-white/[0.02] p-7"
-              >
-                <h3 className="text-lg font-semibold tracking-tight">
-                  {benefit.title}
-                </h3>
-                <p className="mt-3 text-sm leading-6 text-zinc-400">
-                  {benefit.body}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      <section className="border-t border-white/10 px-5 py-20 sm:px-6 sm:py-24">
-        <div className="mx-auto grid max-w-5xl items-center gap-10 lg:grid-cols-2 lg:gap-16">
+      <section className="border-t border-white/10 px-5 py-20 sm:px-6 sm:py-28">
+        <div className="mx-auto grid max-w-5xl items-center gap-12 lg:grid-cols-2 lg:gap-20">
           <div>
-            <h2 className="text-3xl font-semibold leading-[1.1] tracking-[-0.02em] sm:text-4xl">
+            <h2 className="text-[2rem] font-semibold leading-[1.08] tracking-[-0.03em] sm:text-5xl">
               Miss the call.
               <br />
               Not the job.
             </h2>
-            <p className="mt-5 max-w-md text-[15px] leading-7 text-zinc-400">
-              FlowPilot turns the conversation into a job record — who rang, what
-              they need, where they are and how urgent it is. You decide what
-              happens next.
-            </p>
-            <p className="mt-4 max-w-md text-[15px] leading-7 text-zinc-400">
-              It never quotes a price, never promises a time, and never invents a
-              service you don&apos;t offer.
-            </p>
+
+            <ol className="mt-10 space-y-8">
+              {BENEFITS.map((benefit, index) => (
+                <li key={benefit.title} className="flex gap-5">
+                  <span
+                    aria-hidden="true"
+                    className="mt-0.5 flex h-7 w-7 flex-none items-center justify-center rounded-full border border-emerald-400/30 bg-emerald-400/10 text-[11px] font-semibold text-emerald-300"
+                  >
+                    {index + 1}
+                  </span>
+                  <div className="min-w-0">
+                    <h3 className="text-[17px] font-semibold tracking-tight">
+                      {benefit.title}
+                    </h3>
+                    <p className="mt-1.5 text-[15px] leading-7 text-zinc-400">
+                      {benefit.body}
+                    </p>
+                  </div>
+                </li>
+              ))}
+            </ol>
           </div>
 
-          <JobCard
-            name="John Murphy"
-            number="087 xxx xxxx"
-            urgency="Urgent"
-            fields={[
-              {
-                label: "Job",
-                value: "Burst pipe — water through the kitchen ceiling",
-              },
-              { label: "Address", value: "14 Griffith Avenue, Glasnevin" },
-              { label: "Needed", value: "Today, any time after 6pm" },
-            ]}
-            className="mx-auto w-full max-w-sm"
-          />
+          {/*
+            The text, not the job card.
+
+            A job card sat here first and was word-for-word the one the hero
+            animation finishes on — same caller, same burst pipe, same address,
+            1,500px apart. This proves the third claim instead of restating the
+            first, and the body is rendered by the same function the live
+            pipeline texts out, so it cannot quietly stop matching what a
+            customer actually receives.
+          */}
+          <div className="flex justify-center">
+            <PhoneMessage
+              sender="FlowPilot"
+              body={jobAlert({
+                urgent: true,
+                jobType: "Water coming through kitchen ceiling",
+                location: "14 Griffith Avenue, Glasnevin",
+                callerNumber: "087 412 9008",
+              })}
+              emphasis
+              className="h-[340px] w-[196px] shadow-2xl shadow-black/60"
+            />
+          </div>
         </div>
       </section>
 
-      <section className="border-t border-white/10 px-5 py-20 sm:px-6 sm:py-24">
-        <div className="mx-auto max-w-5xl">
-          <div className="max-w-xl">
-            <h2 className="text-3xl font-semibold leading-[1.1] tracking-[-0.02em] sm:text-4xl">
-              Keep your number.
-              <br />
-              Change almost nothing.
-            </h2>
-            <p className="mt-5 text-[15px] leading-7 text-zinc-400">
-              Most of the setup is handled for you. The one thing only you can do
-              takes about a minute on your own phone.
-            </p>
-          </div>
-
-          <ol className="mt-12 grid gap-4 md:grid-cols-3">
-            {SETUP.map((item) => (
-              <li
-                key={item.step}
-                className="rounded-2xl border border-white/10 bg-white/[0.02] p-7"
-              >
-                <span
-                  aria-hidden="true"
-                  className="text-xs font-medium tracking-[0.14em] text-zinc-500"
-                >
-                  {item.step}
-                </span>
-                <h3 className="mt-4 text-base font-semibold">{item.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-zinc-400">
-                  {item.body}
-                </p>
-              </li>
-            ))}
-          </ol>
-        </div>
-      </section>
-
-      <section className="border-t border-white/10 px-5 py-20 sm:px-6 sm:py-24">
+      <section className="border-t border-white/10 px-5 py-20 sm:px-6 sm:py-28">
         <div className="mx-auto max-w-lg text-center">
-          <h2 className="text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
+          <h2 className="text-[2rem] font-semibold tracking-[-0.03em] sm:text-5xl">
             One missed call pays for it.
           </h2>
 
-          <div className="mt-10 rounded-3xl border border-white/15 bg-white/[0.03] p-7 text-left sm:p-9">
+          <div className="mt-12 rounded-3xl border border-white/15 bg-gradient-to-b from-white/[0.06] to-white/[0.02] p-7 text-left sm:p-9">
             <p className="text-sm text-zinc-400">{plan.name}</p>
             <p className="mt-2 flex items-baseline gap-1.5">
-              <span className="text-5xl font-semibold tracking-tight">
+              <span className="text-5xl font-semibold tracking-[-0.03em] sm:text-6xl">
                 {formatPrice(plan)}
               </span>
               <span className="text-sm text-zinc-400">/month</span>
             </p>
 
-            <ul className="mt-7 space-y-3 text-sm">
+            <ul className="mt-8 space-y-3.5 text-sm">
               {plan.features.map((feature) => (
                 <li key={feature} className="flex gap-3 text-zinc-300">
                   <svg
@@ -271,7 +267,7 @@ export default function Home() {
                     strokeWidth="2"
                     strokeLinecap="round"
                     strokeLinejoin="round"
-                    className="mt-0.5 h-4 w-4 flex-none text-zinc-500"
+                    className="mt-0.5 h-4 w-4 flex-none text-emerald-400"
                   >
                     <path d="m4 10 4 4 8-8" />
                   </svg>
@@ -282,7 +278,7 @@ export default function Home() {
 
             <Link
               href="/signup"
-              className="mt-8 flex min-h-12 items-center justify-center rounded-full bg-white px-6 text-[15px] font-semibold text-black transition hover:bg-zinc-200"
+              className="mt-9 flex min-h-12 items-center justify-center rounded-full bg-white px-6 text-[15px] font-semibold text-black transition hover:bg-zinc-200"
             >
               Get FlowPilot
             </Link>
@@ -295,38 +291,38 @@ export default function Home() {
             avoiding. But leading on "free" invites a tradesperson to look for
             the catch before they have understood the product.
           */}
-          <p className="mt-5 text-xs leading-5 text-zinc-400">
+          <p className="mt-6 text-xs leading-5 text-zinc-400">
             {`Your first ${TRIAL_DAYS} days are free. Prices exclude VAT. Cancel any time — your receptionist keeps answering until the end of the month you've paid for.`}
           </p>
         </div>
       </section>
 
+      {/*
+        The FAQ that used to sit here moved to /how-it-works. This answers the
+        same questions from the same source — and the ones we never thought of.
+      */}
       <section className="border-t border-white/10 px-5 py-20 sm:px-6 sm:py-24">
         <div className="mx-auto max-w-2xl">
-          <h2 className="text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
-            Questions worth asking
-          </h2>
-          <div className="mt-10">
-            <Faq items={faqItems(HOME_FAQ_IDS)} />
-          </div>
-
-          <div className="mt-10">
-            <AskFlowPilot />
-          </div>
+          <AskFlowPilot />
         </div>
       </section>
 
-      <section className="border-t border-white/10 px-5 py-24 sm:px-6 sm:py-28">
-        <div className="mx-auto max-w-xl text-center">
-          <h2 className="text-3xl font-semibold leading-[1.1] tracking-[-0.02em] sm:text-4xl">
+      <section className="relative overflow-hidden border-t border-white/10 px-5 py-28 sm:px-6 sm:py-36">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-x-0 bottom-0 h-[30rem] bg-[radial-gradient(ellipse_50%_60%_at_50%_110%,rgba(16,185,129,0.14),transparent_70%)]"
+        />
+
+        <div className="relative mx-auto max-w-xl text-center">
+          <h2 className="text-[2rem] font-semibold leading-[1.08] tracking-[-0.03em] sm:text-5xl">
             Take your time back.
           </h2>
-          <p className="mx-auto mt-5 max-w-sm text-[15px] leading-7 text-zinc-400">
+          <p className="mx-auto mt-5 max-w-sm text-[16px] leading-7 text-zinc-400">
             Your business can keep answering without you.
           </p>
           <Link
             href="/signup"
-            className="mt-9 inline-flex min-h-12 items-center rounded-full bg-white px-8 text-[15px] font-semibold text-black transition hover:bg-zinc-200"
+            className="mt-10 inline-flex min-h-12 items-center rounded-full bg-white px-9 text-[15px] font-semibold text-black transition hover:bg-zinc-200"
           >
             Get FlowPilot
           </Link>

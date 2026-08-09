@@ -24,7 +24,7 @@
 -- decision to take with evidence rather than a guess to build now.
 
 alter table public.call
-  add column delivered_at timestamptz;
+  add column if not exists delivered_at timestamptz;
 
 comment on column public.call.notified_at is
   'When delivery was attempted. Claimed atomically before sending, so a retried Twilio status callback cannot notify twice. NOT proof anything arrived — see delivered_at.';

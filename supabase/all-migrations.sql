@@ -859,7 +859,7 @@ $$;
 -- decision to take with evidence rather than a guess to build now.
 
 alter table public.call
-  add column delivered_at timestamptz;
+  add column if not exists delivered_at timestamptz;
 
 comment on column public.call.notified_at is
   'When delivery was attempted. Claimed atomically before sending, so a retried Twilio status callback cannot notify twice. NOT proof anything arrived — see delivered_at.';
@@ -896,10 +896,10 @@ comment on column public.call.delivered_at is
 -- the same link.
 
 alter table public.lead
-  add column code text not null
+  add column if not exists code text not null
   default translate(encode(gen_random_bytes(6), 'base64'), '+/=', 'xyz');
 
-create unique index lead_code_idx on public.lead(code);
+create unique index if not exists lead_code_idx on public.lead(code);
 
 comment on column public.lead.code is
   'Short public-facing id used in the job alert link (/j/<code>). Not a secret — the route still requires a session and RLS still scopes the row.';

@@ -23,10 +23,10 @@
 -- the same link.
 
 alter table public.lead
-  add column code text not null
+  add column if not exists code text not null
   default translate(encode(gen_random_bytes(6), 'base64'), '+/=', 'xyz');
 
-create unique index lead_code_idx on public.lead(code);
+create unique index if not exists lead_code_idx on public.lead(code);
 
 comment on column public.lead.code is
   'Short public-facing id used in the job alert link (/j/<code>). Not a secret — the route still requires a session and RLS still scopes the row.';

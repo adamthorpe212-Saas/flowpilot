@@ -1,8 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import type Stripe from "stripe";
+import { PLANS } from "@/lib/plans";
 import { stripe, toSubscriptionStatus } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/server";
-import type { Plan } from "@/types/database";
 
 export const runtime = "nodejs";
 
@@ -49,6 +49,32 @@ export async function POST(request: NextRequest) {
           break;
         }
 
+        /*
+         * Record the plan that was actually bought.
+         *
+         * This used to be left alone, on the assumption that business.plan
+         * already matched whatever checkout had used. That stopped being true
+         * when one plan started being sold to everyone: a customer who signed
+         * up under a tier since withdrawn checked out at the current price and
+         * kept the old allowance — paying for one thing while being metered
+         * against another.
+         *
+         * Read from the session's own metadata rather than from what is
+         * currently on sale, so an event replayed weeks later still records
+         * what was sold at the time. Validated against the known ids, because a
+         * value deciding a customer's allowance should not be taken on trust
+         * even from ourselves.
+         */
+        const soldAs = session.metadata?.plan;
+        const plan = PLANS.find((candidate) => candidate.id === soldAs)?.id;
+
+        if (soldAs && !plan) {
+          console.error("Checkout completed with an unknown plan", {
+            businessId,
+            soldAs,
+          });
+        }
+
         await supabase
           .from("business")
           .update({
@@ -58,6 +84,7 @@ export async function POST(request: NextRequest) {
               typeof session.subscription === "string"
                 ? session.subscription
                 : null,
+            ...(plan ? { plan } : {}),
           })
           .eq("id", businessId);
         break;
@@ -74,7 +101,12 @@ export async function POST(request: NextRequest) {
           break;
         }
 
-        const plan = subscription.metadata?.plan as Plan | undefined;
+        // Validated, not cast. `as Plan` told the compiler to stop asking and
+        // would have written any string straight into the column that decides
+        // a customer's allowance.
+        const plan = PLANS.find(
+          (candidate) => candidate.id === subscription.metadata?.plan,
+        )?.id;
         const status = toSubscriptionStatus(subscription.status);
 
         /*

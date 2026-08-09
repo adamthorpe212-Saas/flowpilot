@@ -299,3 +299,59 @@ describe("provisionNumber and the Irish locality rule", () => {
     errors.mockRestore();
   });
 });
+
+describe("telling the customer whose problem it is", () => {
+  /*
+   * Regulatory approval and account configuration are not fixed by pressing the
+   * button again. A customer left tapping one that will never work concludes
+   * the product is broken rather than pending, so these cases are flagged and
+   * the screen drops the retry entirely.
+   */
+  const rejection = (code: number) => ({ code, message: "no valid address" });
+
+  it("marks a missing Twilio account as ours to fix", async () => {
+    twilioConfigured = false;
+
+    const result = await provisionNumber({ error: null });
+
+    expect(result.pending).toBe(true);
+    expect(result.error).toBeTruthy();
+    expect(result.error).not.toMatch(/try again/i);
+  });
+
+  it("marks every-candidate-refused as ours to fix", async () => {
+    localNumbers = [
+      { phoneNumber: "+35318412345", friendlyName: "", locality: "Balbriggan" },
+    ];
+    rejectWith = { "+35318412345": rejection(21615) };
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    const result = await provisionNumber({ error: null });
+
+    expect(result.pending).toBe(true);
+    expect(result.error).not.toMatch(/try again/i);
+    errors.mockRestore();
+  });
+
+  it("does not flag a lapsed subscription as ours", async () => {
+    // This one genuinely is the customer's to sort out, and telling them it is
+    // being handled would leave them waiting for something nobody is doing.
+    business = makeBusiness({ status: "suspended", subscription_status: "canceled" });
+
+    const result = await provisionNumber({ error: null });
+
+    expect(result.error).toBeTruthy();
+    expect(result.pending).toBeFalsy();
+  });
+
+  it("does not flag a transient shortage as ours", async () => {
+    // Retrying genuinely might work here, so the retry stays.
+    localNumbers = [];
+    availableNumbers = [];
+
+    const result = await provisionNumber({ error: null });
+
+    expect(result.pending).toBeFalsy();
+    expect(result.error).toMatch(/try again/i);
+  });
+});

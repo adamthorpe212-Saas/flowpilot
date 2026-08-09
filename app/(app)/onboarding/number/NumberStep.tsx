@@ -45,6 +45,44 @@ export default function NumberStep({
     );
   }
 
+  /*
+   * Waiting on us, not on them.
+   *
+   * Regulatory approval and account configuration are not fixed by pressing a
+   * button again, and a customer left tapping one that will never work decides
+   * the product is broken rather than pending. So the retry disappears, the
+   * reason is stated plainly, and they are given somewhere to go — everything
+   * before this step is already saved, and they will come back to a number
+   * waiting for them.
+   */
+  if (state.pending) {
+    return (
+      <div className="mt-8">
+        <div className="rounded-2xl border border-amber-500/25 bg-amber-500/[0.07] p-6">
+          <p className="text-xs uppercase tracking-[0.16em] text-amber-300">
+            Waiting on us
+          </p>
+          <p className="mt-3 text-[15px] leading-7 text-zinc-200">
+            {state.error}
+          </p>
+          <p className="mt-3 text-sm leading-6 text-zinc-400">
+            Irish numbers need regulatory approval before they can be handed
+            out, and yours is in the queue. Everything you&apos;ve set up so far
+            is saved. We&apos;ll let you know the moment your number is live,
+            and the last step takes a minute.
+          </p>
+        </div>
+
+        <Link
+          href="/dashboard"
+          className="mt-6 block rounded-xl border border-white/20 px-5 py-3 text-center text-[15px] transition hover:border-white/40 hover:bg-white/5"
+        >
+          Back to your dashboard
+        </Link>
+      </div>
+    );
+  }
+
   return (
     <form action={formAction} className="mt-8 space-y-5">
       <FormError message={state.error} />

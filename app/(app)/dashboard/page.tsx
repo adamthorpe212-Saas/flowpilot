@@ -8,7 +8,8 @@ import {
   STATUS_STYLES,
 } from "@/lib/lead-views";
 import { createClient } from "@/lib/supabase/server";
-import { shouldAnswerCalls, trialStatus } from "@/lib/usage";
+import { getUsage, shouldAnswerCalls, trialStatus } from "@/lib/usage";
+import ReceptionistStatus from "./ReceptionistStatus";
 import type { Lead } from "@/types/database";
 
 export const metadata: Metadata = {
@@ -50,12 +51,15 @@ export default async function DashboardPage({
 
   if (view.statuses) query = query.in("status", view.statuses);
 
-  const [{ data }, { count: todoCount }] = await Promise.all([
+  const [{ data }, { count: todoCount }, usage] = await Promise.all([
     query,
     supabase
       .from("lead")
       .select("id", { count: "exact", head: true })
       .in("status", LEAD_VIEWS[0].statuses ?? []),
+    // Alongside the others rather than after them: three sequential round trips
+    // is three times the wait on the page somebody opens most often.
+    business ? getUsage(business) : Promise.resolve(null),
   ]);
 
   const leads = (data ?? []) as Lead[];
@@ -107,6 +111,17 @@ export default async function DashboardPage({
               : "Setup not finished"}
         </span>
       </div>
+
+      {business && (
+        <div className="mt-6">
+          <ReceptionistStatus
+            live={isLive}
+            phoneNumber={business.phone_number}
+            forwardingConfirmed={Boolean(business.forwarding_verified_at)}
+            usage={usage}
+          />
+        </div>
+      )}
 
       {onTrial && trial && trial.daysRemaining <= 5 && (
         <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-amber-500/25 bg-amber-500/10 p-5">

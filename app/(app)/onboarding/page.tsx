@@ -31,8 +31,34 @@ export default async function OnboardingPage() {
       <p className="mt-1 text-sm text-zinc-400">
         {remaining === 0
           ? "All done. Your receptionist is answering calls."
-          : `${remaining} ${remaining === 1 ? "step" : "steps"} to go — about five minutes.`}
+          : `${remaining} ${remaining === 1 ? "step" : "steps"} to go.`}
       </p>
+
+      {/*
+        Progress as a bar rather than only a count. "3 steps to go" is a number
+        somebody has to hold in their head against a total they were never told;
+        a filled bar answers "am I nearly there" without being read.
+      */}
+      <div className="mt-5">
+        <div
+          role="progressbar"
+          aria-valuenow={steps.length - remaining}
+          aria-valuemin={0}
+          aria-valuemax={steps.length}
+          aria-label="Setup progress"
+          className="h-1.5 overflow-hidden rounded-full bg-white/10"
+        >
+          <div
+            className="h-full rounded-full bg-white transition-[width] duration-500"
+            style={{
+              width: `${((steps.length - remaining) / steps.length) * 100}%`,
+            }}
+          />
+        </div>
+        <p className="mt-2 text-xs text-zinc-500">
+          {steps.length - remaining} of {steps.length} done
+        </p>
+      </div>
 
       <ol className="mt-8 space-y-3">
         {steps.map((step, index) => {

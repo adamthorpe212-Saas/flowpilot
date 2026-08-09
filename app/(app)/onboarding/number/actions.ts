@@ -14,7 +14,20 @@ import {
   releaseNumber,
 } from "@/lib/twilio";
 
-export type ProvisionState = { error: string | null; phoneNumber?: string };
+export type ProvisionState = {
+  error: string | null;
+  phoneNumber?: string;
+  /**
+   * True when the hold-up is ours, not the customer's.
+   *
+   * Regulatory approval, a missing configuration, or an area we cannot yet buy
+   * in. None of these are fixed by pressing the button again, and a customer
+   * left tapping one that will never work concludes the product is broken
+   * rather than pending. The distinction changes what the screen says and
+   * whether it offers a retry at all.
+   */
+  pending?: boolean;
+};
 
 /**
  * How many numbers to line up before trying to buy one.
@@ -63,7 +76,8 @@ export async function provisionNumber(
     // a customer is deciding whether this product is real.
     return {
       error:
-        "Phone numbers aren't switched on yet. Everything else is set up — this is the last piece.",
+        "Phone numbers aren't switched on for your account yet. Everything else is ready — this last piece is on us.",
+      pending: true,
     };
   }
 
@@ -133,7 +147,8 @@ export async function provisionNumber(
 
       return {
         error:
-          "We couldn't get you a number just now. We've been told and we're sorting it — you don't need to do anything.",
+          "We couldn't assign you a number yet. We've been told and we're on it — there's nothing for you to do.",
+        pending: true,
       };
     }
 

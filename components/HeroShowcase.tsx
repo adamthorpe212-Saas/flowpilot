@@ -2,36 +2,47 @@
 
 import { useEffect, useState } from "react";
 import JobCard from "@/components/JobCard";
-import PhoneFrame from "@/components/PhoneFrame";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 
 /**
  * The hero visual: one missed call, start to finish.
  *
- * It replaced a small circular diagram with four labelled dots. That diagram
- * described the product in the abstract — a visitor had to read it, decode it,
- * and then imagine the software. This shows the software: a call arriving, the
- * receptionist answering it, and a job record assembling itself beside the
- * phone as the caller speaks.
+ * Rebuilt because the previous composition failed the only test that matters —
+ * on a 390px phone, where most of this traffic arrives, it put a 184px-wide
+ * phone bezel at 603px and the job record at 931px, entirely below the fold,
+ * with its labels set at 10px. The artefact that makes somebody understand
+ * FlowPilot in five seconds was never on screen, and drawing a small phone
+ * inside a phone spends the frame on something the visitor is already holding.
  *
- * The animation exists to teach the sequence, which is the one thing a
- * tradesperson needs to understand and cannot be told in a headline. It runs
- * once through and holds on the finished job rather than looping forever,
+ * So it is one object now, not two: the call across the top, the job filling in
+ * underneath, full width on a phone at a readable size. The step rail carries
+ * the sequence on desktop, where there is room for it beside the card.
+ *
+ * The animation runs once and holds on the finished job rather than looping,
  * because a permanent animation beside a headline competes with the headline.
  */
 
 const STEPS = [
-  { label: "Missed call", caption: "You're under a sink. It rings out." },
-  { label: "FlowPilot answers", caption: "Picks up on your behalf, in your business's name." },
-  { label: "Details taken", caption: "Name, job, address, how urgent it is." },
-  { label: "Sent to you", caption: "The job is on your phone before you're back in the van." },
+  { label: "Missed call", caption: "You're on the tools. It rings out." },
+  {
+    label: "FlowPilot answers",
+    caption: "Picks up on your behalf, in your business's name.",
+  },
+  {
+    label: "Details taken",
+    caption: "Name, job, address, and when they want it done.",
+  },
+  {
+    label: "Sent to you",
+    caption: "On your phone before you're back in the van.",
+  },
 ] as const;
 
 /** Revealed one at a time from step 2, so the record visibly assembles. */
 const FIELDS = [
-  { label: "Job", value: "Burst pipe — water through the kitchen ceiling" },
+  { label: "Job", value: "Move the sink and dishwasher, new radiator" },
   { label: "Address", value: "14 Griffith Avenue, Glasnevin" },
-  { label: "Needed", value: "Today, any time after 6pm" },
+  { label: "Wants it", value: "Week of the 22nd, before the floors go down" },
 ];
 
 const STEP_MS = 2200;
@@ -60,44 +71,69 @@ export default function HeroShowcase() {
 
   return (
     <div className="mx-auto w-full max-w-4xl">
-      <div className="grid items-start gap-6 sm:gap-8 lg:grid-cols-[minmax(0,15rem)_minmax(0,1fr)]">
-        <PhoneFrame className="mx-auto h-[19rem] w-[11.5rem] shadow-2xl shadow-black/60 lg:mx-0">
-          <div className="flex h-full flex-col px-4 pb-4 pt-5 text-center">
-            <p className="text-[9px] uppercase tracking-[0.16em] text-zinc-500">
-              {answering ? "In call" : "Incoming"}
-            </p>
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,13rem)_minmax(0,1fr)] lg:items-center lg:gap-12">
+        {/*
+          The sequence, as a rail on desktop only. On a phone it would be four
+          more lines of text above the thing they actually need to look at, so
+          there it collapses to the single caption underneath the card.
+        */}
+        <ol className="hidden lg:block">
+          {STEPS.map((item, index) => {
+            const done = index < step;
+            const active = index === step;
 
-            <p className="mt-2 text-[13px] font-semibold text-white">
-              John Murphy
-            </p>
-            <p className="mt-0.5 text-[10px] text-zinc-500">087 xxx xxxx</p>
+            return (
+              <li key={item.label} className="flex items-center gap-3 py-2.5">
+                <span
+                  aria-hidden="true"
+                  className={`h-1.5 w-1.5 flex-none rounded-full transition-colors duration-500 ${
+                    active
+                      ? "bg-emerald-400"
+                      : done
+                        ? "bg-white/40"
+                        : "bg-white/15"
+                  }`}
+                />
+                <span
+                  className={`text-sm transition-colors duration-500 ${
+                    active
+                      ? "font-medium text-white"
+                      : done
+                        ? "text-zinc-400"
+                        : "text-zinc-600"
+                  }`}
+                >
+                  {item.label}
+                </span>
+              </li>
+            );
+          })}
+        </ol>
 
-            <div className="mt-5 flex flex-1 flex-col items-center justify-center">
-              {answering ? (
-                <>
-                  <div
+        <div className="min-w-0">
+          <div className="overflow-hidden rounded-2xl border border-white/12 bg-[#0c0c0c] shadow-2xl shadow-black/60">
+            {/*
+              The call itself, as a strip rather than a handset. It carries the
+              same information the bezel did — who is ringing, that FlowPilot is
+              speaking to them — in a fifth of the height, which is what buys the
+              job record its place above the fold.
+            */}
+            <div className="flex items-center gap-3 border-b border-white/8 bg-white/[0.03] px-5 py-3.5">
+              <span className="flex h-9 w-9 flex-none items-center justify-center rounded-full bg-white/[0.06]">
+                {answering ? (
+                  <span
                     aria-hidden="true"
-                    className="flex h-7 items-end gap-[3px]"
+                    className="flex h-3.5 items-end gap-[2px]"
                   >
-                    {[0, 1, 2, 3, 4].map((bar) => (
+                    {[0, 1, 2, 3].map((bar) => (
                       <span
                         key={bar}
-                        className="fp-wave-bar w-[3px] rounded-full bg-emerald-400"
-                        style={{
-                          height: "100%",
-                          animationDelay: `${bar * 110}ms`,
-                        }}
+                        className="fp-wave-bar w-[2px] rounded-full bg-emerald-400"
+                        style={{ height: "100%", animationDelay: `${bar * 110}ms` }}
                       />
                     ))}
-                  </div>
-                  <p className="mt-4 text-[10px] leading-4 text-zinc-300">
-                    {finished
-                      ? "“Dave will ring you straight back.”"
-                      : "“Thanks for calling. What can we help you with?”"}
-                  </p>
-                </>
-              ) : (
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-red-950/80 text-red-300">
+                  </span>
+                ) : (
                   <svg
                     aria-hidden="true"
                     viewBox="0 0 24 24"
@@ -105,39 +141,48 @@ export default function HeroShowcase() {
                     stroke="currentColor"
                     strokeWidth="2"
                     strokeLinecap="round"
-                    className="h-5 w-5"
+                    className="h-4 w-4 text-red-400"
                   >
                     <path d="M3 3l18 18" />
                     <path d="M5.5 9.5a16 16 0 0 0 9 9l2-2.5 3.5 1v3a1.5 1.5 0 0 1-1.7 1.5A19 19 0 0 1 3.5 5.7 1.5 1.5 0 0 1 5 4h3l1 3.5z" />
                   </svg>
-                </div>
-              )}
-            </div>
-          </div>
-        </PhoneFrame>
+                )}
+              </span>
 
-        <div className="min-w-0">
-          {/*
-            The record is present from the start but fills as the call goes on,
-            so the connection between talking and capturing is visible rather
-            than asserted. Its height is reserved to stop the page jumping.
-          */}
-          <JobCard
-            name="John Murphy"
-            number="087 xxx xxxx"
-            urgency={step >= 2 ? "Urgent" : undefined}
-            fields={visibleFields}
-            actions={finished}
-            className="min-h-[16rem] transition-opacity duration-500"
-          />
+              <span className="min-w-0 flex-1">
+                <span className="block text-[11px] uppercase tracking-[0.14em] text-zinc-500">
+                  {answering ? "FlowPilot answering" : "Missed call"}
+                </span>
+                <span className="mt-0.5 block truncate text-sm text-zinc-200">
+                  {answering
+                    ? finished
+                      ? "“Dave will come back to you about the 22nd.”"
+                      : "“When are you hoping to get it done?”"
+                    : "John Murphy · 087 xxx xxxx"}
+                </span>
+              </span>
+            </div>
+
+            {/*
+              Height reserved so the page does not jump as fields arrive. The
+              card renders headerless because the strip above already says whose
+              call this is.
+            */}
+            <JobCard
+              name="John Murphy"
+              number="087 xxx xxxx"
+              fields={visibleFields}
+              actions={finished}
+              chromeless
+              className="min-h-[15rem]"
+            />
+          </div>
 
           <p
             aria-live="polite"
             className="mt-4 text-center text-sm leading-6 text-zinc-400 lg:text-left"
           >
-            <span className="font-medium text-white">
-              {STEPS[step].label}.
-            </span>{" "}
+            <span className="font-medium text-white">{STEPS[step].label}.</span>{" "}
             {STEPS[step].caption}
           </p>
         </div>

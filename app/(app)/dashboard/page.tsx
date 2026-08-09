@@ -23,6 +23,17 @@ const URGENCY_STYLES: Record<string, string> = {
   low: "border-white/10 bg-white/[0.03] text-zinc-400",
 };
 
+/**
+ * How far back the undelivered-jobs warning looks.
+ *
+ * A function rather than a value computed in the component: reading the clock
+ * during render is impure, and the lint rule that says so is right even here,
+ * where this only ever runs on the server.
+ */
+function oneWeekAgo(): string {
+  return new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+}
+
 function formatWhen(value: string) {
   return new Intl.DateTimeFormat("en-IE", {
     day: "numeric",
@@ -51,16 +62,33 @@ export default async function DashboardPage({
 
   if (view.statuses) query = query.in("status", view.statuses);
 
-  const [{ data }, { count: todoCount }, usage] = await Promise.all([
-    query,
-    supabase
-      .from("lead")
-      .select("id", { count: "exact", head: true })
-      .in("status", LEAD_VIEWS[0].statuses ?? []),
-    // Alongside the others rather than after them: three sequential round trips
-    // is three times the wait on the page somebody opens most often.
-    business ? getUsage(business) : Promise.resolve(null),
-  ]);
+  const [{ data }, { count: todoCount }, { count: undelivered }, usage] =
+    await Promise.all([
+      query,
+      supabase
+        .from("lead")
+        .select("id", { count: "exact", head: true })
+        .in("status", LEAD_VIEWS[0].statuses ?? []),
+      /*
+       * Jobs we took and then failed to tell anyone about.
+       *
+       * notified_at is claimed before sending and delivered_at only once a
+       * channel accepts, so this pair is the product admitting it dropped
+       * something. Worth a query on the page somebody opens every morning,
+       * because the alternative is finding out when a customer rings to ask why
+       * nobody called them back. Bounded to a week so one bad afternoon does not
+       * nag forever.
+       */
+      supabase
+        .from("call")
+        .select("id", { count: "exact", head: true })
+        .not("notified_at", "is", null)
+        .is("delivered_at", null)
+        .gte("started_at", oneWeekAgo()),
+      // Alongside the others rather than after them: four sequential round trips
+      // is four times the wait on the page somebody opens most often.
+      business ? getUsage(business) : Promise.resolve(null),
+    ]);
 
   const leads = (data ?? []) as Lead[];
 
@@ -120,6 +148,38 @@ export default async function DashboardPage({
             forwardingConfirmed={Boolean(business.forwarding_verified_at)}
             usage={usage}
           />
+        </div>
+      )}
+
+      {/*
+        The product owning a failure rather than blaming the customer for it.
+        Almost always this is our sending channel, not their settings, and
+        "check your notification settings" would be pinning our problem on
+        somebody whose phone did nothing wrong. It says what happened, says the
+        work is safe, and points at the one thing they can usefully check —
+        without implying they caused it.
+
+        Above the trial nudge on purpose: a job nobody heard about outranks a
+        renewal date.
+      */}
+      {(undelivered ?? 0) > 0 && (
+        <div className="mt-6 rounded-2xl border border-amber-500/25 bg-amber-500/10 p-5">
+          <p className="text-sm font-medium text-amber-100">
+            {undelivered === 1
+              ? "We couldn't get an alert to you about 1 job this week."
+              : `We couldn't get an alert to you about ${undelivered} jobs this week.`}
+          </p>
+          <p className="mt-2 text-sm leading-6 text-amber-100/80">
+            Nothing is lost — every one of them is in the list below with the
+            caller&apos;s number. This is usually something at our end, and
+            we&apos;re on it.
+          </p>
+          <Link
+            href="/settings"
+            className="mt-4 inline-block text-sm font-medium text-amber-100 underline underline-offset-4 transition hover:text-white"
+          >
+            Check where your alerts go
+          </Link>
         </div>
       )}
 

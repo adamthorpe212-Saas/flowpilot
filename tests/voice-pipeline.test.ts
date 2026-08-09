@@ -608,6 +608,97 @@ describe("after the call", () => {
     errors.mockRestore();
   });
 
+  it("records that the job actually reached somebody", async () => {
+    await incoming(twilioRequest("/api/voice/incoming", { CallSid: "CA1", From: CALLER_NUMBER, To: FLOWPILOT_NUMBER }));
+    mockModel([{ speech: "Thanks.", captured: { job_type: "Rewire" }, complete: true }]);
+    await turn(twilioRequest("/api/voice/turn", { CallSid: "CA1", SpeechResult: "A rewire" }));
+    await status(twilioRequest("/api/voice/status", { CallSid: "CA1", CallStatus: "completed", CallDuration: "30" }));
+
+    expect(sentSms.some((sms) => sms.to === OWNER_MOBILE)).toBe(true);
+    expect(tables.call[0].delivered_at).toBeTruthy();
+  });
+
+  it("does not claim delivery when the job reached nobody", async () => {
+    /*
+     * The distinction the delivered_at column exists for. notified_at is taken
+     * before anything is sent — correct for stopping a retried callback texting
+     * twice, useless as evidence. Without this, a business whose only channel is
+     * failing is indistinguishable in the database from one being served
+     * perfectly, and the first anyone hears of it is a customer asking why
+     * FlowPilot has gone quiet.
+     */
+    smsConfigured = false;
+    emailConfigured = false;
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await incoming(twilioRequest("/api/voice/incoming", { CallSid: "CA1", From: CALLER_NUMBER, To: FLOWPILOT_NUMBER }));
+    mockModel([{ speech: "Thanks.", captured: { job_type: "Rewire" }, complete: true }]);
+    await turn(twilioRequest("/api/voice/turn", { CallSid: "CA1", SpeechResult: "A rewire" }));
+    await status(twilioRequest("/api/voice/status", { CallSid: "CA1", CallStatus: "completed", CallDuration: "30" }));
+
+    // Attempted, so the lock is taken and nothing will notify twice...
+    expect(tables.call[0].notified_at).toBeTruthy();
+    // ...but nothing arrived, and the row says so.
+    expect(tables.call[0].delivered_at).toBeFalsy();
+    errors.mockRestore();
+  });
+
+  it("shouts when there is nowhere to send a job at all", async () => {
+    /*
+     * The silent one. Nothing throws here — there is simply no rule to try — so
+     * the alarm used to skip this case entirely and a business would drop every
+     * job without a single line in the logs. The UI stops you deleting your last
+     * rule, but the state exists in the database and this is the log that exists
+     * for what nobody planned for.
+     */
+    tables.notification_rule.length = 0;
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await incoming(twilioRequest("/api/voice/incoming", { CallSid: "CA1", From: CALLER_NUMBER, To: FLOWPILOT_NUMBER }));
+    mockModel([{ speech: "Thanks.", captured: { job_type: "Leak" }, complete: true }]);
+    await turn(twilioRequest("/api/voice/turn", { CallSid: "CA1", SpeechResult: "A leak" }));
+    await status(twilioRequest("/api/voice/status", { CallSid: "CA1", CallStatus: "completed", CallDuration: "30" }));
+
+    expect(
+      errors.mock.calls.some((call) =>
+        String(call[0]).includes("no notification rules"),
+      ),
+    ).toBe(true);
+    errors.mockRestore();
+  });
+
+  it("shouts when a rule exists but none of them wanted this lead", async () => {
+    // Sharper since urgency became optional: most leads are `normal` now, so a
+    // rule left on urgent-only would quietly swallow nearly all of the work.
+    tables.notification_rule.length = 0;
+    tables.notification_rule.push({
+      id: "rule-urgent-only",
+      business_id: BUSINESS_ID,
+      channel: "sms",
+      destination: OWNER_MOBILE,
+      on_new_lead: false,
+      on_urgent_lead: true,
+      outside_hours: true,
+      created_at: "2026-07-01T00:00:00Z",
+    });
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    await incoming(twilioRequest("/api/voice/incoming", { CallSid: "CA1", From: CALLER_NUMBER, To: FLOWPILOT_NUMBER }));
+    mockModel([{ speech: "Thanks.", captured: { job_type: "Leak" }, complete: true }]);
+    await turn(twilioRequest("/api/voice/turn", { CallSid: "CA1", SpeechResult: "A leak" }));
+    await status(twilioRequest("/api/voice/status", { CallSid: "CA1", CallStatus: "completed", CallDuration: "30" }));
+
+    // The caller still gets their confirmation — that send is independent of
+    // the owner's rules. What must not happen is the owner hearing nothing.
+    expect(sentSms.some((sms) => sms.to === OWNER_MOBILE)).toBe(false);
+    expect(
+      errors.mock.calls.some((call) =>
+        String(call[0]).includes("no rule matched"),
+      ),
+    ).toBe(true);
+    errors.mockRestore();
+  });
+
   it("still finalises a call that was abandoned mid-sentence", async () => {
     await incoming(
       twilioRequest("/api/voice/incoming", {

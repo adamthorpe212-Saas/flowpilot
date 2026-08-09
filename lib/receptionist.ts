@@ -1,6 +1,6 @@
 import "server-only";
 
-import { aiDisclosure } from "@/lib/disclosure";
+import { composeOpening } from "@/lib/disclosure";
 import type {
   BusinessProfile,
   QualificationQuestion,
@@ -323,9 +323,9 @@ export function openingLine(context: ReceptionistContext): string {
    * announcing a missed call: a caller who rang a plumber knows they rang a
    * plumber, and "sorry we missed you" opens on an apology for something the
    * caller has not yet complained about.
+   *
+   * Composed by lib/disclosure.ts so the public demo can produce the identical
+   * line without importing this server-only module.
    */
-  const greeting =
-    context.profile.greeting?.trim() || "What can we help you with?";
-
-  return `${aiDisclosure(context.businessName)} ${greeting}`;
+  return composeOpening(context.businessName, context.profile.greeting);
 }

@@ -1,12 +1,15 @@
 import Link from "next/link";
 import type { ReactNode } from "react";
+import Logo from "@/components/Logo";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-full flex-col bg-black text-white">
       <header className="px-5 py-6 sm:px-8">
-        <Link href="/" className="text-lg font-semibold tracking-tight">
-          FlowPilot
+        {/* Inline-flex with a minimum height so the wordmark is a real target
+            and not a 21px sliver of text. */}
+        <Link href="/" className="inline-flex min-h-11 items-center">
+          <Logo size="large" />
         </Link>
       </header>
 

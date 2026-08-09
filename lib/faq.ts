@@ -99,8 +99,37 @@ export function faqItems(ids: readonly string[]): FaqItem[] {
   });
 }
 
-/** Objections that decide whether somebody trusts the product at all. */
+/**
+ * Every answer we have written, whichever page happens to show it.
+ *
+ * For anything that must not depend on page layout — the Ask assistant's
+ * knowledge, and the tests that check answers do not contradict each other.
+ * Deriving those from the page lists meant that trimming a page silently took
+ * knowledge away from the chat.
+ */
+export function allFaqItems(): FaqItem[] {
+  return [...ITEMS];
+}
+
+/**
+ * The five objections that stop somebody buying, in the order they occur.
+ *
+ * Trimmed from seven. The homepage FAQ sits directly under the price, which is
+ * the moment the objections fire, so it holds the ones that decide a sale —
+ * my number, my reputation, will it cope, how much work is this, can I get out.
+ * Recording and out-of-hours are reassurances rather than blockers; they are a
+ * click away on /how-it-works and the chat below still answers both.
+ */
 export const HOME_FAQ_IDS = [
+  "keep-number",
+  "is-it-a-machine",
+  "misunderstands",
+  "time-to-live",
+  "cancel",
+] as const;
+
+/** The full set, for somebody reading the page that explains the product. */
+export const LEARN_FAQ_IDS = [
   "keep-number",
   "is-it-a-machine",
   "misunderstands",

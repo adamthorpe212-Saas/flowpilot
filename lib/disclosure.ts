@@ -37,3 +37,27 @@ export function aiDisclosure(businessName: string): string {
  * hears without needing a business to hand.
  */
 export const AI_DISCLOSURE_EXAMPLE = aiDisclosure("O'Brien Plumbing");
+
+/** The default when a business has not written a greeting of its own. */
+export const DEFAULT_GREETING = "What can we help you with?";
+
+/**
+ * The first thing a caller hears: disclosure, then the business's own words.
+ *
+ * Pulled out of openingLine() because the marketing demo has to open with
+ * exactly this and could not call it — openingLine lives in the server-only
+ * receptionist module, so the demo carried its own hardcoded copy under a
+ * comment promising the two matched. They did not. The demo was still opening
+ * "This is an automated assistant, and I'll take notes" months after the real
+ * disclosure was rewritten, on the page where somebody decides whether to trust
+ * us.
+ *
+ * Free of server imports so both callers can share it, which is the only reason
+ * the promise is now worth anything.
+ */
+export function composeOpening(
+  businessName: string,
+  greeting?: string | null,
+): string {
+  return `${aiDisclosure(businessName)} ${greeting?.trim() || DEFAULT_GREETING}`;
+}

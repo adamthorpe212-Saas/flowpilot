@@ -1,7 +1,9 @@
 import Link from "next/link";
 import AskFlowPilot from "@/components/AskFlowPilot";
+import Faq from "@/components/Faq";
 import HeroShowcase from "@/components/HeroShowcase";
 import PhoneMessage from "@/components/PhoneMessage";
+import { HOME_FAQ_IDS, faqItems } from "@/lib/faq";
 import { jobAlert } from "@/lib/messages";
 import { formatPrice, soldPlan, TRIAL_DAYS } from "@/lib/plans";
 
@@ -15,10 +17,10 @@ import { formatPrice, soldPlan, TRIAL_DAYS } from "@/lib/plans";
  *
  * What's left is the shortest path a tradesperson can take from "what is this"
  * to "I'll take it": the promise, the stakes, what lands on their phone, what it
- * costs, and a way to ask the one question we didn't answer. Everything that
- * explains the mechanism — the eight-step sequence, the live demo, the voicemail
- * comparison, the FAQ — lives on /how-it-works, which is where somebody goes
- * when they've decided they're interested and want to be convinced properly.
+ * costs, the objections that stop a sale, and a way to ask the one we didn't
+ * think of. Everything that explains the mechanism — the eight-step sequence,
+ * the live demo, the voicemail comparison — lives on /how-it-works, which is
+ * where somebody goes when they're interested and want convincing properly.
  */
 
 const REASSURANCES = [
@@ -38,18 +40,41 @@ const NEVERS = [
   "Never invents a service you don't offer",
 ];
 
+/*
+ * Three steps, and two of them are ours. That ratio is the entire point of the
+ * section — a tradesperson reading this is deciding whether it sounds like a
+ * day of admin.
+ */
+const SETUP = [
+  {
+    step: "01",
+    title: "Tell us about your business",
+    body: "The jobs you take, the areas you cover, and how you want calls handled.",
+  },
+  {
+    step: "02",
+    title: "Forward your missed calls",
+    body: "One short code on your own handset. Your customers keep ringing the same number, and nothing on your van changes.",
+  },
+  {
+    step: "03",
+    title: "We ring you to check it worked",
+    body: "A test call so you can hear it answer before a real customer does.",
+  },
+];
+
 const BENEFITS = [
   {
     title: "It answers as your business",
     body: "By name — and it tells the caller straight away that it's an assistant taking details.",
   },
   {
-    title: "It finds out what the job is",
-    body: "What's wrong, where they are, how urgent it is and when suits. One question at a time, like a person would.",
+    title: "It asks when they need it done",
+    body: "What the job is, where they are, and the date they're working to. One question at a time, like a person would.",
   },
   {
     title: "It's on your phone before you're free",
-    body: "The moment the call ends, you get a text with the job and the number to ring back.",
+    body: "A text with the job, the date and the number to ring back. Tap it and the whole job opens — accept it, ring them, or leave it.",
   },
 ];
 
@@ -159,28 +184,30 @@ export default function Home() {
       </section>
 
       {/*
-        The stakes, stated once. This replaced two separate card sections that
-        were both circling the same idea — type alone, so the page has a moment
-        that isn't another grid of bordered boxes.
+        The one emotional beat, and the only section on the page that is not
+        selling a mechanism.
+
+        It was framed as loss — "the job goes to whoever picks up" — which sells
+        by making somebody anxious about the thing they are already anxious
+        about. What they are buying is the opposite of that feeling, so it is
+        framed as permission now: put the phone down, it is handled.
+
+        Type alone, deliberately. This is where a photograph of somebody having
+        a Saturday belongs, and there isn't one — a stock image of a smiling
+        stranger in a hard hat would say less than the sentence does, and every
+        tradesperson has seen that photograph on a hundred other websites.
       */}
       <section className="border-t border-white/10 px-5 py-24 sm:px-6 sm:py-32">
         <div className="mx-auto max-w-3xl text-center">
           <h2 className="text-[2rem] font-semibold leading-[1.08] tracking-[-0.03em] sm:text-5xl">
-            The job goes to
+            Switch off.
             <br />
-            whoever picks up.
+            <span className="text-zinc-500">FlowPilot doesn&apos;t.</span>
           </h2>
-          <p className="mx-auto mt-6 max-w-lg text-[16px] leading-8 text-zinc-400">
-            You can&apos;t answer a phone with both hands full. FlowPilot can —
-            in your business&apos;s name, at half nine at night, on a bank
-            holiday Monday.
+          <p className="mx-auto mt-6 max-w-lg text-balance text-[17px] leading-8 text-zinc-300">
+            On another job, over the weekend, or halfway across the world — your
+            customers still get answered.
           </p>
-
-          <ul className="mx-auto mt-12 flex max-w-2xl flex-col items-center justify-center gap-3 border-t border-white/10 pt-8 text-[13px] text-zinc-400 sm:flex-row sm:gap-8">
-            {NEVERS.map((never) => (
-              <li key={never}>{never}</li>
-            ))}
-          </ul>
         </div>
       </section>
 
@@ -213,6 +240,25 @@ export default function Home() {
                 </li>
               ))}
             </ol>
+
+            {/*
+              The limits sit with what it does, not with switching off. They
+              were in the emotional section, where "never quotes a price"
+              directly after "put the phone down" was a non-sequitur — here they
+              close the list of what it does with the three things it won't,
+              which is the question a sceptical electrician asks next.
+            */}
+            <ul className="mt-10 flex flex-col gap-2.5 border-t border-white/10 pt-7 text-[14px] text-zinc-400 sm:flex-row sm:flex-wrap sm:gap-x-7">
+              {NEVERS.map((never) => (
+                <li key={never} className="flex items-center gap-2.5">
+                  <span
+                    aria-hidden="true"
+                    className="h-1 w-1 flex-none rounded-full bg-zinc-600"
+                  />
+                  {never}
+                </li>
+              ))}
+            </ul>
           </div>
 
           {/*
@@ -229,15 +275,69 @@ export default function Home() {
             <PhoneMessage
               sender="FlowPilot"
               body={jobAlert({
-                urgent: true,
-                jobType: "Water coming through kitchen ceiling",
+                urgent: false,
+                callerName: "John Murphy",
+                jobType: "Move the sink and dishwasher, new radiator",
                 location: "14 Griffith Avenue, Glasnevin",
+                neededBy: "Week of the 22nd",
                 callerNumber: "087 412 9008",
+                link: "flowpilot.ie/j/K4x9M2p7",
               })}
               emphasis
-              className="h-[340px] w-[196px] shadow-2xl shadow-black/60"
+              className="h-[360px] w-[218px] shadow-2xl shadow-black/60"
             />
           </div>
+        </div>
+      </section>
+
+      {/*
+        Setup anxiety, answered immediately before the price.
+
+        Not a duplicate of the sequence on /how-it-works: that one explains what
+        happens to a caller, this one answers "what do I have to do", which is
+        the second thought a tradesperson has after "what is this" and the one
+        that loses the sale if it goes unanswered. Three steps because two of
+        them are ours.
+
+        It deliberately does not promise a timescale. Irish numbers need
+        regulatory approval that we do not control, and "live in minutes" is the
+        kind of claim that turns a delay we warned nobody about into a refund.
+      */}
+      <section className="border-t border-white/10 px-5 py-20 sm:px-6 sm:py-28">
+        <div className="mx-auto max-w-5xl">
+          <div className="max-w-xl">
+            <h2 className="text-[2rem] font-semibold leading-[1.08] tracking-[-0.03em] sm:text-5xl">
+              Keep your number.
+              <br />
+              Change almost nothing.
+            </h2>
+            <p className="mt-6 text-[16px] leading-8 text-zinc-400">
+              Most of it is done for you. The one thing only you can do takes
+              about a minute on your own phone.
+            </p>
+          </div>
+
+          <ol className="mt-12 grid gap-4 md:grid-cols-3">
+            {SETUP.map((item) => (
+              <li
+                key={item.step}
+                className="rounded-2xl border border-white/10 bg-white/[0.02] p-7"
+              >
+                <span
+                  aria-hidden="true"
+                  className="text-xs font-medium tracking-[0.14em] text-zinc-500"
+                >
+                  {item.step}
+                </span>
+                <h3 className="mt-4 text-[17px] font-semibold tracking-tight">
+                  {item.title}
+                </h3>
+                <p className="mt-2 text-[15px] leading-7 text-zinc-400">
+                  {item.body}
+                </p>
+              </li>
+            ))}
+          </ol>
         </div>
       </section>
 
@@ -298,12 +398,32 @@ export default function Home() {
       </section>
 
       {/*
-        The FAQ that used to sit here moved to /how-it-works. This answers the
-        same questions from the same source — and the ones we never thought of.
+        Objections get answered where they occur: directly under the price.
+
+        These briefly lived on /how-it-works instead, on the grounds that the
+        accordion was the longest thing on the page. It wasn't — collapsed, all
+        seven came to 446px, and the figure that justified moving them was
+        really the FAQ and the chat added together. Sending somebody to another
+        page to find out whether they keep their own number is a worse trade
+        than 400px.
       */}
-      <section className="border-t border-white/10 px-5 py-20 sm:px-6 sm:py-24">
+      <section
+        id="faq"
+        className="scroll-mt-20 border-t border-white/10 px-5 py-20 sm:px-6 sm:py-24"
+      >
         <div className="mx-auto max-w-2xl">
-          <AskFlowPilot />
+          <h2 className="text-[2rem] font-semibold tracking-[-0.03em] sm:text-4xl">
+            Questions worth asking
+          </h2>
+
+          <div className="mt-10">
+            <Faq items={faqItems(HOME_FAQ_IDS)} />
+          </div>
+
+          {/* The one we didn't think of. */}
+          <div className="mt-10">
+            <AskFlowPilot />
+          </div>
         </div>
       </section>
 

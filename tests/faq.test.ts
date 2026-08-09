@@ -1,7 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
   HOME_FAQ_IDS,
+  LEARN_FAQ_IDS,
   PRICING_FAQ_IDS,
+  allFaqItems,
   faqItems,
   type FaqItem,
 } from "@/lib/faq";
@@ -26,14 +28,36 @@ describe("faqItems", () => {
     expect(() => faqItems(["no-such-question"])).toThrow(/Unknown FAQ id/);
   });
 
-  it("resolves every id both pages use", () => {
+  it("resolves every id every page uses", () => {
     expect(() => faqItems(HOME_FAQ_IDS)).not.toThrow();
+    expect(() => faqItems(LEARN_FAQ_IDS)).not.toThrow();
     expect(() => faqItems(PRICING_FAQ_IDS)).not.toThrow();
+  });
+
+  it("shows every answer somewhere", () => {
+    /*
+     * An answer written and then displayed nowhere is worse than one never
+     * written: it reads as covered in review and is invisible to a customer.
+     * Caught the moment a page list is trimmed without checking the rest.
+     */
+    const shown = new Set<string>([
+      ...HOME_FAQ_IDS,
+      ...LEARN_FAQ_IDS,
+      ...PRICING_FAQ_IDS,
+    ]);
+
+    const orphaned = allFaqItems()
+      .filter((item) => !shown.has(item.id))
+      .map((item) => item.id);
+
+    expect(orphaned, "written but on no page").toEqual([]);
   });
 });
 
 describe("the answers themselves", () => {
-  const all = [...faqItems(HOME_FAQ_IDS), ...faqItems(PRICING_FAQ_IDS)];
+  // Every answer, not the union of the page lists — trimming a page must not
+  // quietly stop these two checks from covering an answer.
+  const all = allFaqItems();
 
   it("gives one answer per question across both pages", () => {
     /*

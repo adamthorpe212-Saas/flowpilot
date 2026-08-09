@@ -20,6 +20,7 @@ export default function JobCard({
   urgency,
   fields,
   actions = true,
+  chromeless = false,
   className = "",
 }: {
   name: string;
@@ -27,34 +28,57 @@ export default function JobCard({
   urgency?: string;
   fields: JobCardField[];
   actions?: boolean;
+  /**
+   * Drops the border, the "New job" header and the caller line.
+   *
+   * For the hero, where a call strip directly above already names who is
+   * ringing — repeating it inside the card made the same person appear twice in
+   * four centimetres.
+   */
+  chromeless?: boolean;
   className?: string;
 }) {
   return (
     <div
-      className={`overflow-hidden rounded-2xl border border-white/12 bg-[#0c0c0c] ${className}`}
+      className={
+        chromeless
+          ? className
+          : `overflow-hidden rounded-2xl border border-white/12 bg-[#0c0c0c] ${className}`
+      }
     >
-      <div className="flex items-center justify-between gap-3 border-b border-white/8 px-5 py-3.5">
-        <p className="text-[10px] font-medium uppercase tracking-[0.16em] text-zinc-400">
-          New job
-        </p>
-        {urgency && (
-          <span className="rounded-full bg-amber-400/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-amber-300">
-            {urgency}
-          </span>
-        )}
-      </div>
+      {!chromeless && (
+        <div className="flex items-center justify-between gap-3 border-b border-white/8 px-5 py-3.5">
+          <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-zinc-400">
+            New job
+          </p>
+          {urgency && (
+            <span className="rounded-full bg-amber-400/15 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.1em] text-amber-300">
+              {urgency}
+            </span>
+          )}
+        </div>
+      )}
 
       <div className="px-5 py-4">
-        <p className="text-[15px] font-semibold text-white">{name}</p>
-        <p className="mt-0.5 text-sm text-zinc-400">{number}</p>
+        {!chromeless && (
+          <>
+            <p className="text-[15px] font-semibold text-white">{name}</p>
+            <p className="mt-0.5 text-sm text-zinc-400">{number}</p>
+          </>
+        )}
 
-        <dl className="mt-4 space-y-3">
+        {/*
+          Labels at 11px and values at 15px. They were 10px and 14px, which on a
+          390px phone is the "tiny product screenshot" that makes software look
+          like a diagram of software — and this card is the whole argument.
+        */}
+        <dl className={chromeless ? "space-y-4" : "mt-4 space-y-4"}>
           {fields.map((field) => (
-            <div key={field.label}>
-              <dt className="text-[10px] uppercase tracking-[0.12em] text-zinc-500">
+            <div key={field.label} className="fp-rise-in">
+              <dt className="text-[11px] uppercase tracking-[0.12em] text-zinc-500">
                 {field.label}
               </dt>
-              <dd className="mt-0.5 text-sm leading-5 text-zinc-200">
+              <dd className="mt-1 text-[15px] leading-6 text-zinc-100">
                 {field.value}
               </dd>
             </div>

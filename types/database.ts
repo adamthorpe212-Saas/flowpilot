@@ -149,7 +149,11 @@ export type Call = {
   transcript: TranscriptTurn[];
   status: CallStatus;
   /** Set once the confirmation SMS and owner alert have been sent. */
+  /** Delivery was attempted. Claimed before sending, so not proof of arrival. */
   notified_at: string | null;
+  /** At least one channel accepted a message. Null with notified_at set means
+   * the job was captured and reached nobody. */
+  delivered_at: string | null;
   created_at: string;
 };
 
@@ -157,6 +161,8 @@ export type Lead = {
   id: string;
   business_id: string;
   call_id: string | null;
+  /** Short public-facing id used in the alert link (/j/<code>). */
+  code: string;
   caller_number: string;
   caller_name: string | null;
   job_type: string | null;

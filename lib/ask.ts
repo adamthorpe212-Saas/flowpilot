@@ -1,6 +1,6 @@
 import "server-only";
 
-import { faqItems, HOME_FAQ_IDS, PRICING_FAQ_IDS } from "@/lib/faq";
+import { allFaqItems } from "@/lib/faq";
 import { formatPrice, soldPlan, TRIAL_DAYS } from "@/lib/plans";
 
 /**
@@ -40,7 +40,6 @@ export const ASK_SUGGESTIONS = [
  */
 function knowledge(): string {
   const plan = soldPlan();
-  const questions = [...new Set([...HOME_FAQ_IDS, ...PRICING_FAQ_IDS])];
 
   return [
     "FACTS ABOUT FLOWPILOT",
@@ -59,7 +58,16 @@ function knowledge(): string {
     "",
     "COMMON QUESTIONS AND THEIR ANSWERS",
     "",
-    ...faqItems(questions).flatMap((item) => [
+    /*
+     * Every answer, not the union of what the pages happen to show.
+     *
+     * This was built from HOME_FAQ_IDS ∪ PRICING_FAQ_IDS, which quietly made
+     * the assistant's knowledge a side effect of page layout — trimming the
+     * homepage FAQ to five questions would have stopped it knowing whether we
+     * record calls, which is exactly the kind of thing somebody asks a chat box
+     * instead of reading an accordion.
+     */
+    ...allFaqItems().flatMap((item) => [
       `Q: ${item.question}`,
       `A: ${item.answer}`,
       "",

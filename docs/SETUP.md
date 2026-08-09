@@ -384,6 +384,40 @@ reading the Twilio invoice line by line.
 
 ## Known gaps
 
+**Production is missing three environment variables, and one of them means a
+captured job can reach nobody.** Checked against `vercel env ls production` on
+2026-08-09:
+
+| Variable | State | What breaks without it |
+| --- | --- | --- |
+| `RESEND_API_KEY` / `EMAIL_FROM` | not set | No email channel at all, so SMS is the *only* path to the owner. Email needs no regulator, which is exactly why it is meant to carry jobs while the ComReg sender ID is pending. Without it, one failing channel is total failure. |
+| `CRON_SECRET` | not set | Every scheduled job refuses to run — `reclaim-numbers`, `trial-reminders`, `purge-old-calls`. Reclaim is the one that costs money: FlowPilot keeps paying Twilio rental on numbers belonging to cancelled customers. |
+| `TWILIO_BUNDLE_SID` | not set | Provisioning has no regulatory bundle to pass, so Irish numbers cannot be bought. Expected while C1 is in review. |
+
+`TWILIO_SMS_SENDER_ID` *is* set in production, and a real text was delivered on
+2026-08-07 — but whether it is registered with ComReg is unconfirmed. An
+unregistered alphanumeric sender is delivered in Ireland labelled "Likely Scam"
+(see C2). Until that is confirmed, the confirmation text sent to a *customer's
+customer* is the riskiest thing the product does, and the marketing site should
+not lean on it.
+
+**A job that reaches nobody is now visible in the database.** `call.notified_at`
+is claimed atomically *before* anything is sent, so it stops a retried Twilio
+callback texting twice — but it is written whether or not delivery works, and it
+used to be the only record. `call.delivered_at` (migration
+`20260809140000`) is set only when a channel actually accepts a message. A row
+with `notified_at` set and `delivered_at` null is a job that was captured
+perfectly and told nobody. Worth querying before a customer has to ask:
+
+```sql
+select id, started_at from public.call
+where notified_at is not null and delivered_at is null
+order by started_at desc;
+```
+
+Nothing retries automatically. Retrying safely needs to know which channel
+succeeded, and a wrong retry double-texts a member of the public.
+
 **No privacy policy, terms, or data processing agreement — this blocks launch.**
 FlowPilot processes personal data belonging to members of the public who never
 signed up: their name, phone number, home address and what is wrong with it.

@@ -1,8 +1,10 @@
 import "server-only";
 
 import { createHash } from "node:crypto";
+import { DEMO_BUSINESS_NAME, DEMO_GREETING } from "@/lib/demo-example";
 import type { ReceptionistContext } from "@/lib/receptionist";
 import { createAdminClient } from "@/lib/supabase/server";
+import type { QualificationQuestion } from "@/types/database";
 
 /**
  * The fictional business the public demo answers as.
@@ -14,14 +16,35 @@ import { createAdminClient } from "@/lib/supabase/server";
  * Uses the same defaults a new signup gets, so what a visitor experiences is
  * genuinely what they would get — not a polished version of it.
  */
-export const DEMO_BUSINESS = "O'Brien Plumbing";
+export const DEMO_BUSINESS = DEMO_BUSINESS_NAME;
+
+/**
+ * The same five questions a new business is seeded with.
+ *
+ * Named and exported so a test can hold them against the migration that creates
+ * them. They had already drifted apart once — the demo asked for timing as
+ * required while the database made it optional — and a demo that qualifies a
+ * caller differently from the receptionist somebody buys is selling a product we
+ * do not ship.
+ *
+ * Kept in step with supabase/migrations/20260809120000_ask_when_not_whether_urgent.sql.
+ */
+export const DEMO_QUESTIONS: QualificationQuestion[] = [
+  { id: "1", business_id: "demo", prompt: "Can you tell me what the job is?", captures: "job_type", required: true, sort_order: 1, created_at: "" },
+  { id: "2", business_id: "demo", prompt: "And whereabouts are you?", captures: "location", required: true, sort_order: 2, created_at: "" },
+  { id: "3", business_id: "demo", prompt: "When are you hoping to get it done?", captures: "preferred_time", required: true, sort_order: 3, created_at: "" },
+  { id: "4", business_id: "demo", prompt: "Can I take your name?", captures: "contact_name", required: true, sort_order: 4, created_at: "" },
+  { id: "5", business_id: "demo", prompt: "Is it urgent, or can it wait?", captures: "urgency", required: false, sort_order: 5, created_at: "" },
+];
 
 export const DEMO_CONTEXT: ReceptionistContext = {
   businessName: DEMO_BUSINESS,
   serviceArea: ["Raheny", "Clontarf", "Glasnevin", "Dublin 3", "Dublin 5", "Dublin 9"],
   profile: {
     business_id: "demo",
-    greeting: `Hello, ${DEMO_BUSINESS} — sorry we missed you. What's the problem?`,
+    // The disclosure already names the business, so the greeting does not
+    // introduce it a second time — it just asks the question.
+    greeting: DEMO_GREETING,
     tone: "Friendly, plain-spoken and brief. No jargon. One short sentence at a time.",
     must_not: [
       "Never quote a price or estimate a cost.",
@@ -46,13 +69,7 @@ export const DEMO_CONTEXT: ReceptionistContext = {
     { id: "5", business_id: "demo", name: "Bathroom fitting", emergency_eligible: false, typical_urgency: "low", sort_order: 5, created_at: "" },
     { id: "6", business_id: "demo", name: "Blocked drains", emergency_eligible: false, typical_urgency: "normal", sort_order: 6, created_at: "" },
   ],
-  questions: [
-    { id: "1", business_id: "demo", prompt: "Can you tell me what the job is?", captures: "job_type", required: true, sort_order: 1, created_at: "" },
-    { id: "2", business_id: "demo", prompt: "And whereabouts are you?", captures: "location", required: true, sort_order: 2, created_at: "" },
-    { id: "3", business_id: "demo", prompt: "Is this an emergency, or can it wait?", captures: "urgency", required: true, sort_order: 3, created_at: "" },
-    { id: "4", business_id: "demo", prompt: "Can I take your name?", captures: "contact_name", required: true, sort_order: 4, created_at: "" },
-    { id: "5", business_id: "demo", prompt: "When would suit you best?", captures: "preferred_time", required: true, sort_order: 5, created_at: "" },
-  ],
+  questions: DEMO_QUESTIONS,
 };
 
 /** Turns a visitor can take before the demo closes. */

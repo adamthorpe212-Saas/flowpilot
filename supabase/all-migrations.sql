@@ -773,3 +773,164 @@ comment on table public.demo_usage is
 
 alter table public.call drop column if exists recording_url;
 
+-- ======================================================================
+-- 20260809120000_ask_when_not_whether_urgent.sql
+-- ======================================================================
+
+-- Asks when the job needs doing, before asking whether it's an emergency.
+--
+-- The default questions a new business got were built emergency-first:
+--
+--   3. "Is this an emergency, or can it wait?"  urgency         REQUIRED
+--   5. "When would suit you best?"              preferred_time  optional
+--
+-- That is the wrong shape for the work these businesses actually do. Most of it
+-- is planned — a rewire booked for a fortnight's time, a bathroom in March, a
+-- job someone wants done before the in-laws visit. For a planned job the date is
+-- the field that decides whether you can take it, and it was the one field the
+-- receptionist was allowed to skip. Meanwhile every caller was asked to classify
+-- their own job as an emergency, which is a question that only makes sense to a
+-- business that sells emergency call-outs.
+--
+-- So they swap. Timing becomes required and is asked third, while the caller is
+-- still describing the job. Urgency stays — a burst pipe genuinely is urgent and
+-- the notification rules still route on it — but it moves last and becomes
+-- optional, which is what it is: useful when it comes up, not worth interrogating
+-- someone about.
+--
+-- lead.urgency is `not null default 'normal'`, so a call that never establishes
+-- urgency still writes a valid row and still notifies. Nothing downstream needs
+-- to change.
+--
+-- New businesses only. Existing rows are left alone deliberately: a business may
+-- have edited its own questions in settings, and overwriting somebody's wording
+-- to correct a default we shipped would be a worse trespass than the default.
+
+create or replace function public.handle_new_business()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.business_profile (business_id)
+  values (new.id);
+
+  insert into public.qualification_question
+    (business_id, prompt, captures, required, sort_order)
+  values
+    (new.id, 'Can you tell me what the job is?',          'job_type',       true,  1),
+    (new.id, 'And whereabouts are you based?',            'location',       true,  2),
+    (new.id, 'When are you hoping to get it done?',       'preferred_time', true,  3),
+    (new.id, 'Can I take your name?',                     'contact_name',   true,  4),
+    (new.id, 'Is it urgent, or can it wait?',             'urgency',        false, 5);
+
+  return new;
+end;
+$$;
+
+-- ======================================================================
+-- 20260809140000_call_delivered_at.sql
+-- ======================================================================
+
+-- Records whether a job actually reached the owner, not just that we tried.
+--
+-- `notified_at` is claimed atomically *before* anything is sent, which is the
+-- right way to stop a retried Twilio status callback texting somebody twice. But
+-- it is written whether or not a single message goes out, and its own comment
+-- claimed it recorded "when the confirmation SMS and owner alert were sent".
+-- That is not what it holds. If every channel fails, notified_at is set, nothing
+-- retries, and any operator reading the row concludes the owner was told.
+--
+-- That gap is not theoretical. Email is the only regulator-free channel and is
+-- not configured in production, so SMS is currently the single path to a
+-- customer — and if an unregistered sender ID is rejected in Ireland, every job
+-- fails to deliver while every row says otherwise. The first anyone would know
+-- is a customer ringing to ask why FlowPilot has gone quiet, and there would be
+-- nothing in the database to confirm or deny it.
+--
+-- Two columns for two facts:
+--   notified_at  — we took the lock and attempted delivery (dedup)
+--   delivered_at — at least one channel actually accepted the message
+--
+-- Deliberately not a retry mechanism. Retrying safely means knowing which
+-- channel succeeded, and a wrong retry double-texts a customer, which is worse
+-- than a missed one. This makes the failure visible first; acting on it is a
+-- decision to take with evidence rather than a guess to build now.
+
+alter table public.call
+  add column delivered_at timestamptz;
+
+comment on column public.call.notified_at is
+  'When delivery was attempted. Claimed atomically before sending, so a retried Twilio status callback cannot notify twice. NOT proof anything arrived — see delivered_at.';
+
+comment on column public.call.delivered_at is
+  'When at least one notification channel accepted a message for this call. Null alongside a set notified_at means the job was captured and reached nobody.';
+
+-- ======================================================================
+-- 20260809160000_lead_short_code.sql
+-- ======================================================================
+
+-- A short code per lead, so the job alert can carry a link somebody can tap.
+--
+-- The alert text told a tradesperson a job existed and then left them to find
+-- it: no way to act on it, and no route from the text to the job. Keeping track
+-- meant remembering, unprompted, to open a website, while the text scrolled away
+-- under WhatsApp. The text is the alert, the dashboard is the list of what you
+-- still owe people, and this is what joins them.
+--
+-- Short rather than the uuid because this rides in an SMS. A GSM-7 message is
+-- 160 characters and the alert already uses about a hundred; a 36-character uuid
+-- pushes every single job into two segments, which is double the cost per job
+-- forever. It also looks like spam. Eight characters keeps the whole link near
+-- twenty and reads like something a person made.
+--
+-- Generated by the database rather than in application code so it cannot be
+-- forgotten on an insert path — and there are two, since lead creation falls
+-- back to essential-fields-only when a column is rejected.
+--
+-- base64 of 6 random bytes is exactly 8 characters; translate() maps the three
+-- characters that are unsafe or ugly in a URL onto letters. 2^48 possibilities
+-- with a unique index behind it: a collision is not a practical concern, and if
+-- one ever happened the insert fails loudly rather than handing two businesses
+-- the same link.
+
+alter table public.lead
+  add column code text not null
+  default translate(encode(gen_random_bytes(6), 'base64'), '+/=', 'xyz');
+
+create unique index lead_code_idx on public.lead(code);
+
+comment on column public.lead.code is
+  'Short public-facing id used in the job alert link (/j/<code>). Not a secret — the route still requires a session and RLS still scopes the row.';
+
+-- ======================================================================
+-- 20260809170000_gsm7_confirmation_default.sql
+-- ======================================================================
+
+-- Takes the em dash out of the confirmation text, because it triples the cost.
+--
+-- The default template opened "Thanks {{caller_name}} — we have logged". The em
+-- dash does not exist in the GSM-7 alphabet, and one character outside GSM-7
+-- forces the entire SMS into UCS-2 encoding, where a segment is 70 characters
+-- rather than 160. Every confirmation FlowPilot has ever sent to a member of the
+-- public has therefore been billed as two or three segments to carry one
+-- sentence, and the same mistake was in the owner's job alert.
+--
+-- A hyphen is in GSM-7 and reads identically at a glance on a phone.
+--
+-- Existing businesses are migrated too, but only where they still have the old
+-- default. Anyone who has written their own wording keeps it — correcting our
+-- default is not licence to rewrite somebody's own words to their customers,
+-- even to save them money.
+
+alter table public.business_profile
+  alter column confirmation_sms_template
+  set default 'Thanks {{caller_name}} - we have logged: {{job_type}}, {{location}}. {{business_name}} will be in touch shortly.';
+
+update public.business_profile
+set confirmation_sms_template =
+  'Thanks {{caller_name}} - we have logged: {{job_type}}, {{location}}. {{business_name}} will be in touch shortly.'
+where confirmation_sms_template =
+  'Thanks {{caller_name}} — we have logged: {{job_type}}, {{location}}. {{business_name}} will be in touch shortly.';
+

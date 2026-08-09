@@ -264,6 +264,62 @@ describe("talking to the real API shape", () => {
  * is written down and kept. These tests exist so that removing it takes a
  * deliberate act rather than a tidy-up of the greeting.
  */
+describe("the public demo opens exactly as a real call does", () => {
+  /*
+   * The demo on /how-it-works carried its own hardcoded greeting under a comment
+   * asserting it matched openingLine(). It did not. The disclosure was rewritten
+   * and the demo went on opening "This is an automated assistant, and I'll take
+   * notes" — words no caller had heard in months, shown to the exact visitor who
+   * is deciding whether to believe us about what their customers will hear.
+   *
+   * Both sides now build the line with composeOpening(). This checks the join
+   * itself still holds, so re-hardcoding either one fails here rather than on a
+   * marketing page nobody re-reads.
+   */
+  it("builds the demo greeting from the live disclosure", async () => {
+    const { composeOpening, aiDisclosure } = await import("@/lib/disclosure");
+    const { DEMO_BUSINESS_NAME, DEMO_GREETING } = await import(
+      "@/lib/demo-example"
+    );
+
+    const opening = composeOpening(DEMO_BUSINESS_NAME, DEMO_GREETING);
+
+    expect(opening).toContain(aiDisclosure(DEMO_BUSINESS_NAME));
+    expect(opening).toContain(DEMO_GREETING);
+    expect(opening).not.toMatch(/I'll take notes/i);
+  });
+
+  it("gives the demo and a real business the same line", async () => {
+    const { openingLine } = await import("@/lib/receptionist");
+    const { composeOpening } = await import("@/lib/disclosure");
+    const { DEMO_BUSINESS_NAME, DEMO_GREETING } = await import(
+      "@/lib/demo-example"
+    );
+
+    const live = openingLine({
+      businessName: DEMO_BUSINESS_NAME,
+      serviceArea: [],
+      profile: {
+        business_id: "demo",
+        greeting: DEMO_GREETING,
+        tone: "Friendly",
+        must_not: [],
+        fallback: "I'll take your details.",
+        closing_line: "Dave will ring you back.",
+        confirmation_sms_template: "{{business_name}}",
+        max_call_seconds: 180,
+        opening_hours: {},
+        out_of_hours_behaviour: "answer_and_notify" as const,
+        updated_at: "2026-08-06T00:00:00Z",
+      },
+      services: [],
+      questions: [],
+    });
+
+    expect(live).toBe(composeOpening(DEMO_BUSINESS_NAME, DEMO_GREETING));
+  });
+});
+
 describe("openingLine", () => {
   function contextWith(greeting: string | null) {
     return {

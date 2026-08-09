@@ -65,8 +65,10 @@ export const PLANS: PlanDefinition[] = [
     features: [
       "A 24/7 receptionist on your own Irish number",
       "Keeps your existing number — nothing on your van changes",
-      "Every caller's name, job, address and how urgent it is",
-      "The job texted to you the moment the call ends",
+      // Was "how urgent it is". The date is the field a planned job turns on,
+      // and this list is where a customer decides what they are buying.
+      "Every caller's name, job, address and when they want it done",
+      "The job and the date texted to you the moment the call ends",
       "A confirmation text to your customer",
       "Your own services, questions and wording",
       "Every call and full transcript in your dashboard",

@@ -86,11 +86,36 @@ export async function POST(request: NextRequest) {
     ]);
 
   if (business && profile) {
-    await notifyAfterCall({
+    const outcome = await notifyAfterCall({
       business: business as Business,
       profile: profile as BusinessProfile,
       lead: (lead as Lead) ?? null,
     });
+
+    /*
+     * Record what actually happened, separately from having claimed the right
+     * to try.
+     *
+     * notified_at is written before a single message is sent — correct for
+     * deduplication, useless as evidence. Without this, a business whose only
+     * channel is failing looks identical in the database to one being served
+     * perfectly, and the first anyone hears of it is a customer asking why
+     * FlowPilot has gone quiet.
+     *
+     * Best-effort on purpose: the messages are already out, and failing the
+     * webhook here would make Twilio retry a callback whose notification lock
+     * is taken, so the retry would do nothing except log noise.
+     */
+    if (outcome.delivered > 0) {
+      const { error } = await supabase
+        .from("call")
+        .update({ delivered_at: new Date().toISOString() })
+        .eq("id", call.id);
+
+      if (error) {
+        console.error("Failed to record delivery", { callId: call.id, error });
+      }
+    }
   }
 
   return NextResponse.json({ ok: true });

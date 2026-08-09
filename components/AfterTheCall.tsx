@@ -1,4 +1,5 @@
 import PhoneMessage from "@/components/PhoneMessage";
+import { DEMO_BUSINESS_NAME } from "@/lib/demo-example";
 import {
   DEFAULT_CONFIRMATION_TEMPLATE,
   jobAlert,
@@ -20,19 +21,37 @@ import {
 
 const CALLER_NUMBER = "087 412 9008";
 
+/*
+ * A planned job, not an emergency.
+ *
+ * This used to be a burst pipe with water coming through a ceiling, which made
+ * the whole product look like an out-of-hours call-out service. Most of the work
+ * these businesses actually take is booked in advance — a bathroom, a rewire, a
+ * job somebody wants done before Christmas — and for that the date is the field
+ * the tradesperson reads first.
+ */
 const EXAMPLE = {
   callerName: "John Murphy",
-  jobType: "Water coming through kitchen ceiling",
+  jobType: "Move the sink and dishwasher, new radiator",
   location: "14 Griffith Avenue, Glasnevin",
-  businessName: "O'Brien Plumbing",
+  neededBy: "Week of the 22nd, before the floors go down",
+  // The same business the live demo answers as. These sat on one page saying
+  // different names, which reads as two different products.
+  businessName: DEMO_BUSINESS_NAME,
 };
 
 export default function AfterTheCall() {
   const toTradesperson = jobAlert({
-    urgent: true,
+    urgent: false,
+    callerName: EXAMPLE.callerName,
     jobType: EXAMPLE.jobType,
     location: EXAMPLE.location,
+    neededBy: EXAMPLE.neededBy,
     callerNumber: CALLER_NUMBER,
+    // A stand-in code, but a real link shape — this is the tap that opens the
+    // job, and showing the text without it would sell a different product from
+    // the one that ships.
+    link: "flowpilot.ie/j/K4x9M2p7",
   });
 
   const toCustomer = render(DEFAULT_CONFIRMATION_TEMPLATE, {
@@ -47,7 +66,7 @@ export default function AfterTheCall() {
       <Side
         label="Your phone"
         tone="bright"
-        caption="Everything you need to ring back already knowing the job. No voicemail to listen to, nothing to write down."
+        caption="The job, the address and the date they want it — enough to know whether you can take it before you ring anyone back."
       >
         <PhoneMessage sender="FlowPilot" body={toTradesperson} emphasis />
       </Side>

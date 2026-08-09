@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
 import { signOut } from "@/app/(auth)/actions";
+import Logo from "@/components/Logo";
 import { getCurrentBusiness } from "@/lib/auth";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
@@ -17,8 +18,8 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
       <header className="border-b border-white/10">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-6">
           <div className="flex items-center gap-6">
-            <Link href="/dashboard" className="font-semibold tracking-tight">
-              FlowPilot
+            <Link href="/dashboard">
+              <Logo />
             </Link>
             <nav aria-label="Application" className="flex items-center gap-5 text-sm">
               <Link href="/dashboard" className="text-zinc-400 transition hover:text-white">

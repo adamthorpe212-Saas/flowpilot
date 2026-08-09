@@ -26,10 +26,9 @@ type Field = { label: string; value: string };
 
 const CAPTURED: Field[] = [
   { label: "Name", value: "John Murphy" },
-  { label: "Job", value: "Burst pipe under the sink" },
-  { label: "Urgency", value: "Emergency — water still running" },
+  { label: "Job", value: "Move sink and dishwasher, new rad" },
   { label: "Address", value: "14 Griffith Avenue, Glasnevin" },
-  { label: "Wants", value: "This afternoon" },
+  { label: "Wants it", value: "Week of the 22nd" },
 ];
 
 export default function VoicemailComparison() {
@@ -93,7 +92,7 @@ export default function VoicemailComparison() {
 
       <p aria-live="polite" className="sr-only">
         {finished
-          ? "Voicemail left a vague message. FlowPilot captured the full job."
+          ? "Voicemail left a vague message. FlowPilot captured the job, the address and the date."
           : started
             ? "Playing the same missed call down both paths."
             : ""}
@@ -114,7 +113,7 @@ export default function VoicemailComparison() {
         <Panel
           title="With voicemail"
           tone="dim"
-          caption="You ring back blind, whenever you're next free. He rang two other plumbers while he waited."
+          caption="You ring back blind, whenever you're next free. He rang two other lads while he waited."
           showCaption={finished}
         >
           <VoicemailScreen step={step} />
@@ -123,7 +122,7 @@ export default function VoicemailComparison() {
         <Panel
           title="With FlowPilot"
           tone="bright"
-          caption="You ring back knowing the job, the address and that it's urgent — or you don't ring at all, because it's already booked."
+          caption="You know the job, the address and the week he wants it — so you know whether you can take it before you pick up the phone."
           showCaption={finished}
         >
           <CapturedScreen step={step} />
@@ -206,8 +205,8 @@ function VoicemailScreen({ step }: { step: number }) {
             Voicemail · 0:14
           </p>
           <p className="mt-2 text-xs leading-5 text-zinc-400">
-            &ldquo;Ehh, yeah, howya — it&apos;s about the… there&apos;s water
-            coming in under the thing. Can you give us a shout back when
+            &ldquo;Ehh, yeah, howya — it&apos;s about the kitchen, we&apos;re
+            getting a bit of work done. Can you give us a shout back when
             you&apos;re free. Thanks.&rdquo;
           </p>
         </div>
@@ -216,7 +215,7 @@ function VoicemailScreen({ step }: { step: number }) {
       {step >= 4 && (
         <div className="fp-rise-in mt-auto">
           <p className="text-[10px] leading-4 text-zinc-400">
-            No name. No address. No idea if it&apos;s an emergency.
+            No name. No address. No idea when they need it.
           </p>
         </div>
       )}

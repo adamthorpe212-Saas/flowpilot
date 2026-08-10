@@ -1,8 +1,8 @@
 import Link from "next/link";
 import AskFlowPilot from "@/components/AskFlowPilot";
 import Faq from "@/components/Faq";
-import HeroShowcase from "@/components/HeroShowcase";
 import PhoneMessage from "@/components/PhoneMessage";
+import WorkflowStrip from "@/components/WorkflowStrip";
 import { HOME_FAQ_IDS, faqItems } from "@/lib/faq";
 import { jobAlert } from "@/lib/messages";
 import { formatPrice, soldPlan, TRIAL_DAYS } from "@/lib/plans";
@@ -88,13 +88,18 @@ export default function Home() {
           Two layers of light behind the headline, both inert to the pointer so
           nothing here can eat a tap on the buttons underneath.
         */}
+        {/*
+          Sized to sit inside the hero, not past it. These were 46rem when a
+          product visual stood underneath; with that gone the hero is 641px and
+          the glow was spilling over the section border into the next one.
+        */}
         <div
           aria-hidden="true"
-          className="pointer-events-none absolute inset-x-0 top-0 h-[46rem] bg-[radial-gradient(ellipse_58%_46%_at_50%_-8%,rgba(16,185,129,0.16),transparent_72%)]"
+          className="pointer-events-none absolute inset-x-0 top-0 h-[34rem] bg-[radial-gradient(ellipse_58%_52%_at_50%_-10%,rgba(16,185,129,0.16),transparent_72%)]"
         />
         <div
           aria-hidden="true"
-          className="fp-grid pointer-events-none absolute inset-x-0 top-0 h-[46rem]"
+          className="fp-grid pointer-events-none absolute inset-x-0 top-0 h-[34rem]"
         />
 
         <div className="relative mx-auto w-full max-w-5xl">
@@ -177,8 +182,13 @@ export default function Home() {
             </ul>
           </div>
 
-          <div className="mt-16 sm:mt-20">
-            <HeroShowcase />
+          {/*
+            The sequence sits inside the hero, under the calls to action rather
+            than above them. Somebody who is already convinced should not have
+            to scroll past an explanation to reach the button.
+          */}
+          <div className="mt-14 sm:mt-16">
+            <WorkflowStrip />
           </div>
         </div>
       </section>

@@ -27,9 +27,14 @@ const GREETING = composeOpening(DEMO_BUSINESS_NAME, DEMO_GREETING);
  * emergencies, so every visitor who tried the demo was steered into
  * demonstrating a product we are not selling.
  */
+/*
+ * Short enough to sit on one line in a chip at 390px. The first of these ran to
+ * fifty-three characters and wrapped into a ragged two-line pill that was wider
+ * than it was useful.
+ */
 const OPENERS = [
-  "We're doing up the kitchen and need the plumbing moved",
-  "I need a new bathroom fitted",
+  "We're redoing the kitchen",
+  "I need a bathroom fitted",
   "My radiator won't heat up",
 ];
 
@@ -194,100 +199,156 @@ export default function LiveDemo() {
     value: shownCaptured[key],
   }));
 
+  /*
+   * Every field, captured or not.
+   *
+   * The empty state used to be a padded box reading "Nothing captured yet",
+   * which is a lot of screen spent saying nothing. Showing the fields greyed out
+   * from the start does three jobs at once: it kills the dead space, it teaches
+   * what the receptionist is going to ask before anybody types, and it turns the
+   * demo into something you watch fill in rather than something you read.
+   */
+  const record = FIELD_ORDER.map((key) => ({
+    key,
+    label: FIELD_LABELS[key],
+    value: shownCaptured[key] ?? null,
+  }));
+
   return (
-    <div className="mx-auto grid max-w-4xl gap-4 lg:grid-cols-[1.3fr_1fr]">
-      <div className="flex min-h-[340px] flex-col rounded-2xl border border-white/12 bg-white/[0.02] p-5">
-        <div className="flex flex-none items-center gap-2 border-b border-white/8 pb-3">
-          <span
-            aria-hidden="true"
-            className={`h-1.5 w-1.5 rounded-full ${ended ? "bg-zinc-600" : "bg-emerald-400"}`}
-          />
-          <span className="text-xs text-zinc-400">
-            O&apos;Brien Plumbing ·{" "}
-            {unavailable
-              ? "example call"
-              : complete
-                ? "call ended"
-                : "call in progress"}
+    /*
+     * Ordered so the conversation and the box you type into are always touching.
+     * On a phone the job record used to sit between them, which put the input
+     * an entire panel away from the thing it was replying to.
+     */
+    <div className="mx-auto grid max-w-4xl gap-4 lg:grid-cols-[1.35fr_1fr] lg:items-start">
+      <div className="rounded-2xl border border-white/12 bg-white/[0.02] lg:col-start-1 lg:row-start-1">
+        <div className="flex items-center gap-2.5 border-b border-white/8 px-5 py-3.5">
+          {!ended ? (
+            <span aria-hidden="true" className="flex h-3.5 items-end gap-[2px]">
+              {[0, 1, 2].map((bar) => (
+                <span
+                  key={bar}
+                  className="fp-wave-bar w-[2px] rounded-full bg-emerald-400"
+                  style={{ height: "100%", animationDelay: `${bar * 120}ms` }}
+                />
+              ))}
+            </span>
+          ) : (
+            <span
+              aria-hidden="true"
+              className="h-1.5 w-1.5 rounded-full bg-zinc-600"
+            />
+          )}
+          <span className="text-[13px] text-zinc-300">
+            O&apos;Brien Plumbing
+          </span>
+          <span className="ml-auto text-[11px] uppercase tracking-[0.12em] text-zinc-500">
+            {unavailable ? "Example" : complete ? "Ended" : "On a call"}
           </span>
         </div>
 
+        {/*
+          Bubbles, and no minimum height. It was a 340px box holding one line of
+          greeting, so nine-tenths of what a visitor first saw was black. Now it
+          grows with the conversation and only scrolls once there is enough to
+          scroll — and the two sides are told apart by shape and side, the way a
+          person reads a conversation, rather than by a label above each line.
+        */}
         <div
           ref={threadRef}
-          className="mt-4 flex-1 space-y-4 overflow-y-auto pr-1"
-          style={{ maxHeight: "18rem" }}
+          className="max-h-[22rem] space-y-3 overflow-y-auto px-5 py-5"
         >
-          {shownTurns.map((turn, index) => (
-            <div key={index} className="fp-rise-in">
-              <p
-                className={`text-[10px] uppercase tracking-[0.14em] ${
-                  turn.role === "assistant" ? "text-white/55" : "text-zinc-500"
-                }`}
+          {shownTurns.map((turn, index) => {
+            const fromFlowPilot = turn.role === "assistant";
+
+            return (
+              <div
+                key={index}
+                className={`fp-rise-in flex ${fromFlowPilot ? "justify-start" : "justify-end"}`}
               >
-                {turn.role === "assistant" ? "FlowPilot" : "Caller"}
-              </p>
-              <p
-                className={`mt-1 text-sm leading-6 ${
-                  turn.role === "assistant" ? "text-white" : "text-zinc-400"
-                }`}
-              >
-                {turn.text}
-              </p>
-            </div>
-          ))}
+                <p
+                  className={`max-w-[85%] rounded-2xl px-4 py-2.5 text-[14px] leading-6 ${
+                    fromFlowPilot
+                      ? "rounded-tl-md bg-white/[0.07] text-white"
+                      : "rounded-tr-md bg-white text-black"
+                  }`}
+                >
+                  {turn.text}
+                </p>
+              </div>
+            );
+          })}
 
           {thinking && (
-            <div>
-              <p className="text-[10px] uppercase tracking-[0.14em] text-white/55">
-                FlowPilot
+            <div className="flex justify-start">
+              <p className="flex items-center gap-1.5 rounded-2xl rounded-tl-md bg-white/[0.07] px-4 py-3">
+                {[0, 1, 2].map((dot) => (
+                  <span
+                    key={dot}
+                    aria-hidden="true"
+                    className="fp-wave-bar h-1.5 w-1.5 rounded-full bg-zinc-400"
+                    style={{ animationDelay: `${dot * 160}ms` }}
+                  />
+                ))}
+                <span className="sr-only">FlowPilot is answering</span>
               </p>
-              <p className="mt-1 text-sm text-zinc-500">thinking…</p>
             </div>
           )}
         </div>
       </div>
 
-      <div className="rounded-2xl border border-white/12 bg-white/[0.02] p-5">
-        <p className="text-[10px] uppercase tracking-[0.14em] text-zinc-400">
-          Job record
-        </p>
-
-        {rows.length === 0 ? (
-          <p className="mt-3 text-xs leading-5 text-zinc-500">
-            Nothing captured yet. It fills in as the caller talks.
+      <div className="rounded-2xl border border-white/12 bg-white/[0.02] p-5 lg:col-start-2 lg:row-span-2 lg:row-start-1">
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-[11px] uppercase tracking-[0.14em] text-zinc-400">
+            Job record
           </p>
-        ) : (
-          <ul className="mt-3 space-y-2.5">
-            {rows.map((row) => (
-              <li key={row.key} className="fp-rise-in flex items-center gap-2.5">
+          <p className="text-[11px] text-zinc-500">
+            {rows.length} of {record.length}
+          </p>
+        </div>
+
+        <ul className="mt-4 space-y-3">
+          {record.map((row) => (
+            <li key={row.key} className="flex items-start gap-2.5">
+              <span
+                aria-hidden="true"
+                className={`mt-0.5 flex h-4 w-4 flex-none items-center justify-center rounded-full text-[9px] ${
+                  row.value
+                    ? "bg-emerald-400/15 text-emerald-300"
+                    : "border border-white/10 text-transparent"
+                }`}
+              >
+                ✓
+              </span>
+              <span className="min-w-0">
+                <span className="block text-[10px] uppercase tracking-[0.1em] text-zinc-500">
+                  {row.label}
+                </span>
                 <span
-                  aria-hidden="true"
-                  className="flex h-4 w-4 flex-none items-center justify-center rounded-full bg-emerald-400/15 text-[9px] text-emerald-300"
+                  className={`block text-[13px] leading-5 ${
+                    row.value ? "fp-rise-in text-white" : "text-zinc-600"
+                  }`}
                 >
-                  ✓
+                  {row.value ?? "—"}
                 </span>
-                <span className="min-w-0">
-                  <span className="block text-[9px] uppercase tracking-[0.1em] text-zinc-500">
-                    {row.label}
-                  </span>
-                  <span className="block text-xs text-white">{row.value}</span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
+              </span>
+            </li>
+          ))}
+        </ul>
 
         {ended && (
-          <div className="mt-4 border-t border-white/8 pt-3">
-            <p className="text-xs text-emerald-300">Sent to Dave&apos;s phone</p>
-            <p className="mt-1 text-[11px] text-zinc-500">
+          <div className="mt-5 border-t border-white/8 pt-4">
+            <p className="text-[13px] text-emerald-300">
+              Sent to Dave&apos;s phone
+            </p>
+            <p className="mt-1 text-[11px] leading-5 text-zinc-500">
               He rings back knowing the job before he dials.
             </p>
           </div>
         )}
       </div>
 
-      <div className="lg:col-span-2">
+      <div className="lg:col-start-1 lg:row-start-2">
         {error && (
           <p
             role="alert"
@@ -327,34 +388,45 @@ export default function LiveDemo() {
               <input
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
-                placeholder={answered ? "Say something else…" : "My boiler has burst"}
+                placeholder={answered ? "Say something else…" : "Tell it about a job…"}
                 aria-label="What a caller might say"
                 maxLength={300}
-                className="flex-1 rounded-full border border-white/15 bg-white/[0.05] px-5 py-3 text-sm text-white placeholder:text-zinc-500 transition focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/10"
+                className="min-h-12 flex-1 rounded-full border border-white/15 bg-white/[0.05] px-5 text-[15px] text-white placeholder:text-zinc-500 transition focus:border-white/40 focus:outline-none focus:ring-2 focus:ring-white/10"
               />
+              {/*
+                Dimming a white button to 40% leaves a grey slab that reads as
+                broken rather than as waiting — which is exactly how it looked at
+                rest, before anybody had typed anything. It now holds a visible
+                outline until there is something to send.
+              */}
               <button
                 type="submit"
                 disabled={thinking || !draft.trim()}
-                className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-black transition hover:bg-zinc-200 disabled:opacity-40"
+                className="min-h-12 flex-none rounded-full bg-white px-6 text-[15px] font-semibold text-black transition hover:bg-zinc-200 disabled:bg-transparent disabled:text-zinc-500 disabled:ring-1 disabled:ring-inset disabled:ring-white/15"
               >
                 Send
               </button>
             </form>
 
-            <div className="mt-3 flex flex-wrap gap-2">
-              {suggestions.map((suggestion) => (
-                <button
-                  key={suggestion}
-                  type="button"
-                  onClick={() => send(suggestion)}
-                  disabled={thinking}
-                  // 44px tall on phones, where these are the main way the demo
-                  // gets driven; back to compact once there is a mouse.
-                  className="flex min-h-11 items-center rounded-full border border-white/15 px-4 text-xs text-zinc-400 transition hover:border-white/30 hover:text-white disabled:opacity-40 sm:min-h-0 sm:px-3.5 sm:py-1.5"
-                >
-                  {suggestion}
-                </button>
-              ))}
+            <div className="mt-3">
+              <p className="text-[11px] uppercase tracking-[0.12em] text-zinc-500">
+                Or tap one
+              </p>
+              <div className="mt-2.5 flex flex-wrap gap-2">
+                {suggestions.map((suggestion) => (
+                  <button
+                    key={suggestion}
+                    type="button"
+                    onClick={() => send(suggestion)}
+                    disabled={thinking}
+                    // 44px tall on phones, where these are the main way the demo
+                    // gets driven; back to compact once there is a mouse.
+                    className="flex min-h-11 items-center rounded-full border border-white/15 px-4 text-[13px] text-zinc-300 transition hover:border-white/30 hover:bg-white/5 hover:text-white disabled:opacity-40 sm:min-h-0 sm:py-2"
+                  >
+                    {suggestion}
+                  </button>
+                ))}
+              </div>
             </div>
           </>
         ) : (

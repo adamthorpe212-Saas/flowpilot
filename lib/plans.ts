@@ -51,7 +51,7 @@ export const PLANS: PlanDefinition[] = [
   {
     id: "pro",
     name: "FlowPilot",
-    price: 99,
+    price: 159,
     currency: "EUR",
     tagline: "Everything, for one price.",
     callAllowance: 200,
@@ -105,4 +105,31 @@ export function formatPrice(plan: PlanDefinition): string {
     currency: plan.currency,
     minimumFractionDigits: 0,
   }).format(plan.price);
+}
+
+/**
+ * The same price framed by the week, rounded up.
+ *
+ * A monthly figure is the one that gets compared against every other monthly
+ * bill; a weekly one is compared against a couple of hours of labour, which is
+ * the comparison that actually favours us. Both are the same money and the
+ * billing is monthly — the site must always say so alongside it.
+ *
+ * Derived, never typed out. A hardcoded "€40 a week" beside a price that later
+ * moves is the kind of drift nothing in the product would catch, and a customer
+ * who does the multiplication and gets a different answer has caught us
+ * rounding in our own favour.
+ *
+ * Rounded UP on purpose: overstating what somebody will pay is the safe
+ * direction to be wrong in. At €159 the true figure is €36.69, so this says €37
+ * and the honest claim above it is "less than €40 a week".
+ */
+export function weeklyPrice(plan: PlanDefinition): string {
+  const WEEKS_PER_MONTH = 52 / 12;
+
+  return new Intl.NumberFormat("en-IE", {
+    style: "currency",
+    currency: plan.currency,
+    minimumFractionDigits: 0,
+  }).format(Math.ceil(plan.price / WEEKS_PER_MONTH));
 }

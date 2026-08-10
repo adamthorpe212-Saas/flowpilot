@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import {formatPrice, getPlan, PLANS, soldPlan } from "@/lib/plans";
+import {
+  formatPrice,
+  getPlan,
+  PLANS,
+  soldPlan,
+  weeklyPrice,
+} from "@/lib/plans";
 import { toSubscriptionStatus } from "@/lib/stripe";
 import { shouldAnswerCalls } from "@/lib/usage";
 import { render } from "@/lib/voice/notify";
@@ -34,7 +40,17 @@ describe("plans", () => {
     // businesses already carrying their id still resolve.
     expect(PLANS.filter((plan) => plan.sold)).toHaveLength(1);
     expect(soldPlan().id).toBe("pro");
-    expect(soldPlan().price).toBe(99);
+
+    /*
+     * Pinned so the price cannot move by accident. It is not the test's job to
+     * decide what FlowPilot costs, but a figure that appears on every page and
+     * inside Stripe should take two deliberate edits to change, not one typo.
+     *
+     * Changing this means also creating a new Price in Stripe and repointing
+     * STRIPE_PRICE_PRO — otherwise the site advertises one number and a card is
+     * debited another. Diagnostics checks that live.
+     */
+    expect(soldPlan().price).toBe(159);
   });
 
   it("still resolves plans no longer sold", () => {
@@ -55,7 +71,32 @@ describe("plans", () => {
   });
 
   it("formats prices as whole euro", () => {
-    expect(formatPrice(soldPlan())).toBe("€99");
+    expect(formatPrice(soldPlan())).toBe("€159");
+  });
+
+  it("never overstates the weekly figure in our own favour", () => {
+    /*
+     * The weekly line is the selling point, so it is the one most tempting to
+     * round down. It is derived and rounded UP: a tradesperson who does the
+     * multiplication should find we understated what he gets, never that we
+     * shaved the number to look cheaper.
+     */
+    const plan = soldPlan();
+    const weekly = Number(weeklyPrice(plan).replace(/[^\d.]/g, ""));
+    const trueWeekly = plan.price / (52 / 12);
+
+    expect(weekly).toBeGreaterThanOrEqual(trueWeekly);
+    expect(weekly).toBeLessThan(trueWeekly + 1);
+  });
+
+  it("keeps the weekly figure honest against the monthly one", () => {
+    // Twelve of these must still be a year's subscription, give or take the
+    // rounding — the framing changes, the money does not.
+    const plan = soldPlan();
+    const weekly = Number(weeklyPrice(plan).replace(/[^\d.]/g, ""));
+
+    expect(weekly * 52).toBeGreaterThanOrEqual(plan.price * 12);
+    expect(weekly * 52).toBeLessThan(plan.price * 12 + 52);
   });
 
   it("throws on an unknown plan rather than guessing", () => {

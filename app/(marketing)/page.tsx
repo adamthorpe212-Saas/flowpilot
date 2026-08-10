@@ -5,7 +5,7 @@ import PhoneMessage from "@/components/PhoneMessage";
 import WorkflowStrip from "@/components/WorkflowStrip";
 import { HOME_FAQ_IDS, faqItems } from "@/lib/faq";
 import { jobAlert } from "@/lib/messages";
-import { formatPrice, soldPlan, TRIAL_DAYS } from "@/lib/plans";
+import { formatPrice, soldPlan, TRIAL_DAYS, weeklyPrice } from "@/lib/plans";
 
 /**
  * The homepage sells. It does not explain.
@@ -364,6 +364,15 @@ export default function Home() {
                 {formatPrice(plan)}
               </span>
               <span className="text-sm text-zinc-400">/month</span>
+            </p>
+            {/*
+              The weekly figure is derived, never typed. A tradesperson compares
+              a monthly bill against every other monthly bill and a weekly one
+              against a couple of hours of labour — but the billing is monthly
+              and the line has to say so, or the first invoice is a surprise.
+            */}
+            <p className="mt-2 text-sm text-zinc-400">
+              Works out at {weeklyPrice(plan)} a week. Billed monthly.
             </p>
 
             <ul className="mt-8 space-y-3.5 text-sm">

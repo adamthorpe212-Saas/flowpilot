@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Faq from "@/components/Faq";
 import { PRICING_FAQ_IDS, faqItems } from "@/lib/faq";
-import { formatPrice, soldPlan, TRIAL_DAYS } from "@/lib/plans";
+import { formatPrice, soldPlan, TRIAL_DAYS, weeklyPrice } from "@/lib/plans";
 
 export const metadata: Metadata = {
   title: "Pricing — FlowPilot",
@@ -45,6 +45,9 @@ export default function PricingPage() {
                 {formatPrice(plan)}
               </span>
               <span className="text-sm text-zinc-400">/month</span>
+            </p>
+            <p className="mt-2 text-sm text-zinc-400">
+              Works out at {weeklyPrice(plan)} a week. Billed monthly.
             </p>
 
             <Link

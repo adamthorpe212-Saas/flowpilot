@@ -3,8 +3,9 @@ import { receptionistModel } from "@/lib/receptionist";
 
 import { isEmailConfigured } from "@/lib/email";
 import { siteUrl } from "@/lib/env";
-import { PLANS } from "@/lib/plans";
+import { formatPrice, PLANS } from "@/lib/plans";
 import { retentionPolicy } from "@/lib/retention";
+import { stripe } from "@/lib/stripe";
 import { createAdminClient } from "@/lib/supabase/server";
 
 /**
@@ -343,6 +344,63 @@ function checkRetention(): Check {
   };
 }
 
+/**
+ * Does Stripe actually charge what the website advertises?
+ *
+ * The price lives in two places that cannot see each other: lib/plans.ts, which
+ * every page renders from, and a Price object inside Stripe, which is what a
+ * card is debited for. Nothing in the codebase can detect a disagreement — the
+ * site would advertise one figure and quietly take another, and the first person
+ * to notice would be a customer reading their statement.
+ *
+ * Live because it has to be. The value is in Stripe, so any check that does not
+ * ask Stripe is only checking that we typed the same number twice.
+ */
+async function checkPriceMatchesStripe(): Promise<Check> {
+  const name = "Advertised price";
+  const plan = PLANS.find((candidate) => candidate.sold);
+
+  if (!plan) {
+    return { name, status: "warn", detail: "No plan is marked as sold" };
+  }
+
+  const priceId = process.env[`STRIPE_PRICE_${plan.id.toUpperCase()}`];
+  const advertised = formatPrice(plan);
+
+  if (!present(process.env.STRIPE_SECRET_KEY) || !present(priceId)) {
+    return {
+      name,
+      status: "warn",
+      detail: `Site says ${advertised}; cannot confirm what Stripe charges`,
+      fix: "Set STRIPE_SECRET_KEY and the price ID for the plan being sold.",
+    };
+  }
+
+  try {
+    const price = await stripe().prices.retrieve(priceId as string);
+    const stripeAmount = (price.unit_amount ?? 0) / 100;
+    const matches = stripeAmount === plan.price;
+
+    return {
+      name,
+      status: matches ? "ok" : "fail",
+      detail: matches
+        ? `Stripe charges ${advertised}, same as the site`
+        : `Site says ${advertised} but Stripe charges ${stripeAmount} ${price.currency?.toUpperCase()}`,
+      fix: matches
+        ? undefined
+        : "Create a new Price in Stripe at the advertised amount and point STRIPE_PRICE_* at it. Existing subscribers stay on the price they signed up to.",
+    };
+  } catch (error) {
+    return {
+      name,
+      status: "warn",
+      detail: `Site says ${advertised}; Stripe would not confirm its price`,
+      fix: error instanceof Error ? error.message : undefined,
+    };
+  }
+}
+
 function checkStripe(): Check[] {
   const hasSecret = present(process.env.STRIPE_SECRET_KEY);
   const hasWebhook = present(process.env.STRIPE_WEBHOOK_SECRET);
@@ -423,11 +481,12 @@ export type Diagnostics = {
 export async function runDiagnostics(
   requestOrigin: string | null,
 ): Promise<Diagnostics> {
-  const [supabase, twilio, model, demoLimit] = await Promise.all([
+  const [supabase, twilio, model, demoLimit, priceMatch] = await Promise.all([
     checkSupabase(),
     checkTwilio(),
     checkModel(),
     checkDemoRateLimit(),
+    checkPriceMatchesStripe(),
   ]);
 
   const checks: Check[] = [
@@ -439,6 +498,7 @@ export async function runDiagnostics(
     model,
     demoLimit,
     ...checkStripe(),
+    priceMatch,
   ];
 
   const base = siteUrl();

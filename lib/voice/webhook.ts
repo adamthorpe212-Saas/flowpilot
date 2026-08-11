@@ -91,38 +91,44 @@ export function escapeXml(value: string): string {
 
 /**
  * Amazon Polly's Irish English voice, so the receptionist does not sound
- * American to Irish callers.
+ * American to somebody who has just rung a Dublin plumber.
  *
- * Was `Google.en-IE-Standard-A`, which rejected every call with error 13520.
- * Google's text-to-speech has en-US, en-GB, en-AU and en-IN but no Irish
- * English at all, so that voice never existed — and Twilio reports an unknown
- * voice as "Invalid text", which points the investigation at the wrong thing.
+ * A default in code rather than a production-only environment variable, because
+ * the voice is part of what the product is. A fresh deploy that quietly falls
+ * back to robotic text-to-speech is shipping a worse product than the one that
+ * was tested, and nobody would notice until a customer heard it.
  *
- * Overridable without a deploy. A bad voice name is fatal to every call and the
- * error message does not say which attribute it objected to, so being able to
- * change it from an environment variable is worth more here than tidiness.
+ * THIS FILE PREVIOUSLY CLAIMED CUSTOM VOICES WERE IMPOSSIBLE HERE. Two attempts
+ * had failed with 13520 "Say: Invalid text" and the conclusion drawn was that
+ * the account could not use named voices at all. That was wrong, and expensively
+ * so — it left every caller listening to the robot for days. The real cause was
+ * almost certainly the apostrophe over-escaping fixed at the same time: `&apos;`
+ * is not valid in TwiML and Twilio reports it against the text, not the voice.
+ * Verified by ringing the number on 2026-08-11.
+ *
+ * The lesson worth keeping: two failures with the same error are evidence about
+ * the *error*, not proof about the thing being varied.
+ *
+ * Still overridable. A bad voice name is fatal to every call, so being able to
+ * change it — or set it empty to fall back to Twilio's built-in voice — without
+ * a deploy is worth more than tidiness.
  */
+const DEFAULT_VOICE = "Polly.Niamh-Neural";
+
 export function voiceName(): string {
-  return (process.env.TWILIO_VOICE ?? "").trim();
+  return (process.env.TWILIO_VOICE ?? DEFAULT_VOICE).trim();
 }
 
 export function say(text: string): string {
   /*
-   * Default to no voice attribute at all, which uses Twilio's built-in voice.
+   * An empty TWILIO_VOICE is the escape hatch, not an accident: it drops the
+   * attribute entirely and uses Twilio's built-in voice, which is the one
+   * configuration that cannot be rejected. A receptionist that sounds plain is
+   * worth infinitely more than one that hangs up.
    *
-   * Two named voices were tried and both killed every call with 13520 "Say:
-   * Invalid text" — Google.en-IE-Standard-A, which does not exist because Google
-   * has no Irish English, and then Polly.Niamh, which does. Two failures with
-   * different voices and identical errors say the account cannot use custom
-   * voices at all, rather than that either name was wrong.
-   *
-   * The built-in voice is the one configuration that cannot be rejected. It
-   * sounds worse, and a receptionist that sounds plain is worth infinitely more
-   * than one that hangs up. Set TWILIO_VOICE to try a named voice again.
-   *
-   * No `language` attribute either. It is ignored whenever a named voice is
-   * set, so it only adds something able to disagree. `<Gather>` keeps its own
-   * language: that is speech recognition, where en-IE is supported and matters.
+   * No `language` attribute. It is ignored whenever a named voice is set, so it
+   * only adds something able to disagree. `<Gather>` keeps its own language:
+   * that is speech recognition, where en-IE is supported and matters.
    */
   const voice = voiceName();
   const attribute = voice ? ` voice="${voice}"` : "";

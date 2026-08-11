@@ -111,21 +111,28 @@ require keeping a record of who visited.
 These are listed because a privacy policy cannot honestly be written around
 them.
 
-**1. A retention period still has to be chosen.** The purge job exists and runs
-nightly (`/api/cron/purge-old-calls`), but it is **off** until `RETENTION_DAYS`
-is set, and until then nothing is deleted. That default is deliberate: how long
-a plumber genuinely needs a finished job on file is a decision about their
-business, and a plausible-looking default would mean the first anyone heard of
-the policy was a customer finding their job history had evaporated.
+**1. ~~A retention period still has to be chosen.~~ SETTLED 2026-08-11:
+`RETENTION_DAYS=365`.** The nightly purge (`/api/cron/purge-old-calls`) redacts
+anything older — transcript, caller number, and the lead row with the name and
+address — while keeping the call row so billed usage stays honest.
 
-Set it and the job redacts anything older — transcript, caller number, and the
-lead row with the name and address — while keeping the call row so billed usage
-stays honest. It refuses periods under 30 days, and refuses anything that is not
+Twelve months, not the ninety days first proposed. Ninety was chosen thinking
+only about minimising data held, and it would have been a product failure: a
+customer ringing back in month five about a bathroom fitted in month one would
+have found no record of it, and neither would the tradesperson facing "you
+installed this in April and it's leaking". A year covers a full seasonal cycle,
+repeat customers and most comebacks, and is still a defensible answer to storage
+limitation — business records kept as long as the business plausibly needs them,
+rather than indefinitely.
+
+Worth stating in the DPA: erasure does not wait for this clock. A caller who
+asks to be forgotten is erased on request from the lead screen, whatever the
+retention period says.
+
+The setting refuses periods under 30 days, and refuses anything that is not
 plain digits, because `Number("0x1E")` is 30 and this is the one setting whose
-misreading destroys data.
-
-`/settings/diagnostics` reports **Caller data retention** as a warning while it
-is unset, so it cannot be forgotten quietly.
+misreading destroys data. `/settings/diagnostics` reports **Caller data
+retention** as a warning while it is unset, so it cannot be forgotten quietly.
 
 **2. Erasure exists; the rest of the rights do not.** A business can now erase a
 caller from the lead screen — it deletes the lead and clears the transcript and

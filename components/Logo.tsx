@@ -7,21 +7,27 @@
  * cost of that only shows up when it changes: a new mark would have meant
  * finding every copy.
  *
- * THE MARK IS NOT HERE YET. Adam has an FP monogram with motion lines, but a
- * raster pasted into a chat cannot become a repo file, and drawing an
- * approximation of somebody's real logo is worse than showing none — an
- * 80%-right mark is a wrong mark that nobody notices until it is on a van.
- * So this is a wordmark for now, which is a legitimate thing to be (Stripe and
- * Linear ship wordmarks) rather than a placeholder pretending to be a mark.
+ * The mark is the FP monogram with motion lines, cropped out of the 1254px
+ * original and scaled down — 699KB to 153KB, for something that renders at
+ * 28px. Shipping the original would have been two-thirds of a megabyte on every
+ * page load to draw a logo the size of a thumbnail.
  *
- * To add it: drop the file at public/flowpilot-mark.svg and set HAS_MARK true.
- * Every surface picks it up from here.
+ * The crop matters as much as the resize. The source is a square canvas with
+ * the artwork occupying only 45% of its width, so scaling it whole produced a
+ * mark that was mostly empty black with a tiny glyph adrift in the middle. The
+ * asset here is cropped to the artwork's actual bounds, found by scanning for
+ * the first non-black pixel rather than guessed at by eye.
+ *
+ * It has no alpha channel: the source is white on solid black, which is why it
+ * sits cleanly on this site without a cutout. That also means it must not be
+ * placed on a light background — there is nothing else here that does, and if
+ * one ever appears the mark needs a transparent version rather than a CSS
+ * workaround.
  */
 
-const HAS_MARK = false;
+const HAS_MARK = true;
 
-/** Where the asset lives once it exists. */
-const MARK_SRC = "/flowpilot-mark.svg";
+const MARK_SRC = "/flowpilot-mark.png";
 
 export default function Logo({
   /** Bigger on marketing pages than in the app chrome. */
@@ -31,8 +37,15 @@ export default function Logo({
   size?: "default" | "large";
   className?: string;
 }) {
-  const markSize = size === "large" ? "h-8 w-8" : "h-7 w-7";
-  const textSize = size === "large" ? "text-lg sm:text-xl" : "text-[15px]";
+  /*
+   * Sized by height with the width left to follow.
+   *
+   * The mark is wider than it is tall — it was being forced into a square, so
+   * a 5:4 glyph was squashed and the whole thing read as tiny. `w-auto` lets it
+   * keep its own proportions and take the width it needs.
+   */
+  const markSize = size === "large" ? "h-9 w-auto" : "h-7 w-auto";
+  const textSize = size === "large" ? "text-xl sm:text-2xl" : "text-[15px]";
 
   return (
     <span

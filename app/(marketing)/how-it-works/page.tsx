@@ -4,7 +4,6 @@ import AfterTheCall from "@/components/AfterTheCall";
 import Faq from "@/components/Faq";
 import JobCard from "@/components/JobCard";
 import LiveDemo from "@/components/LiveDemo";
-import VoicemailComparison from "@/components/VoicemailComparison";
 import { LEARN_FAQ_IDS, faqItems } from "@/lib/faq";
 
 export const metadata: Metadata = {
@@ -27,6 +26,14 @@ export const metadata: Metadata = {
  * read the whole page without learning whether this thing rings them, texts
  * them, or expects them to go looking. That section now has a name and says
  * both, plainly.
+ *
+ * One phone mockup per argument, and only one argument gets phones. A
+ * voicemail-versus-FlowPilot comparison used to sit below, which meant four
+ * bezels on one page — and its two sat empty until somebody pressed play, so by
+ * default it was seven hundred pixels of blank screens. The point it made is
+ * already made twice over: step 01 says calls go to FlowPilot "instead of
+ * voicemail", and the FAQ takes it again. Recover from git if it is ever wanted
+ * back, but it should not return alongside the texts.
  */
 
 const SEQUENCE = [
@@ -182,12 +189,6 @@ export default function HowItWorks() {
               />
             </div>
           </div>
-        </div>
-      </section>
-
-      <section className="border-t border-white/10 px-5 py-20 sm:px-6 sm:py-24">
-        <div className="mx-auto max-w-4xl">
-          <VoicemailComparison />
         </div>
       </section>
 

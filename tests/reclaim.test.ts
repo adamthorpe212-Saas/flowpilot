@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TRIAL_DAYS } from "@/lib/plans";
+
 import { isReclaimable, RECLAIM_GRACE_DAYS } from "@/lib/reclaim";
 import type { Business, SubscriptionStatus } from "@/types/database";
 
@@ -46,22 +46,22 @@ describe("isReclaimable", () => {
     expect(isReclaimable(business({ subscription_status: "past_due" }))).toBe(false);
   });
 
-  it("holds the number through the grace period after a trial ends", () => {
-    const justExpired = business({
+  it("never reclaims from an account that has not subscribed", () => {
+    /*
+     * `incomplete` used to mean a free trial that could quietly lapse while
+     * holding a number, so it was reclaimable. With the trial gone, provisioning
+     * refuses to buy a number for an account that has never paid — so an
+     * `incomplete` business holding one cannot happen through the product.
+     *
+     * If one ever appears it is a bug in provisioning, and silently deleting
+     * the number would destroy the evidence of it. Left alone on purpose.
+     */
+    const neverPaid = business({
       subscription_status: "incomplete",
-      created_at: daysAgo(TRIAL_DAYS + 1),
+      created_at: daysAgo(400),
     });
 
-    expect(isReclaimable(justExpired)).toBe(false);
-  });
-
-  it("reclaims once the grace period is past", () => {
-    const longGone = business({
-      subscription_status: "incomplete",
-      created_at: daysAgo(TRIAL_DAYS + RECLAIM_GRACE_DAYS + 1),
-    });
-
-    expect(isReclaimable(longGone)).toBe(true);
+    expect(isReclaimable(neverPaid)).toBe(false);
   });
 
   it("reclaims after a cancellation plus grace", () => {

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import LegalPage from "@/components/LegalPage";
 import { LEGAL } from "@/lib/legal";
-import { formatPrice, soldPlan, TRIAL_DAYS } from "@/lib/plans";
+import { formatPrice, soldPlan } from "@/lib/plans";
 
 export const metadata: Metadata = {
   title: "Terms — FlowPilot",
@@ -64,9 +64,13 @@ export default function TermsPage() {
 
       <h2>What it costs</h2>
       <p>
-        <strong>{formatPrice(plan)} per month, excluding VAT.</strong> Your first{" "}
-        {TRIAL_DAYS} days are free and no card is needed to set up. Billing is
-        monthly in advance from the end of the trial.
+        <strong>{formatPrice(plan)} per month, excluding VAT.</strong> Billed
+        monthly in advance, starting when you subscribe. There is no free trial.
+      </p>
+      <p>
+        Creating an account and setting up your receptionist costs nothing. You
+        subscribe at the point your phone number is set up, which is when the
+        service begins.
       </p>
       <p>
         Fair use is {plan.callAllowance} answered calls a month. Calls you answer

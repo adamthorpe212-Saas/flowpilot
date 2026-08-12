@@ -1,7 +1,7 @@
 import "server-only";
 
 import { allFaqItems } from "@/lib/faq";
-import { formatPrice, soldPlan, TRIAL_DAYS } from "@/lib/plans";
+import { formatPrice, soldPlan } from "@/lib/plans";
 
 /**
  * The product-knowledge chat below the FAQ.
@@ -46,7 +46,8 @@ function knowledge(): string {
     "",
     "What it is: an AI receptionist for trades and service businesses in Ireland. It answers calls the owner cannot get to, asks what the job is, and sends the details to the owner.",
     "",
-    `Price: ${formatPrice(plan)} per month, excluding VAT. One plan, nothing else to choose. The first ${TRIAL_DAYS} days are free. Cancel any time from billing settings; it keeps answering until the end of the month already paid for.`,
+    `Price: ${formatPrice(plan)} per month, excluding VAT. One plan, nothing else to choose. There is no free trial. Cancel any time from billing settings; it keeps answering until the end of the month already paid for.`,
+    "Signing up and configuring the receptionist costs nothing — the subscription starts when the business subscribes, which is also when its phone number is set up.",
     `Fair use: ${plan.callAllowance} answered calls a month. Nobody is cut off mid-month.`,
     "",
     "What is included:",

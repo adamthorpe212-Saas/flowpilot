@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getCurrentBusiness } from "@/lib/auth";
-import { formatPrice, getPlan, TRIAL_DAYS } from "@/lib/plans";
+import { formatPrice, getPlan } from "@/lib/plans";
 import { getUsage } from "@/lib/usage";
 import BillingActions from "./BillingActions";
 
@@ -14,12 +14,21 @@ const STATUS_COPY: Record<string, { label: string; tone: string; detail: string 
     incomplete: {
       label: "No subscription",
       tone: "border-amber-500/30 bg-amber-500/10 text-amber-200",
-      detail: "Start your subscription to keep your receptionist answering.",
+      detail:
+        "Subscribe to get your number and start answering calls. Nothing has been charged yet.",
     },
+    /*
+     * Kept even though FlowPilot no longer starts trials.
+     *
+     * Stripe still reports `trialing` if one is ever applied — a promotion, or
+     * a subscription set up by hand in the dashboard — and a status the billing
+     * page cannot render would show a customer a blank box about their own
+     * money. It costs four lines to handle a state we do not create.
+     */
     trialing: {
       label: "Free trial",
       tone: "border-emerald-500/30 bg-emerald-500/10 text-emerald-200",
-      detail: "You're on your free trial. Nothing to pay yet.",
+      detail: "You're on a free trial. Nothing to pay yet.",
     },
     active: {
       label: "Active",
@@ -152,7 +161,7 @@ export default async function BillingPage({
         split by whitespace handling wherever it runs.
       */}
       <p className="mt-8 text-xs text-zinc-500">
-        {`${TRIAL_DAYS} days free. Prices exclude VAT. Cancel any time — your receptionist keeps answering until the end of the month you've paid for.`}
+        {`Prices exclude VAT. Cancel any time — your receptionist keeps answering until the end of the month you've paid for.`}
       </p>
     </div>
   );

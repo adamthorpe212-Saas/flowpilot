@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { siteUrl } from "@/lib/env";
 import { getCurrentBusiness } from "@/lib/auth";
 import { soldPlan } from "@/lib/plans";
-import { trialStatus } from "@/lib/usage";
+
 import { isStripeConfigured, priceIdForPlan, stripe } from "@/lib/stripe";
 
 export type BillingState = { error: string | null };
@@ -33,7 +33,8 @@ export async function startCheckout(
 
   if (!isStripeConfigured()) {
     return {
-      error: "Payments aren't switched on yet. Your trial keeps running.",
+      error:
+        "Payments aren't switched on yet. Nothing is wrong at your end — we'll be in touch shortly.",
     };
   }
 
@@ -41,9 +42,6 @@ export async function startCheckout(
   if (!priceId) {
     return { error: "That plan isn't available right now." };
   }
-
-  // Days left of the signup trial, so a customer never gets two.
-  const trialDaysLeft = trialStatus(business).daysRemaining;
 
   let url: string | null = null;
 
@@ -56,17 +54,10 @@ export async function startCheckout(
         ? { customer: business.stripe_customer_id }
         : {}),
       /*
-       * Only the days left of the trial they already started at signup — not a
-       * fresh TRIAL_DAYS.
-       *
-       * Granting the full period here would hand a second free fortnight to
-       * someone who had already used the first, and cancelling before the
-       * charge made it repeatable. The pricing page promises fourteen days
-       * free, once, and the clock starts when they sign up rather than when
-       * they get around to paying.
+       * No trial_period_days. There is no free trial — the first payment is
+       * taken at checkout, and the subscription is active from that moment.
        */
       subscription_data: {
-        ...(trialDaysLeft > 0 ? { trial_period_days: trialDaysLeft } : {}),
         metadata: { business_id: business.id, plan },
       },
       metadata: { business_id: business.id, plan },

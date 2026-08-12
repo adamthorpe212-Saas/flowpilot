@@ -36,7 +36,19 @@ export type PlanDefinition = {
   sold?: boolean;
 };
 
-export const TRIAL_DAYS = 14;
+/*
+ * There is no free trial.
+ *
+ * TRIAL_DAYS was 14, and it was removed rather than set to zero: a trial that
+ * exists in the code but grants nothing is machinery that looks live in review,
+ * and the checkout, the reclaim job and three pages of copy all had branches
+ * hanging off it.
+ *
+ * A tradesperson can still create an account, describe their business and
+ * configure the receptionist for free, and hear it on the demo. What they
+ * cannot do without paying is get a phone number — which is the point at which
+ * FlowPilot starts paying monthly rental on their behalf.
+ */
 
 export const PLANS: PlanDefinition[] = [
   {

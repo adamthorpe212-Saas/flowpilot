@@ -1,4 +1,3 @@
-import { TRIAL_DAYS } from "@/lib/plans";
 import type { Business } from "@/types/database";
 
 /**
@@ -15,17 +14,18 @@ export const RECLAIM_GRACE_DAYS = 14;
 /**
  * When a business stopped being entitled to service.
  *
- * A trial ends on a schedule known from signup. A cancellation is only known
- * from when the webhook wrote it, so updated_at is the best available proxy —
- * and it errs toward holding the number longer, which is the safe direction.
+ * A cancellation is only known from when the webhook wrote it, so updated_at is
+ * the best available proxy — and it errs toward holding the number longer,
+ * which is the safe direction.
+ *
+ * `incomplete` used to appear here, because a business could hold a number
+ * through a free trial and then abandon it. With the trial gone, provisioning
+ * refuses to buy a number for an account that has never paid, so an
+ * `incomplete` business holding one should not exist. It is left un-reclaimed
+ * deliberately: if one ever turns up it is a bug in provisioning, and quietly
+ * deleting the evidence is the worst possible response to that.
  */
 function serviceEndedAt(business: Business): Date | null {
-  if (business.subscription_status === "incomplete") {
-    const end = new Date(business.created_at);
-    end.setDate(end.getDate() + TRIAL_DAYS);
-    return end;
-  }
-
   if (business.subscription_status === "canceled" || business.status === "suspended") {
     return new Date(business.updated_at);
   }

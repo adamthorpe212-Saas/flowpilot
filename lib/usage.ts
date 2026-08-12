@@ -1,7 +1,7 @@
 import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/server";
-import { getPlan, TRIAL_DAYS } from "@/lib/plans";
+import { getPlan } from "@/lib/plans";
 import type { Business } from "@/types/database";
 
 /** Start of the current calendar month, in UTC. */
@@ -48,34 +48,6 @@ export async function getUsage(business: Business): Promise<Usage> {
   };
 }
 
-export type Trial = {
-  endsAt: Date;
-  daysRemaining: number;
-  expired: boolean;
-};
-
-/**
- * The free trial for a business that has never been through checkout.
- *
- * Measured from signup rather than from Stripe, because a customer who never
- * opens the billing page never reaches Stripe at all. TRIAL_DAYS was previously
- * only a checkout parameter and a line of marketing copy, which meant
- * 'incomplete' — the status every new signup starts with — granted service
- * forever. Anyone who ignored billing got the product free indefinitely.
- */
-export function trialStatus(business: Business, now = new Date()): Trial {
-  const endsAt = new Date(business.created_at);
-  endsAt.setDate(endsAt.getDate() + TRIAL_DAYS);
-
-  const msRemaining = endsAt.getTime() - now.getTime();
-
-  return {
-    endsAt,
-    daysRemaining: Math.max(0, Math.ceil(msRemaining / 86_400_000)),
-    expired: msRemaining <= 0,
-  };
-}
-
 /**
  * Whether the receptionist should answer at all.
  *
@@ -84,16 +56,18 @@ export function trialStatus(business: Business, now = new Date()): Trial {
  * silently stops answering a tradesperson's phone mid-week would do far more
  * damage than an over-usage month costs.
  *
- * A failed payment does not stop it either; only a cancelled subscription or an
- * expired trial does.
+ * A failed payment does not stop it either. The card that expired belongs to
+ * somebody whose phone is their livelihood, and killing the line the same day
+ * would cost them far more than the unpaid month costs us; Stripe's dunning
+ * chases it while the receptionist keeps working.
+ *
+ * There is no free trial. `incomplete` means a business that has never been
+ * through checkout, and it answers nothing — a number costs monthly rental from
+ * the moment it is bought, and provisioning gates on this same function, so an
+ * unpaid account cannot make FlowPilot spend money on its behalf.
  */
-export function shouldAnswerCalls(business: Business, now = new Date()): boolean {
+export function shouldAnswerCalls(business: Business): boolean {
   if (business.status === "suspended") return false;
-
-  // Never been through checkout: entitled only for the length of the trial.
-  if (business.subscription_status === "incomplete") {
-    return !trialStatus(business, now).expired;
-  }
 
   return ["trialing", "active", "past_due"].includes(
     business.subscription_status,

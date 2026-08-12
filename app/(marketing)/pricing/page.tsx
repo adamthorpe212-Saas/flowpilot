@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Faq from "@/components/Faq";
 import { PRICING_FAQ_IDS, faqItems } from "@/lib/faq";
-import { formatPrice, soldPlan, TRIAL_DAYS, weeklyPrice } from "@/lib/plans";
+import { formatPrice, soldPlan, weeklyPrice } from "@/lib/plans";
 
 export const metadata: Metadata = {
   title: "Pricing — FlowPilot",
@@ -21,7 +21,7 @@ export default function PricingPage() {
             One missed call pays for it.
           </h1>
           <p className="mx-auto mt-4 max-w-md text-sm leading-6 text-zinc-400 sm:text-base sm:leading-7">
-            {TRIAL_DAYS} days free. No setup fee. Cancel whenever you like.
+            No setup fee. Cancel whenever you like.
           </p>
         </div>
       </section>

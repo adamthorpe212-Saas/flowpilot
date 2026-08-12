@@ -8,7 +8,7 @@ import {
   STATUS_STYLES,
 } from "@/lib/lead-views";
 import { createClient } from "@/lib/supabase/server";
-import { getUsage, shouldAnswerCalls, trialStatus } from "@/lib/usage";
+import { getUsage, shouldAnswerCalls } from "@/lib/usage";
 import ReceptionistStatus from "./ReceptionistStatus";
 import type { Lead } from "@/types/database";
 
@@ -102,14 +102,12 @@ export default async function DashboardPage({
   const isLive = setupDone && business ? shouldAnswerCalls(business) : false;
   const suspended = setupDone && !isLive;
 
-  // A trial running out is a different problem from a subscription lapsing,
-  // and telling someone to "sort out billing" when they never had a bill is
-  // confusing at exactly the wrong moment.
-  const trial = business ? trialStatus(business) : null;
-  const onTrial =
-    business?.subscription_status === "incomplete" && !trial?.expired;
-  const trialExpired =
-    business?.subscription_status === "incomplete" && trial?.expired;
+  /*
+   * Never subscribed is a different problem from a subscription that lapsed,
+   * and telling somebody to "sort out billing" when they have never had a bill
+   * is confusing at exactly the wrong moment.
+   */
+  const neverSubscribed = business?.subscription_status === "incomplete";
 
   return (
     <div>
@@ -159,8 +157,8 @@ export default async function DashboardPage({
         work is safe, and points at the one thing they can usefully check —
         without implying they caused it.
 
-        Above the trial nudge on purpose: a job nobody heard about outranks a
-        renewal date.
+        Above the subscribe prompt on purpose: a job nobody heard about
+        outranks a billing nudge.
       */}
       {(undelivered ?? 0) > 0 && (
         <div className="mt-6 rounded-2xl border border-amber-500/25 bg-amber-500/10 p-5">
@@ -183,37 +181,30 @@ export default async function DashboardPage({
         </div>
       )}
 
-      {onTrial && trial && trial.daysRemaining <= 5 && (
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-amber-500/25 bg-amber-500/10 p-5">
-          <p className="text-sm text-amber-100">
-            {trial.daysRemaining === 0
-              ? "Your free trial ends today."
-              : `${trial.daysRemaining} ${trial.daysRemaining === 1 ? "day" : "days"} left on your free trial.`}{" "}
-            Calls stop being answered after that.
-          </p>
-          <Link
-            href="/billing"
-            className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200"
-          >
-            Choose a plan
-          </Link>
-        </div>
-      )}
-
+      {/*
+        Three different reasons the receptionist is silent, and they need three
+        different sentences. "Sort out billing" to somebody who has never been
+        billed reads as an error; "finish setup" to somebody whose card failed
+        sends them round a loop they cannot complete.
+      */}
       {!isLive && (
         <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-sm text-zinc-300">
-            {trialExpired
-              ? "Your free trial has ended, so calls aren't being answered."
+          <p className="text-sm leading-6 text-zinc-300">
+            {neverSubscribed
+              ? "Subscribe to get your number and start answering calls. Nothing has been charged yet."
               : suspended
                 ? "Your subscription has lapsed, so calls aren't being answered."
                 : "Your receptionist isn't answering calls yet."}
           </p>
           <Link
-            href={suspended ? "/billing" : "/onboarding"}
+            href={neverSubscribed || suspended ? "/billing" : "/onboarding"}
             className="mt-4 inline-block rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-zinc-200"
           >
-            {suspended ? (trialExpired ? "Choose a plan" : "Sort out billing") : "Finish setup"}
+            {neverSubscribed
+              ? "Subscribe"
+              : suspended
+                ? "Sort out billing"
+                : "Finish setup"}
           </Link>
         </div>
       )}

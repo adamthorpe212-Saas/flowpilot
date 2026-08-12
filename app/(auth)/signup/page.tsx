@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { soldPlan, TRIAL_DAYS, formatPrice } from "@/lib/plans";
+import { soldPlan, formatPrice } from "@/lib/plans";
 import SignupForm from "./SignupForm";
 
 export const metadata: Metadata = {
@@ -29,8 +29,13 @@ export default async function SignupPage({
       <h1 className="text-2xl font-semibold tracking-tight">
         Set up your receptionist
       </h1>
+      {/*
+        Still true, and still worth saying: creating the account and configuring
+        the receptionist genuinely costs nothing. What changed is that the free
+        part now ends at the phone number rather than after a fortnight.
+      */}
       <p className="mt-2 text-sm text-zinc-400">
-        {TRIAL_DAYS} days free. No card needed to get set up.
+        No card needed to get set up.
       </p>
 
       {/*
@@ -43,7 +48,7 @@ export default async function SignupPage({
         <div>
           <p className="text-sm font-medium">{plan.name}</p>
           <p className="text-[13px] text-zinc-400">
-            {formatPrice(plan)}/month after your trial
+            {formatPrice(plan)}/month once you go live
           </p>
         </div>
         <Link

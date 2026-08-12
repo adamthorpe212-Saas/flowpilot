@@ -5,7 +5,7 @@ import PhoneMessage from "@/components/PhoneMessage";
 import WorkflowStrip from "@/components/WorkflowStrip";
 import { HOME_FAQ_IDS, faqItems } from "@/lib/faq";
 import { jobAlert } from "@/lib/messages";
-import { formatPrice, soldPlan, TRIAL_DAYS, weeklyPrice } from "@/lib/plans";
+import { formatPrice, soldPlan, weeklyPrice } from "@/lib/plans";
 
 /**
  * The homepage sells. It does not explain.
@@ -404,14 +404,15 @@ export default function Home() {
           </div>
 
           {/*
-            The trial is mentioned, not led with. It is real — an account
-            genuinely gets this long before it is billed — and a site that stays
-            quiet about something that is happening is the one combination worth
-            avoiding. But leading on "free" invites a tradesperson to look for
-            the catch before they have understood the product.
+            No trial to mention any more. What replaces it is the thing that
+            actually reduces the risk of pressing the button: cancelling is
+            genuinely one click and takes no notice period, so the commitment
+            being made is one month rather than a subscription somebody has to
+            ring up to escape.
           */}
           <p className="mt-6 text-xs leading-5 text-zinc-400">
-            {`Your first ${TRIAL_DAYS} days are free. Prices exclude VAT. Cancel any time — your receptionist keeps answering until the end of the month you've paid for.`}
+            Prices exclude VAT. Cancel any time in one click — your receptionist
+            keeps answering until the end of the month you&apos;ve paid for.
           </p>
         </div>
       </section>

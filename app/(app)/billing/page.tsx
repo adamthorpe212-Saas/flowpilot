@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getCurrentBusiness } from "@/lib/auth";
-import { formatPrice, getPlan } from "@/lib/plans";
+import { formatPrice, getPlan, soldPlan } from "@/lib/plans";
 import { getUsage } from "@/lib/usage";
 import BillingActions from "./BillingActions";
 
@@ -57,9 +57,20 @@ export default async function BillingPage({
   const business = await getCurrentBusiness();
   if (!business) return null;
 
-  const plan = getPlan(business.plan);
-  const status = STATUS_COPY[business.subscription_status] ?? STATUS_COPY.incomplete;
+  /*
+   * Somebody who has never subscribed is shown what they would be buying, not
+   * whatever their row happens to say.
+   *
+   * Every signup used to be stamped 'starter' by a database default left over
+   * from when three tiers were sold, so this page confidently offered "Starter
+   * — €49/month · up to 50 answered calls", a plan that cannot be purchased at
+   * a price that is not ours. The default is fixed, but the rule matters
+   * independently: a withdrawn tier can only ever be right for somebody
+   * actually paying for it.
+   */
   const hasSubscription = Boolean(business.stripe_subscription_id);
+  const plan = hasSubscription ? getPlan(business.plan) : soldPlan();
+  const status = STATUS_COPY[business.subscription_status] ?? STATUS_COPY.incomplete;
   const usage = await getUsage(business);
 
   return (

@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import BusinessForm from "@/app/(app)/onboarding/business/BusinessForm";
 import ServicesForm from "@/app/(app)/onboarding/services/ServicesForm";
 import { titleClass } from "@/components/ui/field-styles";
+import BlockedCallers from "./BlockedCallers";
 import OpeningHoursForm from "./OpeningHoursForm";
 import NotificationRules from "./NotificationRules";
 import QuestionsForm from "./QuestionsForm";
@@ -14,6 +15,7 @@ import { isEmailConfigured } from "@/lib/email";
 import { formatIrishNumber } from "@/lib/phone";
 import { createClient } from "@/lib/supabase/server";
 import type {
+  BlockedCaller,
   BusinessProfile,
   NotificationRule,
   QualificationQuestion,
@@ -75,6 +77,7 @@ export default async function SettingsPage() {
     { data: ruleRows },
     { data: profileRow },
     { data: questionRows },
+    { data: blockedRows },
   ] = await Promise.all([
     supabase
       .from("service")
@@ -97,12 +100,18 @@ export default async function SettingsPage() {
       .select("*")
       .eq("business_id", business.id)
       .order("sort_order"),
+    supabase
+      .from("blocked_caller")
+      .select("*")
+      .eq("business_id", business.id)
+      .order("created_at"),
   ]);
 
   const services = (serviceRows ?? []) as Service[];
   const rules = (ruleRows ?? []) as NotificationRule[];
   const profile = (profileRow as BusinessProfile) ?? null;
   const questions = (questionRows ?? []) as QualificationQuestion[];
+  const blockedCallers = (blockedRows ?? []) as BlockedCaller[];
   const emailAvailable = isEmailConfigured();
 
   return (
@@ -195,6 +204,19 @@ export default async function SettingsPage() {
         blurb="Every job goes to everyone on this list, the moment the call ends."
       >
         <NotificationRules rules={rules} emailAvailable={emailAvailable} />
+      </Section>
+
+      {/*
+        Below notifications rather than up with the receptionist's words: this
+        is an exception list, and most people will never add to it. It matters
+        enormously to the ones who do — nobody wants their wife greeted by
+        "I'm their automated assistant".
+      */}
+      <Section
+        title="Callers it should never answer"
+        blurb="Family, a supplier, a scam number. If one of these rings after you've missed it, your receptionist stays quiet and the call does whatever it did before FlowPilot — voicemail, or ringing out."
+      >
+        <BlockedCallers callers={blockedCallers} />
       </Section>
 
       <Section title="Your FlowPilot number">

@@ -1,3 +1,5 @@
+import { DEFAULT_GREETING } from "@/lib/disclosure";
+
 /**
  * The four screens that play inside the phone at the centre of the lifecycle
  * ring, indexed to match `lifecycleStages`.
@@ -46,8 +48,12 @@ export default function StageScreen({ stage }: { stage: number }) {
           ))}
         </div>
 
+        {/* Quoted from the real default rather than typed out. This showed
+            "Sorry we missed you" long after that wording was removed from the
+            product for opening on an apology — the same drift that had the
+            settings page promising a greeting no caller has ever heard. */}
         <p className="mt-3 text-[9px] leading-relaxed text-zinc-300">
-          &ldquo;Sorry we missed you — what&apos;s the problem?&rdquo;
+          &ldquo;{DEFAULT_GREETING}&rdquo;
         </p>
       </div>
     );

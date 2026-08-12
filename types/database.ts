@@ -127,6 +127,23 @@ export type NotificationRule = {
   created_at: string;
 };
 
+/**
+ * A caller the receptionist must not answer.
+ *
+ * `blocked_count` and `last_blocked_at` are how an owner can tell it is
+ * working — a blocklist with no evidence is a promise nobody can check.
+ */
+export type BlockedCaller = {
+  id: string;
+  business_id: string;
+  /** E.164, normalised when it was saved. */
+  number: string;
+  label: string | null;
+  blocked_count: number;
+  last_blocked_at: string | null;
+  created_at: string;
+};
+
 export type TranscriptTurn = {
   role: "assistant" | "caller";
   text: string;

@@ -1,4 +1,5 @@
 import type { NextRequest } from "next/server";
+import { isWithheld } from "@/lib/blocked-callers";
 import { siteUrl } from "@/lib/env";
 import { isWithinOpeningHours } from "@/lib/hours";
 import { openingLine } from "@/lib/receptionist";
@@ -65,6 +66,45 @@ export async function POST(request: NextRequest) {
     return twiml(
       `<Response>${say("Great — your forwarding is working. Your receptionist is live.")}<Hangup/></Response>`,
     );
+  }
+
+  /*
+   * Somebody the owner has told us not to answer.
+   *
+   * Deliberately after the forwarding test above — blocking a number must never
+   * be able to break the one call that proves the product works.
+   *
+   * Reject rather than answer-and-hang-up: an answered call is a billed call
+   * and a moment of silence for whoever is ringing. Rejecting hands the call
+   * back to the carrier, which does whatever it would have done if FlowPilot
+   * did not exist — voicemail, or ringing out. That is the whole promise here.
+   * We never speak to them, so they never know a blocklist exists.
+   */
+  const { data: blocked } = await supabase
+    .from("blocked_caller")
+    .select("id, blocked_count")
+    .eq("business_id", business.id)
+    .eq("number", from)
+    .maybeSingle();
+
+  if (blocked && !isWithheld(from)) {
+    /*
+     * Counted so the owner can see it working. A blocklist with no evidence is
+     * a promise nobody can check — and this is also how somebody notices they
+     * have blocked a number they did not mean to.
+     *
+     * Not awaited: the caller is on the line, and a slow write must not hold
+     * the reject. Losing a count is survivable; delaying the hangup is not.
+     */
+    void supabase
+      .from("blocked_caller")
+      .update({
+        blocked_count: blocked.blocked_count + 1,
+        last_blocked_at: new Date().toISOString(),
+      })
+      .eq("id", blocked.id);
+
+    return twiml("<Response><Reject reason='busy'/></Response>");
   }
 
   /*

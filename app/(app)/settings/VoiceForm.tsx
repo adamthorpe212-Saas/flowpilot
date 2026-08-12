@@ -9,7 +9,7 @@ import { controlClass } from "@/components/ui/field-styles";
 import FormError from "@/components/ui/FormError";
 import Labelled from "@/components/ui/Labelled";
 import SubmitButton from "@/components/ui/SubmitButton";
-import { AI_DISCLOSURE_EXAMPLE } from "@/lib/disclosure";
+import { aiDisclosure, DEFAULT_GREETING } from "@/lib/disclosure";
 import type { BusinessProfile } from "@/types/database";
 
 const INITIAL: VoiceState = { error: null };
@@ -44,39 +44,53 @@ export default function VoiceForm({
         </p>
       )}
 
+      {/*
+        One block, in the order a caller hears it.
+
+        This used to be two paragraphs that contradicted each other. The hint
+        promised the default was "Hello, {business}. Sorry we missed your call."
+        — copy that had been removed from the product deliberately, because it
+        opens on an apology for something the caller has not complained about —
+        while the note below quoted the disclosure against a hardcoded
+        "O'Brien Plumbing", a business the reader has never heard of.
+
+        Both now come from lib/disclosure.ts with the real business name, which
+        is the only way this stays true the next time either one changes.
+      */}
       <Labelled
         htmlFor="greeting"
         label="The first thing a caller hears"
-        hint={`Leave blank and it says: "Hello, ${businessName}. Sorry we missed your call. What can I help you with?"`}
+        hint="Every call opens the same way, then says your line."
       >
+        <p
+          className="rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-[13px] leading-6 text-zinc-400"
+          data-testid="ai-disclosure-note"
+        >
+          <span className="text-white">
+            &ldquo;{aiDisclosure(businessName)}&rdquo;
+          </span>{" "}
+          — this part stays on. Callers have to be told they&apos;re speaking to
+          a machine and that the call is written down. It protects you as much
+          as them: it&apos;s your customer who would otherwise find out
+          afterwards.
+        </p>
+
+        <p className="mt-4 text-[13px] leading-5 text-zinc-400">
+          Then your own words. Leave this blank and it says{" "}
+          <span className="text-zinc-200">
+            &ldquo;{DEFAULT_GREETING}&rdquo;
+          </span>
+          .
+        </p>
+
         <textarea
           id="greeting"
           name="greeting"
           rows={2}
           defaultValue={profile.greeting ?? ""}
           placeholder="Optional — write your own opening line"
-          className={controlClass}
+          className={`mt-2.5 ${controlClass}`}
         />
-
-        {/*
-          Shown here rather than buried in terms, because a business owner who
-          finds an unfamiliar sentence on their own recording assumes something
-          is broken. Naming it as deliberate, and saying why, is the difference
-          between a support ticket and a nod.
-        */}
-        <p
-          className="mt-3 rounded-xl border border-white/10 bg-white/[0.02] px-4 py-3 text-[13px] leading-5 text-zinc-400"
-          data-testid="ai-disclosure-note"
-        >
-          Every call opens with{" "}
-          <span className="text-white">
-            &ldquo;{AI_DISCLOSURE_EXAMPLE}&rdquo;
-          </span>{" "}
-          before your greeting. That stays on: callers have to be told
-          they&apos;re speaking to a machine and that the call is written down.
-          It protects you as much as them — it&apos;s your customer who would
-          otherwise find out afterwards.
-        </p>
       </Labelled>
 
       <Labelled

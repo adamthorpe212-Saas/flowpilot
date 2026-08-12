@@ -1,26 +1,15 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getCurrentBusiness } from "@/lib/auth";
-import {
-  LEAD_VIEWS,
-  resolveView,
-  STATUS_LABELS,
-  STATUS_STYLES,
-} from "@/lib/lead-views";
+import { dashboardAlert } from "@/lib/dashboard-alert";
+import { LEAD_VIEWS, resolveView } from "@/lib/lead-views";
 import { createClient } from "@/lib/supabase/server";
-import { getUsage, shouldAnswerCalls } from "@/lib/usage";
-import ReceptionistStatus from "./ReceptionistStatus";
+import LeadCard from "./LeadCard";
 import type { Lead } from "@/types/database";
 
 export const metadata: Metadata = {
-  title: "Leads — FlowPilot",
+  title: "Jobs — FlowPilot",
   robots: { index: false },
-};
-
-const URGENCY_STYLES: Record<string, string> = {
-  high: "border-red-500/30 bg-red-500/10 text-red-200",
-  normal: "border-white/15 bg-white/5 text-zinc-300",
-  low: "border-white/10 bg-white/[0.03] text-zinc-400",
 };
 
 /**
@@ -32,15 +21,6 @@ const URGENCY_STYLES: Record<string, string> = {
  */
 function oneWeekAgo(): string {
   return new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-}
-
-function formatWhen(value: string) {
-  return new Intl.DateTimeFormat("en-IE", {
-    day: "numeric",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
 }
 
 export default async function DashboardPage({
@@ -62,7 +42,7 @@ export default async function DashboardPage({
 
   if (view.statuses) query = query.in("status", view.statuses);
 
-  const [{ data }, { count: todoCount }, { count: undelivered }, usage] =
+  const [{ data }, { count: todoCount }, { count: undelivered }] =
     await Promise.all([
       query,
       supabase
@@ -85,131 +65,61 @@ export default async function DashboardPage({
         .not("notified_at", "is", null)
         .is("delivered_at", null)
         .gte("started_at", oneWeekAgo()),
-      // Alongside the others rather than after them: four sequential round trips
-      // is four times the wait on the page somebody opens most often.
-      business ? getUsage(business) : Promise.resolve(null),
     ]);
 
   const leads = (data ?? []) as Lead[];
 
-  // Setup being finished is not the same as the receptionist actually
-  // answering. A lapsed subscription declines calls, and showing a green badge
-  // while that happens would be the worst kind of dashboard: reassuring and
-  // wrong.
-  const setupDone = Boolean(
-    business?.phone_number && business?.forwarding_verified_at,
-  );
-  const isLive = setupDone && business ? shouldAnswerCalls(business) : false;
-  const suspended = setupDone && !isLive;
-
   /*
-   * Never subscribed is a different problem from a subscription that lapsed,
-   * and telling somebody to "sort out billing" when they have never had a bill
-   * is confusing at exactly the wrong moment.
+   * At most one, ordered by what stops what — see lib/dashboard-alert.ts. The
+   * usage query that used to run here went with the panel it fed: calls used
+   * this month is a billing question, and Billing already draws it properly.
    */
-  const neverSubscribed = business?.subscription_status === "incomplete";
+  const alert = dashboardAlert({
+    business,
+    undeliveredCount: undelivered ?? 0,
+  });
 
   return (
     <div>
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Leads</h1>
-          <p className="mt-1 text-sm text-zinc-400">
-            {todoCount
-              ? `${todoCount} waiting on you.`
-              : "Every call your receptionist has taken."}
-          </p>
-        </div>
+      {/*
+        This is the home screen. Three blocks used to sit above the first job —
+        a receptionist panel, an undelivered-alerts banner and a subscribe
+        prompt — and on a phone they pushed the actual work past two scrolls.
 
-        <span
-          className={`rounded-full border px-3 py-1.5 text-xs ${
-            isLive
-              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-200"
-              : suspended
-                ? "border-red-500/30 bg-red-500/10 text-red-200"
-                : "border-amber-500/30 bg-amber-500/10 text-amber-200"
+        Every one of them was a copy of something else: the number and
+        forwarding state are on Settings, calls used is on Billing. What is left
+        is a heading, at most one line if something is wrong, and jobs.
+      */}
+      <h1 className="text-2xl font-semibold tracking-tight">Jobs</h1>
+      <p className="mt-1 text-sm text-zinc-400">
+        {todoCount
+          ? `${todoCount} waiting on you.`
+          : "Every call your receptionist has taken."}
+      </p>
+
+      {/*
+        At most one line, and only when something is actually wrong. What used
+        to live here — the number, forwarding state, calls used — is on Settings
+        and Billing already, which is where somebody goes to change it. This
+        page is for jobs.
+      */}
+      {alert && (
+        <Link
+          href={alert.href}
+          className={`mt-4 flex min-h-11 flex-wrap items-center gap-x-3 gap-y-1 rounded-xl border px-4 py-3 text-sm transition ${
+            alert.tone === "warning"
+              ? "border-amber-500/25 bg-amber-500/10 text-amber-100 hover:border-amber-500/40"
+              : "border-white/12 bg-white/[0.03] text-zinc-300 hover:border-white/25"
           }`}
         >
-          {isLive
-            ? "Receptionist live"
-            : suspended
-              ? "Not answering"
-              : "Setup not finished"}
-        </span>
-      </div>
-
-      {business && (
-        <div className="mt-6">
-          <ReceptionistStatus
-            live={isLive}
-            phoneNumber={business.phone_number}
-            forwardingConfirmed={Boolean(business.forwarding_verified_at)}
-            usage={usage}
-          />
-        </div>
+          <span>{alert.message}</span>
+          <span className="font-medium underline underline-offset-4">
+            {alert.action} →
+          </span>
+        </Link>
       )}
 
-      {/*
-        The product owning a failure rather than blaming the customer for it.
-        Almost always this is our sending channel, not their settings, and
-        "check your notification settings" would be pinning our problem on
-        somebody whose phone did nothing wrong. It says what happened, says the
-        work is safe, and points at the one thing they can usefully check —
-        without implying they caused it.
-
-        Above the subscribe prompt on purpose: a job nobody heard about
-        outranks a billing nudge.
-      */}
-      {(undelivered ?? 0) > 0 && (
-        <div className="mt-6 rounded-2xl border border-amber-500/25 bg-amber-500/10 p-5">
-          <p className="text-sm font-medium text-amber-100">
-            {undelivered === 1
-              ? "We couldn't get an alert to you about 1 job this week."
-              : `We couldn't get an alert to you about ${undelivered} jobs this week.`}
-          </p>
-          <p className="mt-2 text-sm leading-6 text-amber-100/80">
-            Nothing is lost — every one of them is in the list below with the
-            caller&apos;s number. This is usually something at our end, and
-            we&apos;re on it.
-          </p>
-          <Link
-            href="/settings"
-            className="mt-4 inline-block text-sm font-medium text-amber-100 underline underline-offset-4 transition hover:text-white"
-          >
-            Check where your alerts go
-          </Link>
-        </div>
-      )}
-
-      {/*
-        Three different reasons the receptionist is silent, and they need three
-        different sentences. "Sort out billing" to somebody who has never been
-        billed reads as an error; "finish setup" to somebody whose card failed
-        sends them round a loop they cannot complete.
-      */}
-      {!isLive && (
-        <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="text-sm leading-6 text-zinc-300">
-            {neverSubscribed
-              ? "Subscribe to get your number and start answering calls. Nothing has been charged yet."
-              : suspended
-                ? "Your subscription has lapsed, so calls aren't being answered."
-                : "Your receptionist isn't answering calls yet."}
-          </p>
-          <Link
-            href={neverSubscribed || suspended ? "/billing" : "/onboarding"}
-            className="mt-4 inline-block rounded-full bg-white px-5 py-2.5 text-sm font-semibold text-black transition hover:bg-zinc-200"
-          >
-            {neverSubscribed
-              ? "Subscribe"
-              : suspended
-                ? "Sort out billing"
-                : "Finish setup"}
-          </Link>
-        </div>
-      )}
-
-      <nav aria-label="Filter leads" className="mt-8 flex flex-wrap gap-2">
+      <nav aria-label="Filter jobs" className="mt-6 flex flex-wrap gap-2">
         {LEAD_VIEWS.map((option) => (
           <Link
             key={option.slug}
@@ -237,46 +147,10 @@ export default async function DashboardPage({
           )}
         </div>
       ) : (
-        <ul className="mt-6 space-y-3">
+        <ul className="mt-5 space-y-3">
           {leads.map((lead) => (
             <li key={lead.id}>
-              <Link
-                href={`/dashboard/${lead.id}`}
-                className="block rounded-2xl border border-white/10 bg-white/[0.02] p-5 transition hover:border-white/25"
-              >
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <p className="font-medium">
-                      {lead.job_type ?? "Enquiry"}
-                      {lead.location ? (
-                        <span className="text-zinc-400"> · {lead.location}</span>
-                      ) : null}
-                    </p>
-                    <p className="mt-1 text-sm text-zinc-400">
-                      {lead.caller_name ?? "Unknown caller"} ·{" "}
-                      {lead.caller_number}
-                    </p>
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    <span
-                      className={`rounded-full border px-2.5 py-1 text-xs ${STATUS_STYLES[lead.status]}`}
-                    >
-                      {STATUS_LABELS[lead.status]}
-                    </span>
-                    {lead.urgency === "high" && (
-                      <span
-                        className={`rounded-full border px-2.5 py-1 text-xs ${URGENCY_STYLES.high}`}
-                      >
-                        Urgent
-                      </span>
-                    )}
-                    <span className="text-xs text-zinc-500">
-                      {formatWhen(lead.created_at)}
-                    </span>
-                  </div>
-                </div>
-              </Link>
+              <LeadCard lead={lead} />
             </li>
           ))}
         </ul>

@@ -49,7 +49,7 @@ export default function OpeningHoursForm({
   const [alwaysOpen, setAlwaysOpen] = useState(!hasHours);
 
   return (
-    <form action={formAction} className="mt-6 space-y-5">
+    <form action={formAction} className="space-y-5">
       <FormError message={state.error} />
 
       {state.saved && (
@@ -81,7 +81,7 @@ export default function OpeningHoursForm({
       {!alwaysOpen && (
         <>
           <fieldset className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
-            <legend className="px-1 text-xs uppercase tracking-[0.14em] text-zinc-400">
+            <legend className="px-1 text-sm font-medium text-zinc-200">
               When you&apos;re open
             </legend>
 
@@ -129,7 +129,7 @@ export default function OpeningHoursForm({
           </fieldset>
 
           <fieldset className="rounded-2xl border border-white/10 bg-white/[0.02] p-5">
-            <legend className="px-1 text-xs uppercase tracking-[0.14em] text-zinc-400">
+            <legend className="px-1 text-sm font-medium text-zinc-200">
               Outside those hours
             </legend>
 

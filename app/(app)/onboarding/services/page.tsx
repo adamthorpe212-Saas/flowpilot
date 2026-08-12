@@ -39,14 +39,18 @@ export default async function ServicesStepPage() {
         list.
       </p>
 
-      <ServicesForm
-        services={services.map((service) => service.name)}
-        emergency={services
-          .filter((service) => service.emergency_eligible)
-          .map((service) => service.name)}
-        industryLabel={business.industry_label}
-        next="/onboarding/number"
-      />
+      {/* The gap used to live inside the form. It belongs to the page that
+          decides how far its intro sits from its first field. */}
+      <div className="mt-8">
+        <ServicesForm
+          services={services.map((service) => service.name)}
+          emergency={services
+            .filter((service) => service.emergency_eligible)
+            .map((service) => service.name)}
+          industryLabel={business.industry_label}
+          next="/onboarding/number"
+        />
+      </div>
     </div>
   );
 }

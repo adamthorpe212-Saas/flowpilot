@@ -3,6 +3,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import BusinessForm from "@/app/(app)/onboarding/business/BusinessForm";
 import ServicesForm from "@/app/(app)/onboarding/services/ServicesForm";
+import { titleClass } from "@/components/ui/field-styles";
 import OpeningHoursForm from "./OpeningHoursForm";
 import NotificationRules from "./NotificationRules";
 import QuestionsForm from "./QuestionsForm";
@@ -25,12 +26,16 @@ export const metadata: Metadata = {
 };
 
 /**
- * One heading treatment, defined once.
+ * One section, one card.
  *
- * Every section used to repeat `text-sm font-medium text-zinc-300` above a
- * `mt-14 border-t pt-10`, which made eight different things look like eight
- * copies of the same thing. Pulling it out is not only tidier — it is what
- * makes it obvious when a section is missing its blurb.
+ * Sections used to be separated by a hairline rule, which is the weakest
+ * division a page can have: eight topics down one column, each blending into
+ * the next, so somebody looking for "what it asks callers" had to read the
+ * whole page to find where one thing ended and another began.
+ *
+ * A card puts a real edge around each topic. It costs a little vertical space
+ * and buys the thing that was missing — you can see, without reading, how many
+ * separate decisions this page is asking you to make.
  */
 function Section({
   title,
@@ -42,14 +47,14 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <section className="mt-12 border-t border-white/10 pt-10">
-      <h2 className="text-lg font-semibold tracking-tight">{title}</h2>
+    <section className="mt-4 rounded-2xl border border-white/10 bg-white/[0.02] p-5 sm:p-6">
+      <h2 className={titleClass}>{title}</h2>
       {blurb && (
-        <p className="mt-1.5 max-w-lg text-sm leading-6 text-zinc-400">
+        <p className="mt-1.5 max-w-lg text-[13px] leading-5 text-zinc-400">
           {blurb}
         </p>
       )}
-      {children}
+      <div className="mt-5">{children}</div>
     </section>
   );
 }
@@ -110,21 +115,17 @@ export default async function SettingsPage() {
       </p>
 
       {/*
-        Ordered by what somebody opened this page to do.
+        Ordered by what somebody opened this page to do: the receptionist first,
+        the business behind it second, the plumbing last.
 
-        It used to run business details, services, preview, voice, hours,
-        number, notifications, diagnostics — eight sections with identical
-        headings and identical rules between them, so nothing looked more
-        important than anything else and the thing people actually come here to
-        change sat fourth.
-
-        Now the receptionist comes first and the plumbing is folded away at the
-        bottom behind a heading that says it is plumbing. Same forms, same
-        actions, different order and different weight.
+        Named for what a customer is deciding, not for what the data is called.
+        "How it answers" and "What it asks for" were our words for our columns.
+        Somebody scanning this page is looking for the thing their receptionist
+        says out loud, and the details it comes back with.
       */}
       <Section
-        title="How it answers"
-        blurb="The first thing a caller hears, how it should sound, and what it must never say."
+        title="What your receptionist says"
+        blurb="Its opening line, how it should sound, and the things it must never say."
       >
         {profile && (
           <VoiceForm profile={profile} businessName={business.name} />
@@ -132,8 +133,8 @@ export default async function SettingsPage() {
       </Section>
 
       <Section
-        title="What it asks for"
-        blurb="Every caller gets asked these, one at a time, in your words."
+        title="What details it gets from callers"
+        blurb="Asked one at a time, in this order, in your own words. Untick one and it only asks if the conversation suits."
       >
         {questions.length > 0 ? (
           <QuestionsForm questions={questions} />
@@ -145,15 +146,15 @@ export default async function SettingsPage() {
       </Section>
 
       <Section
-        title="Hear it before a customer does"
-        blurb="Type what a caller might say and watch the job build itself."
+        title="Try it yourself"
+        blurb="Type what a caller might say and watch the job build itself. Nothing here is saved or sent."
       >
         <ReceptionistPreview />
       </Section>
 
       <Section
         title="About your business"
-        blurb="Your name is said out loud on every call. The areas decide which jobs get flagged as out of your patch."
+        blurb="Your name is said out loud on every call. The areas decide which jobs get flagged as outside your patch."
       >
         <BusinessForm
           name={business.name}
@@ -164,7 +165,7 @@ export default async function SettingsPage() {
       </Section>
 
       <Section
-        title="The work you take"
+        title="The work you take on"
         blurb="So it knows what sounds like a job for you, and what doesn't."
       >
         <ServicesForm
@@ -179,7 +180,7 @@ export default async function SettingsPage() {
 
       <Section
         title="When you're available"
-        blurb="And what it should do with a call outside those hours."
+        blurb="Your hours, and what it should do with a call that comes in outside them."
       >
         {profile && (
           <OpeningHoursForm
@@ -190,14 +191,14 @@ export default async function SettingsPage() {
       </Section>
 
       <Section
-        title="Where jobs go"
-        blurb="Every qualified job is sent to everyone here."
+        title="Where your jobs get sent"
+        blurb="Every job goes to everyone on this list, the moment the call ends."
       >
         <NotificationRules rules={rules} emailAvailable={emailAvailable} />
       </Section>
 
-      <Section title="Your number">
-        <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.02] p-5">
+      <Section title="Your FlowPilot number">
+        <div>
           {business.phone_number ? (
             <>
               <p className="text-sm text-zinc-400">Calls are answered on</p>

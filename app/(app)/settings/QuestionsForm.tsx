@@ -40,7 +40,7 @@ export default function QuestionsForm({
   const ordered = [...questions].sort((a, b) => a.sort_order - b.sort_order);
 
   return (
-    <form action={formAction} className="mt-5">
+    <form action={formAction}>
       <FormError message={state.error} />
 
       {state.saved && !state.error && (
@@ -62,7 +62,7 @@ export default function QuestionsForm({
               className="rounded-2xl border border-white/10 bg-white/[0.02] p-4"
             >
               <div className="flex items-center justify-between gap-3">
-                <span className="flex items-center gap-2.5 text-[11px] uppercase tracking-[0.12em] text-zinc-500">
+                <span className="flex items-center gap-2.5 text-sm font-medium text-zinc-200">
                   <span
                     aria-hidden="true"
                     className="flex h-5 w-5 items-center justify-center rounded-full bg-white/[0.06] text-[10px] text-zinc-400"

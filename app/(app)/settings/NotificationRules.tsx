@@ -28,7 +28,7 @@ export default function NotificationRules({
   const onlyOne = rules.length <= 1;
 
   return (
-    <div className="mt-4 space-y-5">
+    <div className="space-y-5">
       <ul className="divide-y divide-white/5 rounded-2xl border border-white/10 bg-white/[0.02] px-5">
         {rules.length === 0 && (
           <li className="py-5 text-sm text-zinc-400">

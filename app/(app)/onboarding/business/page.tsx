@@ -29,12 +29,16 @@ export default async function BusinessStepPage() {
         your patch.
       </p>
 
-      <BusinessForm
-        name={business.name}
-        industryLabel={business.industry_label ?? ""}
-        serviceArea={business.service_area}
-        next="/onboarding/services"
-      />
+      {/* The gap used to live inside the form. It belongs to the page that
+          decides how far its intro sits from its first field. */}
+      <div className="mt-8">
+        <BusinessForm
+          name={business.name}
+          industryLabel={business.industry_label ?? ""}
+          serviceArea={business.service_area}
+          next="/onboarding/services"
+        />
+      </div>
     </div>
   );
 }

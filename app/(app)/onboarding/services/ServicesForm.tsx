@@ -81,7 +81,7 @@ export default function ServicesForm({
   }
 
   return (
-    <form action={formAction} className="mt-8 space-y-5">
+    <form action={formAction} className="space-y-5">
       {next && <input type="hidden" name="next" value={next} />}
 
       <FormError message={state.error} />
@@ -171,7 +171,7 @@ export default function ServicesForm({
 
       {services.length > 0 && (
         <fieldset className="rounded-2xl border border-white/10 bg-white/[0.02] p-4">
-          <legend className="px-1 text-xs uppercase tracking-[0.14em] text-zinc-400">
+          <legend className="px-1 text-sm font-medium text-zinc-200">
             Which can be emergencies?
           </legend>
           <ul className="mt-2 divide-y divide-white/5">

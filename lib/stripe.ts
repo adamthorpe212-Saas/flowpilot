@@ -26,10 +26,14 @@ export function stripe(): Stripe {
  * charging real cards against test prices, or silently failing in production.
  */
 export function priceIdForPlan(plan: Plan): string | null {
-  const map: Record<Plan, string | undefined> = {
-    starter: process.env.STRIPE_PRICE_STARTER,
+  /*
+   * One plan, one price id. STRIPE_PRICE_STARTER and STRIPE_PRICE_BUSINESS are
+   * gone with the tiers they belonged to — leaving them mapped would mean a
+   * stale id in the environment could still be sent to Stripe and charge
+   * somebody a price the site does not advertise.
+   */
+  const map: Partial<Record<Plan, string | undefined>> = {
     pro: process.env.STRIPE_PRICE_PRO,
-    business: process.env.STRIPE_PRICE_BUSINESS,
   };
   return map[plan] ?? null;
 }

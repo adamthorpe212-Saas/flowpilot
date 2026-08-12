@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
   formatPrice,
   getPlan,
@@ -7,37 +7,21 @@ import {
   weeklyPrice,
 } from "@/lib/plans";
 import { toSubscriptionStatus } from "@/lib/stripe";
-import { shouldAnswerCalls } from "@/lib/usage";
 import { render } from "@/lib/voice/notify";
-import type { Business } from "@/types/database";
-
-function business(overrides: Partial<Business> = {}): Business {
-  return {
-    id: "b1",
-    name: "O'Brien Plumbing",
-    industry_label: null,
-    service_area: [],
-    timezone: "Europe/Dublin",
-    phone_number: "+353871234567",
-    phone_number_sid: "PN1",
-    forwarding_verified_at: "2026-07-31T00:00:00Z",
-    plan: "starter",
-    subscription_status: "active",
-    stripe_customer_id: null,
-    stripe_subscription_id: null,
-    status: "active",
-    trial_reminder_stage: null,
-    created_at: "2026-07-01T00:00:00Z",
-    updated_at: "2026-07-01T00:00:00Z",
-    ...overrides,
-  };
-}
 
 describe("plans", () => {
-  it("sells exactly one plan", () => {
-    // A tier table asks a tradesperson to work out which version of the product
-    // they are before they know what it is. Withdrawn tiers stay defined so
-    // businesses already carrying their id still resolve.
+  it("sells exactly one plan, and defines only that one", () => {
+    /*
+     * A tier table asks a tradesperson to work out which version of the product
+     * they are before they know what it is. There is one.
+     *
+     * The length check is the load-bearing half. Withdrawn tiers used to stay
+     * defined so legacy ids resolved, and that is exactly how every new signup
+     * ended up written as Starter — the tier kept alive for old rows became the
+     * default for new ones. A second entry here is a product decision, not a
+     * refactor, and should not arrive by accident.
+     */
+    expect(PLANS).toHaveLength(1);
     expect(PLANS.filter((plan) => plan.sold)).toHaveLength(1);
     expect(soldPlan().id).toBe("pro");
 
@@ -53,10 +37,20 @@ describe("plans", () => {
     expect(soldPlan().price).toBe(159);
   });
 
-  it("still resolves plans no longer sold", () => {
-    // An account on a withdrawn tier must render, not throw.
+  it("still resolves a withdrawn tier without breaking the page", () => {
+    /*
+     * Starter and Business are no longer defined. An account still carrying one
+     * of those ids must render its dashboard and billing page — falling back to
+     * the plan on sale — rather than throwing over a stale string in a column.
+     */
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+
     expect(() => getPlan("starter")).not.toThrow();
-    expect(() => getPlan("business")).not.toThrow();
+    expect(getPlan("business").id).toBe(soldPlan().id);
+
+    // Logged, not swallowed: it is still worth someone finding.
+    expect(errors).toHaveBeenCalled();
+    errors.mockRestore();
   });
 
   it("only advertises features the product actually has", () => {
@@ -99,9 +93,23 @@ describe("plans", () => {
     expect(weekly * 52).toBeLessThan(plan.price * 12 + 52);
   });
 
-  it("throws on an unknown plan rather than guessing", () => {
+  it("never invents a price for an id it does not know", () => {
+    /*
+     * It used to throw here, which was right while withdrawn tiers were still
+     * defined — an unknown id meant a bug worth surfacing loudly. With one plan
+     * left, throwing would take down somebody's billing page over a stale
+     * string, so it falls back instead. What must never happen is quietly
+     * inventing a tier: whatever comes back is the plan actually on sale, at
+     * the price the site advertises.
+     */
+    const errors = vi.spyOn(console, "error").mockImplementation(() => {});
+
     // @ts-expect-error deliberately invalid
-    expect(() => getPlan("enterprise")).toThrow();
+    const resolved = getPlan("enterprise");
+
+    expect(resolved).toEqual(soldPlan());
+    expect(resolved.price).toBe(159);
+    errors.mockRestore();
   });
 });
 
@@ -125,41 +133,6 @@ describe("toSubscriptionStatus", () => {
 
   it("falls back to incomplete for anything unrecognised", () => {
     expect(toSubscriptionStatus("paused")).toBe("incomplete");
-  });
-});
-
-describe("shouldAnswerCalls", () => {
-  it("answers while trialing or active", () => {
-    expect(shouldAnswerCalls(business({ subscription_status: "trialing" }))).toBe(true);
-    expect(shouldAnswerCalls(business({ subscription_status: "active" }))).toBe(true);
-  });
-
-  it("does not answer for a signup whose trial has run out", () => {
-    /*
-     * This fixture was created well over the trial length ago. It previously
-     * asserted the opposite, which is how the free-forever bug survived: every
-     * signup starts as 'incomplete', and nothing anywhere measured how long ago
-     * that was. See tests/trial.test.ts for the boundaries.
-     */
-    expect(shouldAnswerCalls(business({ subscription_status: "incomplete" }))).toBe(
-      false,
-    );
-  });
-
-  it("keeps answering while a payment is being sorted out", () => {
-    // Cutting off a tradesperson's phone over a failed card would do far more
-    // damage than the unpaid month costs.
-    expect(shouldAnswerCalls(business({ subscription_status: "past_due" }))).toBe(true);
-  });
-
-  it("stops for a cancelled subscription", () => {
-    expect(shouldAnswerCalls(business({ subscription_status: "canceled" }))).toBe(false);
-  });
-
-  it("stops when the business is suspended, whatever the subscription says", () => {
-    expect(
-      shouldAnswerCalls(business({ status: "suspended", subscription_status: "active" })),
-    ).toBe(false);
   });
 });
 

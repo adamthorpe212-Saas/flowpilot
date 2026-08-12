@@ -50,16 +50,21 @@ export type PlanDefinition = {
  * FlowPilot starts paying monthly rental on their behalf.
  */
 
+/**
+ * One plan. €159 a month is the whole price list.
+ *
+ * Starter (€49/50 calls) and Business (€199/500) used to sit here as withdrawn
+ * tiers, kept so that a business still carrying their id would resolve rather
+ * than throw. That reasoning was sound and it stopped being true: the schema
+ * defaulted every new signup to 'starter', so the tier kept alive for legacy
+ * rows became the tier everybody was written as — and billing quoted €49 and
+ * metered 50 calls to people buying a €159 product.
+ *
+ * They are gone, and getPlan() falls back rather than throwing, so a legacy id
+ * renders the real plan instead of a blank page. The database still permits the
+ * old values; nothing writes them any more.
+ */
 export const PLANS: PlanDefinition[] = [
-  {
-    id: "starter",
-    name: "Starter",
-    price: 49,
-    currency: "EUR",
-    tagline: "Withdrawn. Kept so existing accounts still resolve.",
-    callAllowance: 50,
-    features: [],
-  },
   {
     id: "pro",
     name: "FlowPilot",
@@ -87,15 +92,6 @@ export const PLANS: PlanDefinition[] = [
     ],
     sold: true,
   },
-  {
-    id: "business",
-    name: "Business",
-    price: 199,
-    currency: "EUR",
-    tagline: "Withdrawn. Kept so existing accounts still resolve.",
-    callAllowance: 500,
-    features: [],
-  },
 ];
 
 /** The plan a new customer buys. */
@@ -105,10 +101,24 @@ export function soldPlan(): PlanDefinition {
   return plan;
 }
 
+/**
+ * The plan for a stored id, falling back to what is sold.
+ *
+ * This used to throw, which was right when withdrawn tiers were still defined:
+ * an unknown id meant a genuine bug and hiding it was worse. With one plan left,
+ * throwing would take down a customer's dashboard and billing page over a stale
+ * string in a column — the loudest possible failure for the least useful reason.
+ *
+ * Logged rather than swallowed. A business carrying an id we no longer define is
+ * still something to look at, but it should be found in the logs rather than by
+ * somebody unable to open their account.
+ */
 export function getPlan(id: Plan): PlanDefinition {
   const plan = PLANS.find((candidate) => candidate.id === id);
-  if (!plan) throw new Error(`Unknown plan: ${id}`);
-  return plan;
+  if (plan) return plan;
+
+  console.error(`Unknown plan "${id}" — falling back to the plan on sale.`);
+  return soldPlan();
 }
 
 export function formatPrice(plan: PlanDefinition): string {

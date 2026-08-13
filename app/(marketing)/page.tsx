@@ -294,7 +294,13 @@ export default function Home() {
                 link: "flowpilot.ie/j/K4x9M2p7",
               })}
               emphasis
-              className="h-[360px] w-[218px] shadow-2xl shadow-black/60"
+              /*
+                No drop shadow here any more. The screen sits inside the bezel,
+                which clips overflow, so a shadow on it was being cut off — the
+                frame carries its own now. Widened so the alert stops wrapping
+                every line.
+              */
+              className="h-[400px] w-[236px]"
             />
           </div>
         </div>

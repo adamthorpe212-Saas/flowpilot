@@ -159,7 +159,15 @@ export default function LifecycleRing() {
         })}
 
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2">
-          <PhoneFrame className="h-[230px] w-[118px] sm:h-[272px] sm:w-[140px] lg:h-[282px] lg:w-[146px]">
+          {/*
+              No status bar on this one. At 118px wide the time and battery
+              would be cramped decoration, and this screen is showing a stage of
+              a call rather than pretending to be a messages app.
+            */}
+            <PhoneFrame
+              chrome={false}
+              className="h-[230px] w-[118px] sm:h-[272px] sm:w-[140px] lg:h-[282px] lg:w-[146px]"
+            >
             {/*
               Keyed so each stage remounts and replays the fade. See globals.css
               for why this is a CSS animation and not a JS-driven one.

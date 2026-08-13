@@ -1,7 +1,9 @@
 import "server-only";
 
+import { availabilityPrompt } from "@/lib/availability";
 import { composeOpening } from "@/lib/disclosure";
 import type {
+  Appointment,
   BusinessProfile,
   QualificationQuestion,
   Service,
@@ -46,6 +48,14 @@ export type ReceptionistContext = {
   profile: BusinessProfile;
   services: Service[];
   questions: QualificationQuestion[];
+  /**
+   * The tradesman's own diary, read-only.
+   *
+   * Only ever reaches the prompt through availabilityPrompt(), which strips it
+   * down to which days are busy — never what the jobs are, and never which days
+   * are free. See lib/availability.ts for why that asymmetry matters.
+   */
+  appointments?: Appointment[];
 };
 
 export type ReceptionistReply = {
@@ -68,6 +78,10 @@ export type ReceptionistReply = {
 
 function buildSystemPrompt(context: ReceptionistContext): string {
   const { businessName, serviceArea, profile, services, questions } = context;
+
+  // Null when the diary is empty, and left out entirely in that case: an empty
+  // diary is an absence of evidence, not evidence of a free week.
+  const availability = availabilityPrompt(context.appointments ?? []);
 
   const serviceList = services.length
     ? services
@@ -107,6 +121,8 @@ function buildSystemPrompt(context: ReceptionistContext): string {
     "",
     "Work through these, in order, skipping anything the caller has already told you:",
     questionList,
+    "",
+    availability ?? "",
     "",
     "You must never:",
     ...profile.must_not.map((rule) => `- ${rule}`),

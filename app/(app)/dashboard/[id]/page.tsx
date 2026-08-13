@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { updateLeadStatus } from "@/app/(app)/dashboard/actions";
+import BookJob from "./BookJob";
 import DeleteLead from "@/app/(app)/dashboard/DeleteLead";
 import { formatIrishNumber } from "@/lib/phone";
 import { createClient } from "@/lib/supabase/server";
@@ -142,6 +143,15 @@ export default async function LeadPage({
           ))}
         </dl>
       )}
+
+      {/*
+        Above the status buttons: booking a job IS the status change most of
+        the time, and doing it here sets the lead to booked as a side effect
+        rather than asking him to do the same thing twice.
+      */}
+      <section className="mt-8">
+        <BookJob lead={lead} />
+      </section>
 
       <section className="mt-8">
         <h2 className="text-sm font-medium text-zinc-300">Where it&apos;s at</h2>

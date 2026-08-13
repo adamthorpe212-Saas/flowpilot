@@ -23,7 +23,10 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
             </Link>
             <nav aria-label="Application" className="flex items-center gap-5 text-sm">
               <Link href="/dashboard" className="text-zinc-400 transition hover:text-white">
-                Leads
+                Jobs
+              </Link>
+              <Link href="/calendar" className="text-zinc-400 transition hover:text-white">
+                Calendar
               </Link>
               <Link href="/settings" className="text-zinc-400 transition hover:text-white">
                 Settings

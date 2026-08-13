@@ -144,6 +144,34 @@ export type BlockedCaller = {
   created_at: string;
 };
 
+/** Part of a day, because a tradesman says "Thursday morning", not "09:15". */
+export type AppointmentSlot = "morning" | "afternoon" | "anytime";
+
+/**
+ * A job in the tradesman's own diary.
+ *
+ * Written only by the business. The receptionist reads a density summary of
+ * these — see lib/availability.ts — and has no path to create one.
+ */
+export type Appointment = {
+  id: string;
+  business_id: string;
+  /** Null when he added the job by hand, or when the lead was later erased. */
+  lead_id: string | null;
+  /** `2026-08-21`. A date, deliberately not a timestamp. */
+  scheduled_for: string;
+  slot: AppointmentSlot;
+  title: string;
+  customer_name: string | null;
+  customer_number: string | null;
+  location: string | null;
+  notes: string | null;
+  /** Set only when the owner taps send, never by the system. */
+  customer_notified_at: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
 export type TranscriptTurn = {
   role: "assistant" | "caller";
   text: string;

@@ -3,6 +3,7 @@ import "server-only";
 import { createAdminClient } from "@/lib/supabase/server";
 import type { ReceptionistContext } from "@/lib/receptionist";
 import type {
+  Appointment,
   Business,
   BusinessProfile,
   QualificationQuestion,
@@ -38,8 +39,12 @@ export async function loadContextForNumber(
 
   const businessId = (business as Business).id;
 
-  const [{ data: profile }, { data: services }, { data: questions }] =
-    await Promise.all([
+  const [
+    { data: profile },
+    { data: services },
+    { data: questions },
+    { data: appointments },
+  ] = await Promise.all([
       supabase
         .from("business_profile")
         .select("*")
@@ -55,6 +60,19 @@ export async function loadContextForNumber(
         .select("*")
         .eq("business_id", businessId)
         .order("sort_order"),
+      /*
+       * The diary, for setting expectations only.
+       *
+       * Alongside the others rather than after them: a caller is on the line
+       * while this runs. Only the columns availability actually needs are
+       * selected — the rest never leaves the database, because a receptionist
+       * that knows the schedule is one a competitor can make recite it.
+       */
+      supabase
+        .from("appointment")
+        .select("id, business_id, scheduled_for")
+        .eq("business_id", businessId)
+        .gte("scheduled_for", new Date().toISOString().slice(0, 10)),
     ]);
 
   // The bootstrap trigger guarantees a profile exists for every business, so
@@ -72,6 +90,7 @@ export async function loadContextForNumber(
       profile: profile as BusinessProfile,
       services: (services ?? []) as Service[],
       questions: (questions ?? []) as QualificationQuestion[],
+      appointments: (appointments ?? []) as Appointment[],
     },
   };
 }

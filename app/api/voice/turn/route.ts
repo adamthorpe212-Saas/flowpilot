@@ -1,6 +1,7 @@
 import type { NextRequest } from "next/server";
 import { siteUrl } from "@/lib/env";
 import { nextReply } from "@/lib/receptionist";
+import { gatherAttributes } from "@/lib/voice/hints";
 import { createAdminClient } from "@/lib/supabase/server";
 import type { Call, TranscriptTurn } from "@/types/database";
 import { loadContextForNumber } from "@/lib/voice/context";
@@ -110,7 +111,9 @@ export async function POST(request: NextRequest) {
     return twiml(
       `<Response>` +
         `<Gather input="speech" action="${siteUrl()}/api/voice/turn?silences=${silences + 1}" method="POST" ` +
-        `speechTimeout="auto" timeout="4" language="en-IE" actionOnEmptyResult="true">` +
+        `speechTimeout="auto" timeout="4" actionOnEmptyResult="true"` +
+        gatherAttributes(receptionist) +
+        `>` +
         say(prompt) +
         `</Gather>` +
         `</Response>`,
@@ -212,7 +215,9 @@ export async function POST(request: NextRequest) {
   return twiml(
     `<Response>` +
       `<Gather input="speech" action="${action}" method="POST" ` +
-      `speechTimeout="auto" timeout="4" language="en-IE" actionOnEmptyResult="true">` +
+      `speechTimeout="auto" timeout="4" actionOnEmptyResult="true"` +
+      gatherAttributes(receptionist) +
+      `>` +
       say(reply.speech) +
       `</Gather>` +
       `</Response>`,

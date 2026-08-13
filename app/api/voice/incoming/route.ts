@@ -3,6 +3,7 @@ import { isWithheld } from "@/lib/blocked-callers";
 import { siteUrl } from "@/lib/env";
 import { isWithinOpeningHours } from "@/lib/hours";
 import { openingLine } from "@/lib/receptionist";
+import { gatherAttributes } from "@/lib/voice/hints";
 import { createAdminClient } from "@/lib/supabase/server";
 import { shouldAnswerCalls } from "@/lib/usage";
 import { loadContextForNumber } from "@/lib/voice/context";
@@ -157,7 +158,9 @@ export async function POST(request: NextRequest) {
   return twiml(
     `<Response>` +
       `<Gather input="speech" action="${siteUrl()}/api/voice/turn" method="POST" ` +
-      `speechTimeout="auto" timeout="${GATHER_TIMEOUT_SECONDS}" language="en-IE" actionOnEmptyResult="true">` +
+      `speechTimeout="auto" timeout="${GATHER_TIMEOUT_SECONDS}" actionOnEmptyResult="true"` +
+      gatherAttributes(receptionist) +
+      `>` +
       say(greeting) +
       `</Gather>` +
       `</Response>`,

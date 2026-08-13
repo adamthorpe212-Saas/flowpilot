@@ -2,12 +2,17 @@ import Link from "next/link";
 import { LEGAL } from "@/lib/legal";
 
 /**
- * Carries the two things a stranger looks for before entering a card: who they
- * would be paying, and where the terms are.
+ * Where the terms are, and how to reach the business.
  *
- * The trading name is stated in full rather than as "FlowPilot" alone. Somebody
- * whose statement will read Adam Thorpe should be able to see that before they
- * pay, not after.
+ * This used to carry the owner's full name and home address, on the argument
+ * that somebody whose card statement will read a person's name should see it
+ * before paying rather than after. That argument was sound about the statement
+ * and wrong about the footer: it put a private residence on every page of a
+ * marketing site to solve a problem that belongs on the checkout.
+ *
+ * The name still appears where it has to — Stripe shows the real trading name
+ * at the moment of payment, which is the only place it genuinely protects
+ * anyone.
  */
 export default function Footer() {
   return (
@@ -15,8 +20,7 @@ export default function Footer() {
       <div className="mx-auto flex max-w-7xl flex-col gap-6 sm:flex-row sm:items-start sm:justify-between">
         <div className="text-sm text-zinc-500">
           <p className="text-zinc-400">AI reception for Irish trades.</p>
-          <p className="mt-2">{LEGAL.entity}</p>
-          <p className="mt-1">{LEGAL.address}</p>
+          <p className="mt-2">{LEGAL.country}</p>
         </div>
 
         <nav

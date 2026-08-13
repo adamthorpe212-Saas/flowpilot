@@ -51,12 +51,34 @@ describe("who we say we are", () => {
     const claims = [LEGAL.entity, LEGAL.tradingName].join(" ");
 
     expect(claims).not.toMatch(/\bltd\b|\blimited\b|\bteoranta\b|\bplc\b/i);
-    expect(LEGAL.entity).toContain("trading as");
+  });
+
+  it("publishes no home address, and no owner's name", () => {
+    /*
+     * The owner works from home, so the only address available is a private
+     * residence — where his family lives — and it was on every page of a
+     * marketing site.
+     *
+     * A known gap rather than an oversight: the e-Commerce Directive expects an
+     * online service provider to publish a geographic address, and the fix is a
+     * registered office service rather than putting a house back on the
+     * internet. Pinned so neither comes back while somebody is tidying.
+     */
+    expect(LEGAL.address).toBeNull();
+    expect(LEGAL.entity).toBe("FlowPilot");
   });
 
   it("gives somewhere to actually reach a person", () => {
     expect(LEGAL.email).toMatch(/^[^\s@]+@[^\s@]+\.[^\s@]+$/);
-    expect(LEGAL.address).toMatch(/Ireland$/);
+  });
+
+  it("contacts the business, not a personal mailbox", () => {
+    /*
+     * On the domain, so the contact on a legal page survives a change of email
+     * provider — and so somebody writing about their data is writing to the
+     * business rather than into a person's inbox.
+     */
+    expect(LEGAL.email.endsWith("@flowpilot.ie")).toBe(true);
   });
 });
 

@@ -31,8 +31,10 @@ export default function PrivacyPage() {
     >
       <h2>Who we are</h2>
       <p>
-        {LEGAL.entity}, {LEGAL.address}. For anything on this page, email{" "}
-        <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a>.
+        {LEGAL.entity} is an Irish sole trader business. For anything on this
+        page — including a request to see or delete data we hold — email{" "}
+        <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a> and you will get a
+        reply from a person.
       </p>
 
       <h2>Two different jobs at once</h2>

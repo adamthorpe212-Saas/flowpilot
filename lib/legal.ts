@@ -13,15 +13,46 @@
  */
 
 export const LEGAL = {
-  /** The person actually contracting. Matches Stripe and the Twilio bundle. */
-  entity: "Adam Thorpe, trading as FlowPilot",
-  tradingName: "FlowPilot",
-  address: "28 Glasnevin Park, Dublin 11, D11 N4F8, Ireland",
   /**
-   * Also the address on file with Twilio for the Irish number and with Stripe
-   * for the merchant account. Changing it means changing it in three places.
+   * The trading name, published alone.
+   *
+   * This was "Adam Thorpe, trading as FlowPilot" with a home address beside it.
+   * Both are gone from every public page: the owner works from home, and a
+   * private residence on a marketing site is a different thing from a business
+   * address — it is where his family lives, published to anyone who lands on
+   * the pricing page.
+   *
+   * The sole trader position has not changed. There is still no company and no
+   * CRO number, so nothing here says "Ltd" — that would be a false statement
+   * about a legal entity rather than a stylistic choice. What changed is how
+   * much of a private individual is on display to make that point.
    */
-  email: "adamthorpe212@gmail.com",
+  entity: "FlowPilot",
+  tradingName: "FlowPilot",
+  /**
+   * No geographic address published, and this is a known gap rather than an
+   * oversight.
+   *
+   * The e-Commerce Directive expects an online service provider to publish one,
+   * and GDPR expects a data controller to be contactable. The email below
+   * carries the contact duty; the address duty is currently unmet, because the
+   * only address available is a home one.
+   *
+   * The fix is a registered office service — roughly €100–250 a year from any
+   * Irish formation agent or accountant — which gives a business address to
+   * publish instead. Worth doing before FlowPilot has customers who might one
+   * day need to serve notice on it.
+   */
+  address: null,
+  /**
+   * On the domain rather than a personal mailbox, so the contact on a legal
+   * page survives the owner changing email provider — and so a customer writing
+   * about their data is writing to the business.
+   *
+   * Twilio and Stripe still hold the real registered details separately. Those
+   * are filings, not publications, and are not affected by what this page says.
+   */
+  email: "adam@flowpilot.ie",
   country: "Ireland",
 } as const;
 

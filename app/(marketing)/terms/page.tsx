@@ -27,8 +27,13 @@ export default function TermsPage() {
     >
       <h2>Who you are contracting with</h2>
       <p>
-        {LEGAL.entity}, {LEGAL.address}. Contact:{" "}
+        {LEGAL.entity}, an Irish sole trader business. Not a limited company —
+        there is no company number, and nothing here is sold by one. Contact:{" "}
         <a href={`mailto:${LEGAL.email}`}>{LEGAL.email}</a>.
+      </p>
+      <p>
+        The name on your card statement will be the sole trader&apos;s, not
+        &ldquo;FlowPilot&rdquo;. Stripe shows it at the moment you pay.
       </p>
       <p>
         FlowPilot is sold to businesses, not consumers. By signing up you confirm

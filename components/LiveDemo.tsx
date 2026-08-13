@@ -52,7 +52,9 @@ function suggestFor(question: string): string[] {
   if (asked.includes("where") || asked.includes("address")) {
     return ["14 Griffith Avenue, Glasnevin", "Raheny, Dublin 5"];
   }
-  if (asked.includes("name")) return ["Adam", "Adam Thorpe"];
+  // Was the owner's own name, which put it on the public homepage as a
+  // suggestion chip. A demo caller should be nobody in particular.
+  if (asked.includes("name")) return ["John", "John Murphy"];
   // Timing before urgency, and both offered as dates rather than a panic — the
   // receptionist now asks when they want it done before it asks how bad it is.
   if (asked.includes("when") || asked.includes("suit") || asked.includes("hoping")) {

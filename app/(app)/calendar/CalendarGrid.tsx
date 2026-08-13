@@ -4,13 +4,8 @@ import { useEffect, useMemo, useOptimistic, useState, useTransition } from "reac
 import { moveAppointment, removeAppointment } from "@/app/(app)/calendar/actions";
 import NotifyCustomer from "@/app/(app)/calendar/NotifyCustomer";
 import { formatIrishNumber } from "@/lib/phone";
-import {
-  isoDate,
-  monthGrid,
-  monthName,
-  shiftMonth,
-  WEEKDAY_LABELS,
-} from "@/lib/month-grid";
+import MonthGrid, { FULL_DAY_JOBS } from "@/components/MonthGrid";
+import { isoDate, monthName, shiftMonth } from "@/lib/month-grid";
 import type { Appointment } from "@/types/database";
 
 const SLOT_LABELS: Record<Appointment["slot"], string> = {
@@ -18,9 +13,6 @@ const SLOT_LABELS: Record<Appointment["slot"], string> = {
   afternoon: "Afternoon",
   anytime: "Anytime",
 };
-
-/** Matches the threshold the receptionist uses, so both agree what "full" is. */
-const FULL_DAY_JOBS = 3;
 
 /**
  * The month, as a month.
@@ -120,10 +112,16 @@ export default function CalendarGrid({
     return () => window.removeEventListener("keydown", onKey);
   }, [moving]);
 
-  const weeks = useMemo(
-    () => monthGrid(viewing.year, viewing.month),
-    [viewing],
-  );
+  /*
+   * Counts for the grid, which is all MonthGrid is given. It never receives an
+   * appointment, so it cannot render a customer's name by accident — the same
+   * discipline lib/availability.ts applies to the receptionist.
+   */
+  const jobCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const [date, jobs] of byDay) counts.set(date, jobs.length);
+    return counts;
+  }, [byDay]);
 
   const selectedJobs = byDay.get(selected) ?? [];
 
@@ -189,102 +187,25 @@ export default function CalendarGrid({
         </p>
       )}
 
-      <div
-        role="grid"
-        aria-label={monthName(viewing.year, viewing.month)}
-        className="mt-4 rounded-2xl border border-white/10 bg-white/[0.02] p-2 sm:p-3"
-      >
-        <div className="grid grid-cols-7 gap-1">
-          {WEEKDAY_LABELS.map((label, index) => (
-            <div
-              key={index}
-              className="pb-1 text-center text-[11px] font-medium uppercase tracking-wider text-zinc-500"
-            >
-              {label}
-            </div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-7 gap-1">
-          {weeks.flat().map((day) => {
-            const jobs = byDay.get(day.date) ?? [];
-            const isSelected = day.date === selected;
-            const isToday = day.date === today;
-
-            return (
-              <button
-                key={day.date}
-                type="button"
-                onClick={() =>
-                  active ? moveTo(active, day.date) : setSelected(day.date)
-                }
-                onDragOver={(event) => {
-                  // Without preventDefault the browser refuses the drop and the
-                  // job silently springs back, which reads as a broken feature.
-                  if (dragging) event.preventDefault();
-                }}
-                onDrop={(event) => {
-                  event.preventDefault();
-                  if (dragging) moveTo(dragging, day.date);
-                }}
-                aria-current={isToday ? "date" : undefined}
-                aria-label={
-                  active
-                    ? `Move to ${day.date}`
-                    : `${day.date}, ${jobs.length} ${jobs.length === 1 ? "job" : "jobs"}`
-                }
-                className={`relative flex aspect-square flex-col items-center justify-center rounded-xl text-sm transition ${
-                  active
-                    ? "ring-1 ring-inset ring-white/25 hover:bg-white/20 hover:ring-white/60"
-                    : ""
-                } ${
-                  isSelected && !active
-                    ? "bg-white font-semibold text-black"
-                    : day.inMonth
-                      ? "text-zinc-200 hover:bg-white/10"
-                      : "text-zinc-600 hover:bg-white/5"
-                }`}
-              >
-                <span
-                  className={
-                    isToday && !isSelected
-                      ? "flex h-6 w-6 items-center justify-center rounded-full bg-white/15 font-semibold text-white"
-                      : undefined
-                  }
-                >
-                  {day.day}
-                </span>
-
-                {/*
-                  Dots rather than a number. Three dots read as "busy" at a
-                  glance without anybody counting, which is the whole reason to
-                  look at a month rather than a list.
-                */}
-                {jobs.length > 0 && (
-                  <span
-                    aria-hidden="true"
-                    className="absolute bottom-1.5 flex gap-0.5"
-                  >
-                    {Array.from({
-                      length: Math.min(jobs.length, FULL_DAY_JOBS),
-                    }).map((_, index) => (
-                      <span
-                        key={index}
-                        className={`h-1 w-1 rounded-full ${
-                          isSelected && !active
-                            ? "bg-black/50"
-                            : jobs.length >= FULL_DAY_JOBS
-                              ? "bg-amber-400"
-                              : "bg-emerald-400"
-                        }`}
-                      />
-                    ))}
-                  </span>
-                )}
-              </button>
-            );
-          })}
-        </div>
+      <div className="mt-4">
+        <MonthGrid
+          year={viewing.year}
+          month={viewing.month}
+          jobsByDay={jobCounts}
+          selected={selected}
+          today={today}
+          moving={Boolean(active)}
+          onSelect={(date) => (active ? moveTo(active, date) : setSelected(date))}
+          onDayDragOver={(event) => {
+            // Without preventDefault the browser refuses the drop and the job
+            // silently springs back, which reads as a broken feature.
+            if (dragging) event.preventDefault();
+          }}
+          onDayDrop={(event, date) => {
+            event.preventDefault();
+            if (dragging) moveTo(dragging, date);
+          }}
+        />
       </div>
 
       <section className="mt-6">

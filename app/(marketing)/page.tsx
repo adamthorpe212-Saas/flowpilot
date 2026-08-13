@@ -1,6 +1,7 @@
 import Link from "next/link";
 import AskFlowPilot from "@/components/AskFlowPilot";
 import Faq from "@/components/Faq";
+import InsideTheApp from "@/components/InsideTheApp";
 import PhoneMessage from "@/components/PhoneMessage";
 import WorkflowStrip from "@/components/WorkflowStrip";
 import { HOME_FAQ_IDS, faqItems } from "@/lib/faq";
@@ -302,6 +303,39 @@ export default function Home() {
               */
               className="h-[400px] w-[236px]"
             />
+          </div>
+        </div>
+      </section>
+
+      {/*
+        And then where it lives.
+
+        The natural next beat: a call arrives, a text lands on his phone, and
+        this is where every job sits afterwards. Without it the product reads as
+        a texting service, which undersells it — the dashboard and the diary are
+        most of what somebody is paying for after the first week.
+
+        Renders the real LeadCard and the real MonthGrid against fixtures rather
+        than screenshots. A screenshot of the app goes stale silently and
+        nothing catches it, and this site has shipped a stale imitation three
+        times: the disclosure line, the default greeting and the animated phone
+        each showed a product FlowPilot had stopped being.
+      */}
+      <section className="border-t border-white/10 px-5 py-20 sm:px-6 sm:py-28">
+        <div className="mx-auto max-w-6xl">
+          <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">
+            Inside FlowPilot
+          </p>
+          <h2 className="mt-3 max-w-2xl text-balance text-3xl font-semibold tracking-tight sm:text-4xl">
+            Every job in one place, and a diary that answers for you.
+          </h2>
+          <p className="mt-4 max-w-xl text-[15px] leading-7 text-zinc-400">
+            No spreadsheet, no notebook on the dash. Open it in the morning and
+            it tells you who rang, what they want and when they want it.
+          </p>
+
+          <div className="mt-12">
+            <InsideTheApp />
           </div>
         </div>
       </section>

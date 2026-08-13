@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getCurrentBusiness } from "@/lib/auth";
+import { networkFromCarrier, networkReassurance } from "@/lib/irish-networks";
 import { createClient } from "@/lib/supabase/server";
+import { lookupCarrierName } from "@/lib/twilio";
 import ForwardingStep from "./ForwardingStep";
 
 export const metadata: Metadata = {
@@ -20,6 +22,22 @@ export default async function ForwardingStepPage() {
     .eq("business_id", business.id)
     .eq("channel", "sms")
     .maybeSingle();
+
+  /*
+   * Detected, never asked.
+   *
+   * A "which network are you on?" dropdown is a question a customer can answer
+   * wrong — plenty of people on gomo will pick Eir and plenty on 48 will pick
+   * Three — and a wrong answer produces confidently wrong instructions. Twilio
+   * already knows, from the mobile they have to enter anyway.
+   *
+   * Decoration on a step that works regardless, so a failed lookup degrades to
+   * a generic line rather than blocking anything.
+   */
+  const mobile = rule?.destination ?? null;
+  const reassurance = networkReassurance(
+    networkFromCarrier(mobile ? await lookupCarrierName(mobile) : null),
+  );
 
   return (
     <div className="mx-auto max-w-lg">
@@ -40,7 +58,8 @@ export default async function ForwardingStepPage() {
 
       <ForwardingStep
         flowpilotNumber={business.phone_number}
-        mobile={rule?.destination ?? null}
+        mobile={mobile}
+        networkReassurance={reassurance}
         verified={Boolean(business.forwarding_verified_at)}
       />
     </div>

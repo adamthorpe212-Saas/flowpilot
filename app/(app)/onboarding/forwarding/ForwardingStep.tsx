@@ -32,10 +32,13 @@ export default function ForwardingStep({
   flowpilotNumber,
   mobile,
   verified,
+  networkReassurance,
 }: {
   flowpilotNumber: string | null;
   mobile: string | null;
   verified: boolean;
+  /** Detected from their mobile — see lib/irish-networks.ts. */
+  networkReassurance: string;
 }) {
   const [mobileState, saveMobileAction] = useActionState(saveMobile, INITIAL);
   const [testState, testAction] = useActionState(startForwardingTest, INITIAL);
@@ -148,8 +151,11 @@ export default function ForwardingStep({
           2. Turn on forwarding
         </h2>
         <p className="mt-2 text-sm leading-6 text-zinc-400">
-          Two codes, on the phone you want forwarded. Both take a second and
-          your network confirms each one.
+          Two codes, on the phone you want forwarded. Each one takes a second,
+          and your network shows a confirmation you can dismiss.
+        </p>
+        <p className="mt-1.5 text-sm leading-6 text-zinc-500">
+          {networkReassurance}
         </p>
 
         {/*
@@ -283,19 +289,38 @@ export default function ForwardingStep({
           {gaveUp && (
             <div className="rounded-xl border border-amber-500/25 bg-amber-500/10 px-4 py-3 text-sm text-amber-100">
               <p className="font-medium">We didn&apos;t get that call.</p>
-              <ul className="mt-2 space-y-1.5 text-amber-100/80">
+              {/*
+                The most likely cause first, with the code to fix it.
+
+                This used to say "voicemail is taking the call instead — turn it
+                off", without saying how. That is the exact point at which setup
+                stalled in testing: the customer knows what is wrong and has no
+                way to act on it.
+              */}
+              <ol className="mt-2 space-y-2 text-amber-100/80">
                 <li>
-                  Did you dial the forwarding code above, and did your network
-                  confirm it?
+                  <span className="font-medium text-amber-100">
+                    Went to voicemail?
+                  </span>{" "}
+                  That is voicemail winning, and it is the usual cause. Dial{" "}
+                  <span className="font-mono">{CLEAR_FORWARDING_CODE}</span> to
+                  clear it, then{" "}
+                  <span className="break-all font-mono">{code}</span> again.
                 </li>
                 <li>
-                  Did you answer the call? It has to ring out for us to see it.
+                  <span className="font-medium text-amber-100">
+                    Rang out to nothing?
+                  </span>{" "}
+                  The second code did not take. Dial it again and check your
+                  network confirms it.
                 </li>
                 <li>
-                  If your phone went to voicemail first, voicemail is taking the
-                  call instead — turn it off and try again.
+                  <span className="font-medium text-amber-100">
+                    Did you answer?
+                  </span>{" "}
+                  It has to ring out completely for us to see it.
                 </li>
-              </ul>
+              </ol>
             </div>
           )}
 

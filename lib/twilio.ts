@@ -118,6 +118,36 @@ export async function purchaseNumber(
   return { phoneNumber: purchased.phoneNumber, sid: purchased.sid };
 }
 
+/**
+ * Which network a mobile is on, or null if we cannot tell.
+ *
+ * Used to reassure somebody that the dial codes on the forwarding step apply to
+ * them. It is decoration on a step that works regardless, so every failure —
+ * unconfigured, network error, unknown carrier — returns null rather than
+ * throwing. A lookup wobble must never block the one step a customer cannot
+ * skip.
+ */
+export async function lookupCarrierName(
+  phoneNumber: string,
+): Promise<string | null> {
+  if (!isTwilioConfigured()) return null;
+
+  try {
+    const result = await client()
+      .lookups.v2.phoneNumbers(phoneNumber)
+      .fetch({ fields: "line_type_intelligence" });
+
+    const intelligence = result.lineTypeIntelligence as
+      | { carrier_name?: string }
+      | undefined;
+
+    return intelligence?.carrier_name ?? null;
+  } catch (error) {
+    console.error("Carrier lookup failed", { phoneNumber, error });
+    return null;
+  }
+}
+
 export function isSmsConfigured(): boolean {
   return Boolean(
     process.env.TWILIO_MESSAGING_SERVICE_SID || process.env.TWILIO_SMS_SENDER_ID,

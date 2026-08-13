@@ -35,6 +35,19 @@ describe("plans", () => {
      * debited another. Diagnostics checks that live.
      */
     expect(soldPlan().price).toBe(159);
+
+    /*
+     * Pinned for the same reason as the price, and it took a real bill to find
+     * out why. At 200 the allowance quietly cost more than the margin could
+     * carry: an answered call measures at about €0.38 all in — speech
+     * recognition billed per 15 second interval, two SMS, the model, the
+     * voice — so a customer at the cap consumed €77 of a €159 subscription.
+     *
+     * An allowance is a cost commitment written as a marketing number, which is
+     * exactly the kind of figure that drifts upward to win an argument. Moving
+     * it should mean re-reading the unit economics, not editing one line.
+     */
+    expect(soldPlan().callAllowance).toBe(120);
   });
 
   it("still resolves a withdrawn tier without breaking the page", () => {

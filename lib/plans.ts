@@ -71,7 +71,26 @@ export const PLANS: PlanDefinition[] = [
     price: 159,
     currency: "EUR",
     tagline: "Everything, for one price.",
-    callAllowance: 200,
+    /*
+     * 120 answered calls a month — roughly three a working day.
+     *
+     * Was 200, set before anyone had read a real Twilio bill. The measured cost
+     * of an answered call is about €0.38: speech recognition billed per 15
+     * second interval, two SMS, the model, the voice, the minutes. At 200 that
+     * is €77 of a €159 subscription before hosting or Stripe, and the margin
+     * falls from around 85% to under 50%.
+     *
+     * 120 is still far more than the product is for. FlowPilot answers the
+     * calls a tradesperson MISSES, not every call they get — three a day missed
+     * is a very busy week, and the customers who inspired this number were
+     * averaging closer to forty a month. Nobody honest will notice the change.
+     *
+     * It is a fair-use figure, not a shut-off. Going over does not stop calls
+     * being answered — see shouldAnswerCalls — because a receptionist that goes
+     * quiet mid-month is worse for the business than the cost of the overage is
+     * for us.
+     */
+    callAllowance: 120,
     /*
      * Every line here has to be something the product actually does today. This
      * list previously promised "full call recordings", which FlowPilot has never

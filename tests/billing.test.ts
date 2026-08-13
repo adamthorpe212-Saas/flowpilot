@@ -173,3 +173,40 @@ describe("render", () => {
     expect(render("Job: {{job_type}} , {{location}} .", {})).toBe("Job:,.");
   });
 });
+
+describe("what a new business is created on", () => {
+  it("only ever creates on a plan that is actually sold", () => {
+    /*
+     * Two halves of one hole, and either alone leaves it open.
+     *
+     * lib/auth.ts used to fall back to the literal "starter" when signup
+     * metadata was missing, and the create_business RPC validated against
+     * ('starter', 'pro', 'business') — a list written when all three were on
+     * sale. So a magic link, a restored session, or a crafted metadata value
+     * could write a business onto a withdrawn tier at an allowance nobody had
+     * costed.
+     *
+     * That is the same defect that once billed customers against Starter's 50
+     * calls while they paid for Pro: a withdrawn tier left reachable because
+     * removing it looked riskier than leaving it.
+     *
+     * The SQL side is pinned in the migration. This pins the invariant both
+     * sides depend on — that there is exactly one creatable plan, and it is the
+     * one on sale.
+     */
+    const creatable = PLANS.filter((plan) => plan.sold).map((plan) => plan.id);
+
+    expect(creatable).toEqual(["pro"]);
+    expect(soldPlan().id).toBe("pro");
+  });
+
+  it("never falls back to a plan it does not define", () => {
+    /*
+     * The guard against writing the fallback out as a literal again. Whatever
+     * a new business is created on has to be a plan this file knows about, so
+     * the row and the rendered page can never disagree.
+     */
+    const defined = PLANS.map((plan) => plan.id);
+    expect(defined).toContain(soldPlan().id);
+  });
+});

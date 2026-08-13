@@ -1,6 +1,7 @@
 import "server-only";
 
 import { cache } from "react";
+import { soldPlan } from "@/lib/plans";
 import { createClient } from "@/lib/supabase/server";
 import type { Business } from "@/types/database";
 
@@ -47,11 +48,22 @@ export const getCurrentBusiness = cache(async (): Promise<Business | null> => {
     user.email?.split("@")[0] ||
     "My business";
 
-  // Which plan they clicked on the pricing page. Records intent only — the
-  // function validates it, and entitlement comes from subscription_status,
-  // which only the Stripe webhook can set.
-  const selectedPlan =
-    (user.user_metadata?.selected_plan as string | undefined) ?? "starter";
+  /*
+   * Which plan they clicked on the pricing page. Records intent only —
+   * entitlement comes from subscription_status, which only the Stripe webhook
+   * can set.
+   *
+   * The fallback used to be the literal "starter", which stopped being a plan
+   * the day the tier table was cut to one. Anyone reaching onboarding without
+   * signup metadata — a magic link, a restored session, a future invite flow —
+   * would have been written to the database as a plan that no longer exists,
+   * and getPlan() would have quietly rendered them Pro while the row said
+   * otherwise. Exactly the shape of the bug that had customers billed against
+   * Starter's allowance while paying for Pro.
+   *
+   * Derived from soldPlan() now, so it cannot drift from what is on sale again.
+   */
+  const selectedPlan = soldPlan().id;
 
   const { error } = await supabase.rpc("create_business_for_current_user", {
     business_name: businessName,

@@ -1,7 +1,7 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { removeAppointment } from "@/app/(app)/calendar/actions";
+import { useEffect, useMemo, useOptimistic, useState, useTransition } from "react";
+import { moveAppointment, removeAppointment } from "@/app/(app)/calendar/actions";
 import NotifyCustomer from "@/app/(app)/calendar/NotifyCustomer";
 import { formatIrishNumber } from "@/lib/phone";
 import {
@@ -48,16 +48,77 @@ export default function CalendarGrid({
   });
   const [selected, setSelected] = useState(today);
 
+  /*
+   * The job being moved, and how.
+   *
+   * Two mechanisms, because one is not enough. Native drag events never fire on
+   * touch, and a tradesman is on a phone — but dragging is the obvious gesture
+   * on a laptop and refusing it there would feel broken. `moving` drives the
+   * tap-to-move path; `dragging` the pointer one. Both end in the same action.
+   */
+  const [moving, setMoving] = useState<string | null>(null);
+  const [dragging, setDragging] = useState<string | null>(null);
+  const [pending, startTransition] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+
+  /*
+   * Optimistic, so a move lands the instant it is made.
+   *
+   * Waiting on a round trip to see a job change day makes the grid feel dead,
+   * and this is an edit somebody does repeatedly while thinking. If the write
+   * fails the optimistic state is discarded on the next render and the message
+   * below says so.
+   */
+  const [shown, applyMove] = useOptimistic(
+    appointments,
+    (current: Appointment[], move: { id: string; date: string }) =>
+      current.map((appointment) =>
+        appointment.id === move.id
+          ? { ...appointment, scheduled_for: move.date }
+          : appointment,
+      ),
+  );
+
   /** Jobs keyed by day, so a cell is a lookup rather than a scan. */
   const byDay = useMemo(() => {
     const map = new Map<string, Appointment[]>();
-    for (const appointment of appointments) {
+    for (const appointment of shown) {
       const existing = map.get(appointment.scheduled_for) ?? [];
       existing.push(appointment);
       map.set(appointment.scheduled_for, existing);
     }
     return map;
-  }, [appointments]);
+  }, [shown]);
+
+  const active = moving ?? dragging;
+
+  function moveTo(id: string, date: string) {
+    const job = shown.find((appointment) => appointment.id === id);
+    setMoving(null);
+    setDragging(null);
+    if (!job || job.scheduled_for === date) return;
+
+    setError(null);
+    startTransition(async () => {
+      applyMove({ id, date });
+      const result = await moveAppointment(id, date);
+      if (result.error) setError(result.error);
+    });
+    // Follow the job, so he can see where it landed rather than watching it
+    // vanish from the day he was looking at.
+    setSelected(date);
+  }
+
+  // Escape cancels a move in progress. Somebody who starts one and changes
+  // their mind should not have to find a button to get out of it.
+  useEffect(() => {
+    if (!moving) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setMoving(null);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [moving]);
 
   const weeks = useMemo(
     () => monthGrid(viewing.year, viewing.month),
@@ -100,6 +161,34 @@ export default function CalendarGrid({
         </div>
       </div>
 
+      {active && (
+        <p
+          role="status"
+          className="mt-4 flex flex-wrap items-center justify-between gap-2 rounded-xl border border-white/20 bg-white/[0.06] px-4 py-3 text-sm text-zinc-200"
+        >
+          <span>Pick the day to move it to.</span>
+          <button
+            type="button"
+            onClick={() => {
+              setMoving(null);
+              setDragging(null);
+            }}
+            className="text-xs text-zinc-400 underline underline-offset-4 transition hover:text-white"
+          >
+            Cancel
+          </button>
+        </p>
+      )}
+
+      {error && (
+        <p
+          role="alert"
+          className="mt-4 rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-200"
+        >
+          {error}
+        </p>
+      )}
+
       <div
         role="grid"
         aria-label={monthName(viewing.year, viewing.month)}
@@ -126,11 +215,30 @@ export default function CalendarGrid({
               <button
                 key={day.date}
                 type="button"
-                onClick={() => setSelected(day.date)}
+                onClick={() =>
+                  active ? moveTo(active, day.date) : setSelected(day.date)
+                }
+                onDragOver={(event) => {
+                  // Without preventDefault the browser refuses the drop and the
+                  // job silently springs back, which reads as a broken feature.
+                  if (dragging) event.preventDefault();
+                }}
+                onDrop={(event) => {
+                  event.preventDefault();
+                  if (dragging) moveTo(dragging, day.date);
+                }}
                 aria-current={isToday ? "date" : undefined}
-                aria-label={`${day.date}, ${jobs.length} ${jobs.length === 1 ? "job" : "jobs"}`}
+                aria-label={
+                  active
+                    ? `Move to ${day.date}`
+                    : `${day.date}, ${jobs.length} ${jobs.length === 1 ? "job" : "jobs"}`
+                }
                 className={`relative flex aspect-square flex-col items-center justify-center rounded-xl text-sm transition ${
-                  isSelected
+                  active
+                    ? "ring-1 ring-inset ring-white/25 hover:bg-white/20 hover:ring-white/60"
+                    : ""
+                } ${
+                  isSelected && !active
                     ? "bg-white font-semibold text-black"
                     : day.inMonth
                       ? "text-zinc-200 hover:bg-white/10"
@@ -163,7 +271,7 @@ export default function CalendarGrid({
                       <span
                         key={index}
                         className={`h-1 w-1 rounded-full ${
-                          isSelected
+                          isSelected && !active
                             ? "bg-black/50"
                             : jobs.length >= FULL_DAY_JOBS
                               ? "bg-amber-400"
@@ -200,7 +308,22 @@ export default function CalendarGrid({
             {selectedJobs.map((job) => (
               <li
                 key={job.id}
-                className="rounded-2xl border border-white/10 bg-white/[0.02] p-4"
+                /*
+                  Draggable for pointers, with the Move button below for
+                  everything else. Native drag events never fire on touch, so
+                  this alone would leave a phone with no way to reschedule.
+                */
+                draggable
+                onDragStart={(event) => {
+                  setDragging(job.id);
+                  event.dataTransfer.effectAllowed = "move";
+                  // Firefox refuses to start a drag unless something is set.
+                  event.dataTransfer.setData("text/plain", job.id);
+                }}
+                onDragEnd={() => setDragging(null)}
+                className={`rounded-2xl border border-white/10 bg-white/[0.02] p-4 transition ${
+                  dragging === job.id ? "opacity-40" : ""
+                } ${pending ? "opacity-70" : ""}`}
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
@@ -212,15 +335,31 @@ export default function CalendarGrid({
                     </p>
                   </div>
 
-                  <form action={removeAppointment}>
-                    <input type="hidden" name="id" value={job.id} />
+                  <div className="flex flex-none items-center gap-3">
                     <button
-                      type="submit"
-                      className="text-xs text-zinc-500 transition hover:text-white"
+                      type="button"
+                      onClick={() =>
+                        setMoving(moving === job.id ? null : job.id)
+                      }
+                      className={`text-xs transition ${
+                        moving === job.id
+                          ? "text-white"
+                          : "text-zinc-500 hover:text-white"
+                      }`}
                     >
-                      Remove
+                      {moving === job.id ? "Picking day…" : "Move"}
                     </button>
-                  </form>
+
+                    <form action={removeAppointment}>
+                      <input type="hidden" name="id" value={job.id} />
+                      <button
+                        type="submit"
+                        className="text-xs text-zinc-500 transition hover:text-white"
+                      >
+                        Remove
+                      </button>
+                    </form>
+                  </div>
                 </div>
 
                 {job.notes && (

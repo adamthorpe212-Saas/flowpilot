@@ -153,6 +153,47 @@ export async function notifyCustomer(
   return { error: null, saved: true };
 }
 
+/**
+ * Move a job to another day.
+ *
+ * Its own action rather than a general update, because moving is the one edit
+ * that happens constantly — a job slips a day, the weather turns, a part does
+ * not arrive — and it should cost one gesture rather than a form.
+ *
+ * Deliberately does NOT re-text the customer. They were told a day and that day
+ * has changed, which is exactly the message they most need, but sending it
+ * automatically would mean a text going out in his name the instant he nudges
+ * something on a grid. Clearing the notified flag instead puts "Text them the
+ * day" back on the job, so he can send it when he means to.
+ */
+export async function moveAppointment(
+  id: string,
+  scheduledFor: string,
+): Promise<{ error: string | null }> {
+  const business = await getCurrentBusiness();
+  if (!business) return { error: "Sign in and try again." };
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(scheduledFor)) {
+    return { error: "That isn't a day." };
+  }
+
+  const supabase = await createClient();
+
+  const { error } = await supabase
+    .from("appointment")
+    .update({ scheduled_for: scheduledFor, customer_notified_at: null })
+    .eq("id", id)
+    .eq("business_id", business.id);
+
+  if (error) {
+    console.error("Failed to move appointment", { id, error });
+    return { error: "Couldn't move that. Try again." };
+  }
+
+  revalidatePath("/calendar");
+  return { error: null };
+}
+
 export async function removeAppointment(formData: FormData): Promise<void> {
   const business = await getCurrentBusiness();
   if (!business) return;

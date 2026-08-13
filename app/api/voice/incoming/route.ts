@@ -44,25 +44,35 @@ export async function POST(request: NextRequest) {
   const supabase = createAdminClient();
 
   /*
-   * A forwarding test coming back to us.
+   * Proof that forwarding works.
    *
-   * The test rings the customer's own phone from their FlowPilot number and
-   * lets it ring out. If forwarding is set up, the carrier sends it here — so
-   * seeing our own number as the caller is proof the forward works, and the
-   * only proof available. Confirming it here rather than in the action that
-   * placed the call is deliberate: this is the moment the evidence exists.
+   * ForwardedFrom is set by the carrier on any call it forwards, and its mere
+   * presence is the proof — the call could only have reached us by being
+   * forwarded. So any forwarded call confirms it, not just our own test.
+   *
+   * This used to require `from === business.phone_number`, meaning only the
+   * test call counted. A customer whose first real forwarded call arrived,
+   * transcribed and texted correctly still showed "forwarding not confirmed"
+   * on their dashboard, with a banner telling them to go and set up the thing
+   * that was demonstrably already working. The product had the evidence in its
+   * hand and refused to look at it.
+   */
+  if (forwardedFrom && !business.forwarding_verified_at) {
+    await supabase
+      .from("business")
+      .update({
+        forwarding_verified_at: new Date().toISOString(),
+        status: "active",
+      })
+      .eq("id", business.id);
+  }
+
+  /*
+   * The test call specifically: our own number ringing the customer's phone and
+   * being forwarded straight back. Nobody is on the line, so it says so and
+   * hangs up rather than taking details from an empty call.
    */
   if (from === business.phone_number && forwardedFrom) {
-    if (!business.forwarding_verified_at) {
-      await supabase
-        .from("business")
-        .update({
-          forwarding_verified_at: new Date().toISOString(),
-          status: "active",
-        })
-        .eq("id", business.id);
-    }
-
     return twiml(
       `<Response>${say("Great — your forwarding is working. Your receptionist is live.")}<Hangup/></Response>`,
     );

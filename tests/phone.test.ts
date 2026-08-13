@@ -1,8 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  busyForwardingCode,
   CANCEL_FORWARDING_CODE,
+  CLEAR_FORWARDING_CODE,
   forwardingCode,
   forwardingTelHref,
+  RING_SECONDS,
+  unreachableForwardingCode,
   formatIrishNumber,
   normaliseIrishNumber,
 } from "@/lib/phone";
@@ -47,23 +51,62 @@ describe("formatIrishNumber", () => {
 });
 
 describe("forwardingCode", () => {
-  it("uses the single all-conditional code", () => {
-    // **004* covers no-answer, busy and unreachable together. Three separate
-    // codes would be three chances for a customer to give up halfway, leaving
-    // forwarding that works until the phone is switched off.
-    expect(forwardingCode("+353871234567")).toBe("**004*+353871234567#");
+  it("forwards on no answer, with an explicit ring timer", () => {
+    /*
+     * Was `**004*`, which sets all three conditions at once. It reported
+     * success on a gomo handset and forwarded nothing — several Irish MVNOs
+     * refuse or silently ignore it. `**61*` is the one every network accepts,
+     * and no-answer is the condition that matters: a tradesman on a roof does
+     * not decline calls, he misses them.
+     */
+    expect(forwardingCode("+353871234567")).toBe(
+      "**61*+353871234567*11*10#",
+    );
   });
 
-  it("percent-encodes the hash in the tel: link", () => {
-    // A raw # is read as a URL fragment and the code is silently truncated.
-    const href = forwardingTelHref("+353871234567");
-    expect(href).toBe("tel:**004*+353871234567%23");
+  it("lets the ring time be set", () => {
+    expect(forwardingCode("+353871234567", 15)).toBe(
+      "**61*+353871234567*11*15#",
+    );
+  });
+
+  it("rings long enough to answer and not so long the caller gives up", () => {
+    /*
+     * The timer is explicit for a reason. Left unset the network picks a
+     * default that is often longer than the voicemail timer it replaced, so
+     * the forward loses a race nobody can see.
+     */
+    expect(RING_SECONDS).toBeGreaterThanOrEqual(5);
+    expect(RING_SECONDS).toBeLessThanOrEqual(20);
+    expect(RING_SECONDS % 5).toBe(0);
+  });
+
+  it("covers busy and unreachable separately", () => {
+    expect(busyForwardingCode("+353871234567")).toBe("**67*+353871234567#");
+    expect(unreachableForwardingCode("+353871234567")).toBe(
+      "**62*+353871234567#",
+    );
+  });
+
+  it("percent-encodes every hash in the tel: link", () => {
+    // A raw # is read as a URL fragment and the code is silently truncated,
+    // so the code appears to dial and does nothing.
+    const href = forwardingTelHref(forwardingCode("+353871234567"));
+    expect(href).toBe("tel:**61*+353871234567*11*10%23");
     expect(href).not.toContain("#");
   });
 });
 
-describe("CANCEL_FORWARDING_CODE", () => {
-  it("is the documented undo", () => {
-    expect(CANCEL_FORWARDING_CODE).toBe("##004#");
+describe("clearing forwarding", () => {
+  it("wipes everything, including carrier voicemail", () => {
+    /*
+     * The defect that made setup fail silently: carrier voicemail is itself a
+     * conditional forward, so ours sat behind it and the network's own won.
+     * ##002# clears all of them, which is why it has to run first.
+     *
+     * ##004# would leave voicemail in place and reintroduce the bug.
+     */
+    expect(CLEAR_FORWARDING_CODE).toBe("##002#");
+    expect(CANCEL_FORWARDING_CODE).toBe("##002#");
   });
 });

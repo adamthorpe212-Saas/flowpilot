@@ -143,14 +143,36 @@ async function checkTwilio(): Promise<Check[]> {
         : "Irish numbers cannot send SMS. Register a sender ID with ComReg — docs/SETUP.md section C2.",
   });
 
+  /*
+   * The bundle and the address have to agree, and checking them separately is
+   * how that got missed.
+   *
+   * Both were set, both were individually valid, and every Irish number
+   * purchase failed with Twilio 21651 — "Address not contained in bundle" —
+   * because the account had two address records for the same building and the
+   * bundle was approved against the other one. Diagnostics reported a healthy
+   * "Bundle configured" throughout.
+   *
+   * A pair of values that must match is one check, not two. This cannot verify
+   * the match without calling Twilio, so it says plainly that it has not, and
+   * names the error somebody will actually see.
+   */
   const hasBundle = present(process.env.TWILIO_BUNDLE_SID);
+  const hasAddress = present(process.env.TWILIO_ADDRESS_SID);
+
   checks.push({
     name: "Irish regulatory bundle",
-    status: hasBundle ? "ok" : "warn",
-    detail: hasBundle
-      ? "Bundle configured"
-      : "Not set — number provisioning may be rejected",
-    fix: hasBundle ? undefined : "docs/SETUP.md section C1. Takes days to approve.",
+    status: hasBundle && hasAddress ? "ok" : "warn",
+    detail:
+      hasBundle && hasAddress
+        ? "Bundle and address configured — both must belong together"
+        : hasBundle
+          ? "Bundle set but no address — Irish numbers cannot be bought without one"
+          : "Not set — number provisioning will be rejected",
+    fix:
+      hasBundle && hasAddress
+        ? "If purchases fail with Twilio 21651, TWILIO_ADDRESS_SID is not the address this bundle was approved against. Check the bundle's supporting document in Twilio."
+        : "docs/SETUP.md section C1. Takes days to approve.",
   });
 
   return checks;

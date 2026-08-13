@@ -13,9 +13,13 @@ import Field from "@/components/ui/Field";
 import FormError from "@/components/ui/FormError";
 import SubmitButton from "@/components/ui/SubmitButton";
 import {
+  busyForwardingCode,
   CANCEL_FORWARDING_CODE,
+  CLEAR_FORWARDING_CODE,
   forwardingCode,
   forwardingTelHref,
+  RING_SECONDS,
+  unreachableForwardingCode,
 } from "@/lib/phone";
 
 const INITIAL: ForwardingState = { error: null };
@@ -144,46 +148,102 @@ export default function ForwardingStep({
           2. Turn on forwarding
         </h2>
         <p className="mt-2 text-sm leading-6 text-zinc-400">
-          On the phone you want forwarded, dial this. It takes a second and your
-          network confirms it.
+          Two codes, on the phone you want forwarded. Both take a second and
+          your network confirms each one.
         </p>
 
-        <div className="mt-4 rounded-2xl border border-white/10 bg-white/[0.03] p-5">
-          <p className="break-all text-center font-mono text-lg text-white">
-            {code}
-          </p>
+        {/*
+          Clearing comes first, and it is not optional.
 
-          <div className="mt-4 flex flex-wrap justify-center gap-2">
-            <a
-              href={forwardingTelHref(flowpilotNumber)}
-              className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200"
-            >
-              Dial it now
-            </a>
-            <CopyButton value={code} label="Copy code" />
+          This step used to be one code. It reported success and forwarded
+          nothing, because carrier voicemail is itself a conditional forward —
+          ours sat behind it and the network's own won every time. Setup looked
+          finished and every call still went to voicemail, which is the worst
+          way for the one unskippable step to fail.
+        */}
+        <div className="mt-4 space-y-3">
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+            <p className="text-xs uppercase tracking-[0.12em] text-zinc-500">
+              First — clear your voicemail
+            </p>
+            <p className="mt-2 break-all text-center font-mono text-lg text-white">
+              {CLEAR_FORWARDING_CODE}
+            </p>
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              <a
+                href={forwardingTelHref(CLEAR_FORWARDING_CODE)}
+                className="rounded-full border border-white/20 px-5 py-2 text-sm transition hover:bg-white/5"
+              >
+                Dial it now
+              </a>
+              <CopyButton value={CLEAR_FORWARDING_CODE} label="Copy" />
+            </div>
+            <p className="mt-4 text-center text-xs leading-5 text-zinc-500">
+              This switches off your network voicemail. That&apos;s the point —
+              voicemail is what&apos;s been swallowing your missed calls, and
+              FlowPilot replaces it.
+            </p>
           </div>
 
-          <p className="mt-4 text-center text-xs leading-5 text-zinc-500">
-            On iPhone, tapping may not work — some codes have to be typed into
-            the keypad by hand. Copy it and dial it like a phone number.
-          </p>
+          <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5">
+            <p className="text-xs uppercase tracking-[0.12em] text-zinc-500">
+              Then — send missed calls to FlowPilot
+            </p>
+            <p className="mt-2 break-all text-center font-mono text-lg text-white">
+              {code}
+            </p>
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              <a
+                href={forwardingTelHref(code)}
+                className="rounded-full bg-white px-5 py-2 text-sm font-semibold text-black transition hover:bg-zinc-200"
+              >
+                Dial it now
+              </a>
+              <CopyButton value={code} label="Copy code" />
+            </div>
+            <p className="mt-4 text-center text-xs leading-5 text-zinc-500">
+              Your phone rings for {RING_SECONDS} seconds first. Anything you
+              pick up never touches FlowPilot.
+            </p>
+          </div>
         </div>
+
+        <p className="mt-3 text-center text-xs leading-5 text-zinc-500">
+          On iPhone, tapping may not work — some codes have to be typed into the
+          keypad by hand. Copy each one and dial it like a phone number.
+        </p>
 
         <details className="mt-3 rounded-2xl border border-white/10 bg-white/[0.02] p-4">
           <summary className="cursor-pointer text-sm text-zinc-400">
-            Works on Vodafone, Three and Eir — and how to undo it
+            Also catch calls when you&apos;re engaged or out of coverage
           </summary>
           <p className="mt-3 text-sm leading-6 text-zinc-400">
-            This is a standard network code, so it works the same on all Irish
-            networks. It only affects calls you don&apos;t answer — anything you
-            pick up never touches FlowPilot.
+            Optional. The code above covers calls you don&apos;t answer, which is
+            almost all of them. These two cover the rest.
+          </p>
+          <div className="mt-3 space-y-2">
+            <p className="break-all font-mono text-sm text-zinc-300">
+              {busyForwardingCode(flowpilotNumber)}{" "}
+              <span className="font-sans text-zinc-500">— when engaged</span>
+            </p>
+            <p className="break-all font-mono text-sm text-zinc-300">
+              {unreachableForwardingCode(flowpilotNumber)}{" "}
+              <span className="font-sans text-zinc-500">
+                — phone off or no signal
+              </span>
+            </p>
+          </div>
+          <p className="mt-4 text-sm leading-6 text-zinc-400">
+            These are standard network codes and work the same on every Irish
+            network, including gomo, 48 and Tesco Mobile.
           </p>
           <p className="mt-3 text-sm leading-6 text-zinc-400">
-            To turn it off at any time, dial{" "}
+            To turn FlowPilot off at any time, dial{" "}
             <span className="font-mono text-zinc-300">
               {CANCEL_FORWARDING_CODE}
             </span>
-            .
+            . Your network voicemail won&apos;t come back on its own — you&apos;d
+            need to re-enable it with your provider.
           </p>
         </details>
       </section>

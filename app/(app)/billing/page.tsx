@@ -68,7 +68,19 @@ export default async function BillingPage({
    * independently: a withdrawn tier can only ever be right for somebody
    * actually paying for it.
    */
-  const hasSubscription = Boolean(business.stripe_subscription_id);
+  /*
+   * One source of truth for "are they paying us".
+   *
+   * This read stripe_subscription_id while the status badge three lines below
+   * read subscription_status, so a business active in one column and empty in
+   * the other was shown "Active" and "Start subscription" side by side. Two
+   * columns describing one fact will always drift; subscription_status is the
+   * one the webhook maintains and the one entitlement is decided from
+   * everywhere else, so it wins here too.
+   */
+  const hasSubscription = ["active", "trialing", "past_due"].includes(
+    business.subscription_status,
+  );
   const plan = hasSubscription ? getPlan(business.plan) : soldPlan();
   const status = STATUS_COPY[business.subscription_status] ?? STATUS_COPY.incomplete;
   const usage = await getUsage(business);

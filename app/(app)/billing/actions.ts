@@ -25,6 +25,29 @@ export async function startCheckout(
   if (!business) return { error: "Sign in and try again." };
 
   /*
+   * Never sell somebody a second subscription.
+   *
+   * The billing page decided which button to show from stripe_subscription_id
+   * while the status badge above it read subscription_status — two sources of
+   * truth for one fact. A business that was active with no subscription id
+   * recorded saw "Active" and "Start subscription" together, and clicking it
+   * would have created a second subscription and charged them €159 twice.
+   *
+   * Hiding the button is not the fix. A checkout that can be reached by a form
+   * post must refuse on the server, because that is the only place a customer
+   * cannot get around. The UI change is a courtesy on top of this.
+   *
+   * Canceled and incomplete are deliberately absent: somebody who has lapsed or
+   * abandoned a checkout must be able to buy.
+   */
+  if (["active", "trialing", "past_due"].includes(business.subscription_status)) {
+    return {
+      error:
+        "You're already subscribed. Use Manage billing to change your card or cancel.",
+    };
+  }
+
+  /*
    * Always the plan we sell, whatever the form says. A business grandfathered
    * onto a withdrawn tier still checks out at the price the site advertises,
    * and no crafted request can buy a price we no longer show.

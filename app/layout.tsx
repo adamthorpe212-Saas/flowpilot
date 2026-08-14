@@ -1,3 +1,4 @@
+import { Analytics } from "@vercel/analytics/next";
 import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -74,7 +75,23 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="min-h-full flex flex-col">
+        {children}
+        {/*
+          Page views, so decisions about this site stop being guesses.
+
+          Chosen over Google Analytics deliberately: this sets no cookie,
+          builds no cross-site profile, and keeps no identifier that outlives
+          the day. That is what lets the privacy policy stay honest — it
+          promises no advertising and nothing "following you around", and both
+          remain true. Google Analytics would have made that page a lie, which
+          is a strange trade for knowing your bounce rate.
+
+          It reports nothing in development, so local browsing cannot pollute
+          the numbers.
+        */}
+        <Analytics />
+      </body>
     </html>
   );
 }

@@ -62,7 +62,7 @@ export const LEGAL = {
  * A privacy policy with no date is one nobody can tell is current, and it is the
  * first thing anyone reviewing it looks for.
  */
-export const LEGAL_UPDATED = "12 August 2026";
+export const LEGAL_UPDATED = "14 August 2026";
 
 /**
  * The retention period the privacy policy publishes.

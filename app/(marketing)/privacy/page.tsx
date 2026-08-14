@@ -164,11 +164,18 @@ export default function PrivacyPage() {
         .
       </p>
 
-      <h2>Cookies</h2>
+      <h2>Cookies and visitor numbers</h2>
       <p>
-        We use a cookie to keep you signed in. That is all — there is no
-        advertising, no analytics following you around, and nothing shared with
-        anybody for marketing.
+        We use a cookie to keep you signed in. That is the only cookie we set —
+        there is no advertising, nothing that follows you to other websites, and
+        nothing shared with anybody for marketing.
+      </p>
+      <p>
+        We do count page views, so we can tell which parts of this site are
+        useful. That is handled by Vercel, who host the site: it sets no cookie,
+        builds no profile of you, and keeps no identifier that lasts beyond the
+        day. It tells us that a page was viewed, roughly where in the world from,
+        and on what kind of device — never who you are.
       </p>
 
       <h2>Changes</h2>

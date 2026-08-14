@@ -3,7 +3,7 @@ import { previewAppointments } from "@/lib/app-preview";
 import { appointmentText } from "@/lib/appointment-text";
 import { availabilityPrompt } from "@/lib/availability";
 import { DEMO_BUSINESS_NAME } from "@/lib/demo-example";
-import { isoDate } from "@/lib/month-grid";
+import { isoDateIn, startOfDayIn } from "@/lib/today";
 
 /**
  * The week, and the two things having a diary actually buys you.
@@ -21,7 +21,8 @@ import { isoDate } from "@/lib/month-grid";
  * disappear from the site rather than become a lie.
  */
 export default function DiaryPreview() {
-  const now = new Date();
+  // Ireland's day, not the server's. Vercel runs UTC.
+  const now = startOfDayIn();
   const appointments = previewAppointments(now);
   const week = weekFrom(appointments, now);
 
@@ -43,7 +44,7 @@ export default function DiaryPreview() {
 
   return (
     <div>
-      <WeekStrip days={week} today={isoDate(now)} />
+      <WeekStrip days={week} today={isoDateIn()} />
 
       <div className="mt-3 grid gap-3 sm:grid-cols-2">
         {customerText && (

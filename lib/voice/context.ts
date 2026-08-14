@@ -1,6 +1,7 @@
 import "server-only";
 
 import { createAdminClient } from "@/lib/supabase/server";
+import { isoDateIn } from "@/lib/today";
 import type { ReceptionistContext } from "@/lib/receptionist";
 import type {
   Appointment,
@@ -72,7 +73,10 @@ export async function loadContextForNumber(
         .from("appointment")
         .select("id, business_id, scheduled_for")
         .eq("business_id", businessId)
-        .gte("scheduled_for", new Date().toISOString().slice(0, 10)),
+        // The business's own day. toISOString() is UTC, so on a Vercel server
+        // this dropped today's jobs from the receptionist's view of the diary
+        // for the first hour of every summer morning.
+        .gte("scheduled_for", isoDateIn((business as Business).timezone)),
     ]);
 
   // The bootstrap trigger guarantees a profile exists for every business, so

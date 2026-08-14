@@ -1,3 +1,4 @@
+import { startOfDayIn } from "@/lib/today";
 import type { Appointment } from "@/types/database";
 
 /**
@@ -35,7 +36,7 @@ export function appointmentText(
    * internally can only be verified on the day it is run — these tests would
    * have passed today and failed tomorrow, which is worse than no tests.
    */
-  today: Date = new Date(),
+  today: Date = startOfDayIn(),
 ): string {
   const day = spokenDay(appointment.scheduled_for, today);
   const slot = SLOT_WORDS[appointment.slot];

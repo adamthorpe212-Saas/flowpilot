@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { getCurrentBusiness } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
+import { isoDateIn, localNoon } from "@/lib/today";
 import AppointmentForm from "./AppointmentForm";
 import CalendarGrid from "./CalendarGrid";
 import type { Appointment } from "@/types/database";
@@ -28,7 +29,13 @@ export default async function CalendarPage() {
    * the very most for a sole trader, and holding them in the client is what
    * makes paging between months instant on a phone with no signal in a van.
    */
-  const now = new Date();
+  /*
+   * The business's day, not the server's. Vercel runs UTC and Ireland is an
+   * hour ahead of it from late March to late October, so between midnight and
+   * 1am every date on this page was yesterday's.
+   */
+  const today = isoDateIn(business.timezone);
+  const now = localNoon(today);
   const from = new Date(now.getFullYear() - 1, now.getMonth(), 1);
   const to = new Date(now.getFullYear() + 1, now.getMonth() + 1, 0);
 
@@ -55,6 +62,7 @@ export default async function CalendarPage() {
         <CalendarGrid
           appointments={appointments}
           businessName={business.name}
+          today={today}
         />
       </div>
 

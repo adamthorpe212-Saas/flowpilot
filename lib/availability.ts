@@ -1,3 +1,4 @@
+import { startOfDayIn } from "@/lib/today";
 import type { Appointment } from "@/types/database";
 
 /**
@@ -55,7 +56,7 @@ export type DayLoad = {
  */
 export function busyDays(
   appointments: Appointment[],
-  today: Date = new Date(),
+  today: Date = startOfDayIn(),
 ): DayLoad[] {
   const start = isoDate(today);
   const end = isoDate(addDays(today, HORIZON_DAYS));
@@ -89,7 +90,7 @@ export function busyDays(
  */
 export function availabilityPrompt(
   appointments: Appointment[],
-  today: Date = new Date(),
+  today: Date = startOfDayIn(),
 ): string | null {
   const days = busyDays(appointments, today);
   if (days.length === 0) return null;

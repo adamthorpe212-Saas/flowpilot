@@ -5,7 +5,8 @@ import MonthGrid from "@/components/MonthGrid";
 import WeekStrip, { weekFrom } from "@/components/WeekStrip";
 import { previewAppointments, previewLeads } from "@/lib/app-preview";
 import { LEAD_VIEWS } from "@/lib/lead-views";
-import { isoDate, monthName } from "@/lib/month-grid";
+import { monthName } from "@/lib/month-grid";
+import { isoDateIn, startOfDayIn } from "@/lib/today";
 
 /**
  * A walk around the app, for somebody who has not paid yet.
@@ -29,11 +30,12 @@ import { isoDate, monthName } from "@/lib/month-grid";
  * said in words on this page instead, where it cannot rot.
  */
 export default function AppTour() {
-  const now = new Date();
+  // Ireland's day, not the server's. Vercel runs UTC.
+  const now = startOfDayIn();
   const leads = previewLeads(now);
   const appointments = previewAppointments(now);
   const week = weekFrom(appointments, now);
-  const today = isoDate(now);
+  const today = isoDateIn();
 
   /** ISO date → how many jobs that day. The shape MonthGrid wants. */
   const jobsByDay = new Map<string, number>();

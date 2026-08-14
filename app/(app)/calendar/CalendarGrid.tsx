@@ -6,7 +6,8 @@ import NotifyCustomer from "@/app/(app)/calendar/NotifyCustomer";
 import { formatIrishNumber } from "@/lib/phone";
 import MonthGrid, { FULL_DAY_JOBS } from "@/components/MonthGrid";
 import WeekStrip, { weekFrom } from "@/components/WeekStrip";
-import { isoDate, monthName, shiftMonth } from "@/lib/month-grid";
+import { monthName, shiftMonth } from "@/lib/month-grid";
+import { localNoon } from "@/lib/today";
 import type { Appointment } from "@/types/database";
 
 const SLOT_LABELS: Record<Appointment["slot"], string> = {
@@ -29,14 +30,22 @@ const SLOT_LABELS: Record<Appointment["slot"], string> = {
 export default function CalendarGrid({
   appointments,
   businessName,
+  today,
 }: {
   appointments: Appointment[];
   businessName: string;
+  /*
+   * Decided by the server in the business's own timezone, not read from the
+   * clock here. This was `isoDate(new Date())`, which is the browser's day
+   * during hydration and the SERVER's day during the render it hydrates onto —
+   * and Vercel runs UTC, an hour behind Ireland all summer. Between midnight
+   * and 1am the grid highlighted yesterday and "Today" jumped to the wrong day.
+   */
+  today: string;
 }) {
-  const today = isoDate(new Date());
 
   const [viewing, setViewing] = useState(() => {
-    const now = new Date();
+    const now = localNoon(today);
     return { year: now.getFullYear(), month: now.getMonth() + 1 };
   });
   const [selected, setSelected] = useState(today);
@@ -134,7 +143,7 @@ export default function CalendarGrid({
    * same component the marketing site uses, so neither can drift from the
    * other.
    */
-  const week = useMemo(() => weekFrom(shown, new Date()), [shown]);
+  const week = useMemo(() => weekFrom(shown, localNoon(today)), [shown, today]);
 
   return (
     <div>
@@ -153,7 +162,7 @@ export default function CalendarGrid({
           <button
             type="button"
             onClick={() => {
-              const now = new Date();
+              const now = localNoon(today);
               setViewing({ year: now.getFullYear(), month: now.getMonth() + 1 });
               setSelected(today);
             }}

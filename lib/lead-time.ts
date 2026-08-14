@@ -1,3 +1,5 @@
+import { IRELAND, isoDateIn } from "@/lib/today";
+
 /**
  * When a call came in, written the way somebody would say it.
  *
@@ -12,15 +14,35 @@
  * `now` is a parameter rather than read from the clock, because a function that
  * reads Date.now() internally can only be tested at the moment it is run.
  */
-export function formatLeadTime(iso: string, now: Date = new Date()): string {
+export function formatLeadTime(
+  iso: string,
+  now: Date = new Date(),
+  /**
+   * The timezone the tradesperson lives in, not the one the server runs in.
+   *
+   * Both sides of this comparison used to be read with local getters, so on
+   * Vercel — which runs UTC — every lead was placed on a UTC day and stamped
+   * with a UTC clock. From late March to late October that made every lead an
+   * hour early on screen, and any call taken between midnight and 1am appeared
+   * under Yesterday while the phone was still warm.
+   */
+  timezone: string = IRELAND,
+): string {
   const when = new Date(iso);
   if (Number.isNaN(when.getTime())) return "";
 
-  const startOfDay = (date: Date) =>
-    new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+  /*
+   * Compared as calendar dates in that timezone, not as instants. Midnight is
+   * a boundary between days, and which day an instant falls on is a question
+   * that cannot be answered without saying where.
+   */
+  const dayOf = (date: Date) => {
+    const [year, month, day] = isoDateIn(timezone, date).split("-").map(Number);
+    return Date.UTC(year, month - 1, day);
+  };
 
   const daysAgo = Math.round(
-    (startOfDay(now) - startOfDay(when)) / (24 * 60 * 60 * 1000),
+    (dayOf(now) - dayOf(when)) / (24 * 60 * 60 * 1000),
   );
 
   /*
@@ -33,6 +55,7 @@ export function formatLeadTime(iso: string, now: Date = new Date()): string {
     return new Intl.DateTimeFormat("en-IE", {
       hour: "2-digit",
       minute: "2-digit",
+      timeZone: timezone,
     }).format(when);
   }
 
@@ -44,11 +67,15 @@ export function formatLeadTime(iso: string, now: Date = new Date()): string {
    * week a job came from.
    */
   if (daysAgo > 1 && daysAgo < 7) {
-    return new Intl.DateTimeFormat("en-IE", { weekday: "short" }).format(when);
+    return new Intl.DateTimeFormat("en-IE", {
+      weekday: "short",
+      timeZone: timezone,
+    }).format(when);
   }
 
   return new Intl.DateTimeFormat("en-IE", {
     day: "numeric",
     month: "short",
+    timeZone: timezone,
   }).format(when);
 }

@@ -215,12 +215,17 @@ export default function Home() {
           </div>
 
           {/*
-            No phone anywhere on this page now. The homepage argues; the app is
-            walked through on /how-it-works, where somebody who wants convincing
-            can click around it properly rather than squint at a mockup.
+            No phone and no transcript on this page. The homepage argues; the
+            app is walked through on /how-it-works, where somebody who wants
+            convincing can click around it properly.
+
+            The transcript in particular was the tallest object on the landing
+            page — nine turns of a plumber's phone call, in front of somebody
+            deciding in fifteen seconds whether to keep reading. It is the most
+            convincing thing FlowPilot has and the wrong thing to meet first.
           */}
           <div className="mt-12">
-            <LeadRecord />
+            <LeadRecord transcript={false} />
           </div>
 
           <p className="mt-8 text-sm text-zinc-400">

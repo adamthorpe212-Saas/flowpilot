@@ -42,11 +42,39 @@ const DETAILS: [string, string][] = [
   ["Number", DEMO_CALLER_DISPLAY],
 ];
 
-export default function LeadRecord() {
+export default function LeadRecord({
+  /**
+   * Off on the homepage.
+   *
+   * A nine-turn conversation is the most convincing thing here and the wrong
+   * thing to meet first — it was the tallest object on the landing page, and
+   * somebody deciding in fifteen seconds does not want to read a plumber's
+   * phone call. It belongs where somebody has already chosen to look properly,
+   * which is the tour on /how-it-works.
+   *
+   * A prop rather than two components, because the half that stays has to be
+   * the same half in both places.
+   */
+  transcript = true,
+}: {
+  transcript?: boolean;
+} = {}) {
   return (
     <div className="overflow-hidden rounded-3xl border border-white/10 bg-white/[0.02]">
-      <div className="grid lg:grid-cols-[1.05fr_1fr]">
-        <div className="border-b border-white/10 p-6 sm:p-8 lg:border-b-0 lg:border-r">
+      {/*
+        With the transcript, the record is the job beside what was said. Without
+        it, the same content splits down the middle instead — details on one
+        side, where it's at and what you can do on the other — so the panel
+        still fills its width rather than leaving half of it empty.
+      */}
+      <div className={transcript ? "grid lg:grid-cols-[1.05fr_1fr]" : "grid sm:grid-cols-2"}>
+        <div
+          className={`p-6 sm:p-8 ${
+            transcript
+              ? "border-b border-white/10 lg:border-b-0 lg:border-r"
+              : "border-b border-white/10 sm:border-b-0 sm:border-r"
+          }`}
+        >
           <p className="text-[11px] uppercase tracking-[0.18em] text-zinc-500">
             The job
           </p>
@@ -66,45 +94,14 @@ export default function LeadRecord() {
             ))}
           </dl>
 
-          <p className="mt-6 text-[11px] uppercase tracking-[0.18em] text-zinc-500">
-            Where it&apos;s at
-          </p>
-          <ul className="mt-3 flex flex-wrap gap-1.5">
-            {FLOW.map((status) => (
-              <li
-                key={status}
-                className={`rounded-full border px-3 py-1.5 text-xs ${
-                  status === CURRENT
-                    ? "border-white/25 bg-white/10 text-white"
-                    : "border-white/10 text-zinc-500"
-                }`}
-              >
-                {STATUS_LABELS[status]}
-              </li>
-            ))}
-          </ul>
-
-          {/*
-            Styled as buttons but deliberately not buttons, and not links.
-            Nothing here can be pressed, so nothing here needs to be reachable
-            by keyboard — a tab stop that does nothing is worse than no tab
-            stop. aria-hidden keeps them out of the accessibility tree, and the
-            caption underneath tells a screen reader user what they do.
-          */}
-          <div aria-hidden="true" className="mt-6 flex flex-wrap gap-2">
-            <span className="inline-flex min-h-10 items-center rounded-xl bg-white/10 px-4 text-sm font-medium text-white">
-              Ring back
-            </span>
-            <span className="inline-flex min-h-10 items-center rounded-xl border border-white/15 px-4 text-sm text-zinc-300">
-              Add to calendar
-            </span>
-          </div>
-          <p className="mt-3 text-[13px] leading-5 text-zinc-500">
-            Ring them back or put the work in your diary, straight from the job.
-          </p>
+          {/* Alongside the details only when the transcript takes the column. */}
+          {transcript && <Progress className="mt-6" />}
         </div>
 
         <div className="p-6 sm:p-8">
+          {!transcript && <Progress />}
+          {transcript && (
+            <>
           <p className="text-[11px] uppercase tracking-[0.18em] text-zinc-500">
             What was said
           </p>
@@ -139,8 +136,61 @@ export default function LeadRecord() {
             Kept with the job, so you can check exactly what was agreed. Calls
             are transcribed, never recorded.
           </p>
+            </>
+          )}
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Where the job is up to, and the two things you can do with it.
+ *
+ * Its own component because it moves: beside the details when the transcript
+ * takes the second column, into the second column when it does not. Rendering
+ * it twice and hiding one would put a duplicate stage rail in the page for
+ * anything reading the markup rather than the pixels.
+ */
+function Progress({ className = "" }: { className?: string }) {
+  return (
+    <div className={className}>
+      <p className="text-[11px] uppercase tracking-[0.18em] text-zinc-500">
+        Where it&apos;s at
+      </p>
+      <ul className="mt-3 flex flex-wrap gap-1.5">
+        {FLOW.map((status) => (
+          <li
+            key={status}
+            className={`rounded-full border px-3 py-1.5 text-xs ${
+              status === CURRENT
+                ? "border-white/25 bg-white/10 text-white"
+                : "border-white/10 text-zinc-500"
+            }`}
+          >
+            {STATUS_LABELS[status]}
+          </li>
+        ))}
+      </ul>
+
+      {/*
+        Styled as buttons but deliberately not buttons, and not links. Nothing
+        here can be pressed, so nothing here needs to be reachable by keyboard —
+        a tab stop that does nothing is worse than no tab stop. aria-hidden
+        keeps them out of the accessibility tree, and the caption underneath
+        tells a screen reader user what they do.
+      */}
+      <div aria-hidden="true" className="mt-6 flex flex-wrap gap-2">
+        <span className="inline-flex min-h-10 items-center rounded-xl bg-white/10 px-4 text-sm font-medium text-white">
+          Ring back
+        </span>
+        <span className="inline-flex min-h-10 items-center rounded-xl border border-white/15 px-4 text-sm text-zinc-300">
+          Add to calendar
+        </span>
+      </div>
+      <p className="mt-3 text-[13px] leading-5 text-zinc-500">
+        Ring them back or put the work in your diary, straight from the job.
+      </p>
     </div>
   );
 }

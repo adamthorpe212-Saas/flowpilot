@@ -18,7 +18,7 @@
 const STEPS = [
   {
     label: "You miss the call",
-    detail: "Your own number, as always. You're under a sink, or driving.",
+    detail: "Your own number, as always. You're on a job, or driving.",
   },
   {
     label: "FlowPilot answers",

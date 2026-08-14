@@ -165,13 +165,36 @@ export default function Home() {
       <section className="border-t border-white/10 px-5 py-20 sm:px-6 sm:py-24">
         <div className="mx-auto max-w-5xl">
           <div className="max-w-2xl">
-            <h2 className="text-[2rem] font-semibold leading-[1.08] tracking-[-0.03em] sm:text-4xl">
-              A customer rings while you&apos;re under a sink.
+            {/*
+              The competitive claim, in six words.
+
+              This read "A customer rings while you're under a sink" — a scene,
+              not a reason. It described the problem a tradesperson already knows
+              intimately and said nothing about why FlowPilot beats the thing
+              they currently have, which is voicemail. Naming the alternative is
+              what makes the difference concrete: everyone understands what a
+              voicemail gets you, and "the job" against "a message" is the whole
+              product in one comparison.
+            */}
+            {/*
+              Smaller on a phone than the other section headings, deliberately.
+
+              At 32px each sentence wrapped, so the pair became four ragged
+              lines — "Voicemail takes a / message." over "FlowPilot takes the /
+              job." The contrast is the entire point of the line and it only
+              works if each half is read as one thing. A slightly smaller
+              heading that lands beats a larger one that falls apart.
+            */}
+            <h2 className="text-[1.6rem] font-semibold leading-[1.15] tracking-[-0.03em] sm:text-4xl sm:leading-[1.08]">
+              Voicemail takes a message.
+              <br />
+              FlowPilot takes the job.
             </h2>
             <p className="mt-5 text-[16px] leading-7 text-zinc-400">
-              FlowPilot answers as your business, finds out what the job is and
-              when they need it, and has it waiting in your app. You ring back
-              when your hands are free — or put it straight in the diary.
+              It answers in your business&apos;s name, finds out what the work
+              is, where they are and when they need it — then has the whole job
+              waiting on your phone. Ring them back when you&apos;re free, or put
+              it straight in the diary.
             </p>
           </div>
 

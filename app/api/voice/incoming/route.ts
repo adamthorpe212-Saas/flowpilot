@@ -3,6 +3,7 @@ import { isWithheld } from "@/lib/blocked-callers";
 import { siteUrl } from "@/lib/env";
 import { isWithinOpeningHours } from "@/lib/hours";
 import { openingLine } from "@/lib/receptionist";
+import { isRelayConfigured, relayTwiml } from "@/lib/voice/relay";
 import { gatherAttributes } from "@/lib/voice/hints";
 import { createAdminClient } from "@/lib/supabase/server";
 import { shouldAnswerCalls } from "@/lib/usage";
@@ -171,6 +172,22 @@ export async function POST(request: NextRequest) {
       { role: "assistant", text: greeting, at: new Date().toISOString() },
     ],
   });
+
+  /*
+   * The streaming pipeline when it is configured, the turn-based one otherwise.
+   *
+   * Deliberately a fallback rather than a switch. ConversationRelay depends on
+   * a WebSocket service that is not this deployment, so it has a failure mode
+   * <Gather> does not: if that service is down or misconfigured, the caller
+   * hears silence and hangs up. Falling back means the worst case is the
+   * product as it was last week, which is a bad day rather than a lost job.
+   *
+   * The call row is written identically either way, so a call answered by
+   * either pipeline lands in the same dashboard with the same shape.
+   */
+  if (isRelayConfigured()) {
+    return twiml(relayTwiml(receptionist, greeting, callSid));
+  }
 
   return twiml(
     `<Response>` +

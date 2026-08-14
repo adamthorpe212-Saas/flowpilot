@@ -84,7 +84,20 @@ export async function startCheckout(
         metadata: { business_id: business.id, plan },
       },
       metadata: { business_id: business.id, plan },
-      success_url: `${siteUrl()}/billing?checkout=success`,
+      /*
+       * Back to setup, not to a receipt.
+       *
+       * This landed everybody on /billing, which said "Active — everything's
+       * running normally" to a customer who had just paid and still had no
+       * phone number, no forwarding and therefore no receptionist. The one
+       * moment they are most willing to be led, and the product congratulated
+       * itself and stopped talking.
+       *
+       * Onboarding is idempotent and derives its own progress, so sending a
+       * finished customer there is harmless — they see every step ticked. The
+       * flag is kept so the page can say the payment landed.
+       */
+      success_url: `${siteUrl()}/onboarding?checkout=success`,
       cancel_url: `${siteUrl()}/billing?checkout=cancelled`,
       allow_promotion_codes: true,
     });

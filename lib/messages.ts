@@ -13,15 +13,36 @@
 
 /**
  * The default a new business gets, matching the column default set in
- * 20260809170000_gsm7_confirmation_default.sql. Editable per business.
+ * 20260814160000_say_who_is_texting.sql. Editable per business.
  *
- * The hyphen was an em dash until that migration. One character outside the
- * GSM-7 alphabet forces the whole message into UCS-2, where a segment is 70
- * characters rather than 160 — so a single dash was making every confirmation
- * text cost two segments instead of one.
+ * Leads with the business name, and says what it is.
+ *
+ * This text goes to a stranger. Somebody rings a plumber, gets no answer, and
+ * thirty seconds later an unknown number tells them their address — which reads
+ * as a scam unless the first thing they see is the name of the business they
+ * just rang. It opened "Thanks {{caller_name}} - we have logged" and did not
+ * name the business until the very end, by which point they had already decided.
+ *
+ * That matters more than it should because Irish landline numbers cannot send
+ * SMS at all, so these go out from a US number and will keep doing so until a
+ * sender ID is registered with ComReg. The wording cannot make the number Irish;
+ * it can make the number make sense.
+ *
+ * "No need to reply to this number" is literal rather than polite. Nothing
+ * handles inbound SMS on that number, and a reply would vanish — so a customer
+ * correcting a misheard address into the void is worse than being told not to.
+ *
+ * {{caller_name}} is gone deliberately: it was often empty, because plenty of
+ * callers ring off before giving a name, and "Thanks  - we have logged" is a
+ * worse first impression than no greeting at all.
+ *
+ * The hyphen is a hyphen and not an em dash. One character outside the GSM-7
+ * alphabet forces the whole message into UCS-2, where a segment is 70
+ * characters rather than 160 — a single dash doubles what every confirmation
+ * costs to send.
  */
 export const DEFAULT_CONFIRMATION_TEMPLATE =
-  "Thanks {{caller_name}} - we have logged: {{job_type}}, {{location}}. {{business_name}} will be in touch shortly.";
+  "{{business_name}} automated receptionist. Your job is logged: {{job_type}}, {{location}}. You will get a call back - no need to reply to this number.";
 
 /**
  * The GSM-7 basic alphabet, plus the extension characters that cost two septets.

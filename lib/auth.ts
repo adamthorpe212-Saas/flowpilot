@@ -65,20 +65,44 @@ export const getCurrentBusiness = cache(async (): Promise<Business | null> => {
    */
   const selectedPlan = soldPlan().id;
 
-  const { error } = await supabase.rpc("create_business_for_current_user", {
-    business_name: businessName,
-    selected_plan: selectedPlan,
-  });
+  const { data: newId, error } = await supabase.rpc(
+    "create_business_for_current_user",
+    { business_name: businessName, selected_plan: selectedPlan },
+  );
 
   if (error) {
     console.error("Failed to create business", error);
     return null;
   }
 
+  if (!newId) {
+    console.error("create_business_for_current_user returned no id");
+    return null;
+  }
+
+  /*
+   * Selected BY ID, and that is the whole fix.
+   *
+   * This read used to be `.select("*").limit(1)` — byte-for-byte the same
+   * request as the existence check above it. Next memoises identical fetches
+   * within a single render, so the second call never left the server: it was
+   * handed back the first one's response, which was empty by definition,
+   * because that is why we are in this branch at all.
+   *
+   * The business was created correctly and then reported as missing, so the
+   * layout bounced every brand-new customer to /login on the first page load
+   * after signing up. It worked on the second, which is the cruellest version
+   * of a bug: the account is fine, the data is fine, and the one impression
+   * that matters — the first — is a redirect they cannot explain.
+   *
+   * Scoping by the id the RPC just returned makes it a different URL, so it is
+   * a real request. It is also simply the more honest query: we want the row we
+   * just made, not whichever row happens to come back first.
+   */
   const { data: created } = await supabase
     .from("business")
     .select("*")
-    .limit(1)
+    .eq("id", newId as string)
     .maybeSingle();
 
   return (created as Business) ?? null;

@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { getCurrentBusiness } from "@/lib/auth";
 import { bundleAreaCode } from "@/lib/irish-numbers";
-import { createAdminClient } from "@/lib/supabase/server";
+import { createAdminClient, createClient } from "@/lib/supabase/server";
 import { shouldAnswerCalls } from "@/lib/usage";
 import {
   findAvailableIrishNumbers,
@@ -54,6 +54,36 @@ export async function provisionNumber(
 
   if (business.phone_number) {
     return { error: null, phoneNumber: business.phone_number };
+  }
+
+  /*
+   * No services, no number.
+   *
+   * The setup steps are ordered but the hub linked to all of them, so a
+   * customer could go straight from paying to buying a number and never tell
+   * FlowPilot what work they take. That is not a cosmetic skip: the services
+   * list is what the receptionist offers callers, what it qualifies against,
+   * and — through speechHints — most of what stops it hearing "Tyrrelstown" as
+   * "Tyler". A receptionist with an empty services list answers the phone and
+   * disappoints, and the customer blames the product, correctly.
+   *
+   * Enforced on the server rather than by hiding a link, because the number is
+   * bought here and this is the only place a customer cannot route around.
+   */
+  // Named for its privilege, because an admin client is declared further down
+  // in this same function and the two must never be confused: that one bypasses
+  // row-level security and this one must not.
+  const asCustomer = await createClient();
+  const { count: serviceCount } = await asCustomer
+    .from("service")
+    .select("id", { count: "exact", head: true })
+    .eq("business_id", business.id);
+
+  if (!serviceCount) {
+    return {
+      error:
+        "Tell us what work you take on first — your receptionist needs it to know what to ask callers.",
+    };
   }
 
   /*

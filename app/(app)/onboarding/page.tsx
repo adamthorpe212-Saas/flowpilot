@@ -64,6 +64,43 @@ export default async function OnboardingPage() {
         {steps.map((step, index) => {
           const isNext = next?.slug === step.slug;
 
+          /*
+           * Later steps are shown but not openable until the ones before them
+           * are done.
+           *
+           * Every step used to be a live link, so a customer could pay and go
+           * straight to buying a number without ever saying what work they
+           * take. The provisioning action refuses that on the server, but a
+           * button that leads to a refusal is a worse experience than one that
+           * plainly is not ready yet — and the order here is not arbitrary:
+           * the receptionist is built out of the answers given before it.
+           */
+          const locked = !step.done && !isNext;
+
+          if (locked) {
+            return (
+              <li key={step.slug}>
+                <div className="flex items-center gap-4 rounded-2xl border border-white/[0.07] bg-white/[0.01] p-5 opacity-55">
+                  <span
+                    aria-hidden="true"
+                    className="flex h-7 w-7 flex-none items-center justify-center rounded-full border border-white/10 text-xs text-zinc-500"
+                  >
+                    {index + 1}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block text-zinc-400">{step.title}</span>
+                    <span className="mt-1 block text-sm text-zinc-500">
+                      {step.description}
+                    </span>
+                  </span>
+                  <span className="flex-none text-xs text-zinc-500">
+                    After the step above
+                  </span>
+                </div>
+              </li>
+            );
+          }
+
           return (
             <li key={step.slug}>
               <Link

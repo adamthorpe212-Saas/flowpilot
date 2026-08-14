@@ -16,6 +16,7 @@ let availableNumbers: Available[] = [];
 let localNumbers: Available[] = [];
 /** Area codes passed to Twilio, in order, so fallback behaviour is observable. */
 const searches: (string | null)[] = [];
+let serviceCount = 1;
 let updateError: { message: string } | null = null;
 
 /** Numbers we asked Twilio to sell us, including the ones it refused. */
@@ -63,6 +64,19 @@ vi.mock("@/lib/supabase/server", () => ({
       }),
     }),
   }),
+  /*
+   * The customer-scoped client, used only to count services before spending
+   * money on a number. Separate from the admin client above on purpose: one
+   * bypasses row-level security and one must not, and a mock that conflated
+   * them would hide the day somebody swaps them over.
+   */
+  createClient: async () => ({
+    from: () => ({
+      select: () => ({
+        eq: async () => ({ count: serviceCount }),
+      }),
+    }),
+  }),
 }));
 
 vi.mock("@/lib/twilio", () => ({
@@ -92,6 +106,9 @@ const { provisionNumber } = await import("@/app/(app)/onboarding/number/actions"
 beforeEach(() => {
   business = makeBusiness();
   twilioConfigured = true;
+  // A business that has told us what work it does. The one test that cares
+  // sets this to zero itself.
+  serviceCount = 1;
   availableNumbers = [
     { phoneNumber: "+353870000001", friendlyName: "+353870000001", locality: "Dublin" },
   ];
@@ -151,6 +168,27 @@ describe("provisionNumber", () => {
     expect(result.error).toBeNull();
     expect(result.phoneNumber).toBe("+353870000009");
     expect(purchased).toEqual([]);
+  });
+
+  it("refuses to buy a number before the customer says what work they do", async () => {
+    /*
+     * The services list is not a formality. It is what the receptionist offers
+     * callers, what it qualifies against, and — through speechHints — most of
+     * what stops it hearing "Tyrrelstown" as "Tyler". A number bought before it
+     * exists starts costing rental immediately and answers badly, and the
+     * customer blames the product, correctly.
+     *
+     * The setup hub links to the steps in order but a customer could open any
+     * of them, so this has to hold on the server.
+     */
+    serviceCount = 0;
+
+    const result = await provisionNumber({ error: null });
+
+    expect(result.error).toMatch(/what work you take on/i);
+    expect(purchased, "must not spend money").toEqual([]);
+    // Not our problem to fix — there is something for the customer to do.
+    expect(result.pending).toBeFalsy();
   });
 
   it("refuses to buy a number for a lapsed subscription", async () => {

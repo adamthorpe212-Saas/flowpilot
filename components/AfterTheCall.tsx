@@ -1,5 +1,6 @@
 import PhoneMessage from "@/components/PhoneMessage";
 import { DEMO_BUSINESS_NAME } from "@/lib/demo-example";
+import { DEMO_CALLER_DISPLAY } from "@/lib/demo-numbers";
 import {
   DEFAULT_CONFIRMATION_TEMPLATE,
   jobAlert,
@@ -19,7 +20,7 @@ import {
  * is a strange thing to do when you can simply show it.
  */
 
-const CALLER_NUMBER = "087 412 9008";
+const CALLER_NUMBER = DEMO_CALLER_DISPLAY;
 
 /*
  * A planned job, not an emergency.

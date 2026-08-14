@@ -46,6 +46,22 @@ const ITEMS: FaqItem[] = [
       "It asks again. If it still can't tell, it takes whatever details it has and flags the job for you rather than guessing — you get a lead marked as needing a human. It never quotes a price and never promises a time you haven't agreed to.",
   },
   {
+    /*
+     * The product's strongest trust argument, and the site never made it.
+     *
+     * Settings has had "What your receptionist says", "What details it gets
+     * from callers" and "Callers it should never answer" for months, and a
+     * visitor deciding whether to hand over their phone line could not learn
+     * any of it without buying first. The fear being answered is specific —
+     * that a machine will speak for their business and say something that
+     * costs them a customer.
+     */
+    id: "control-what-it-says",
+    question: "Can I control what it says?",
+    answer:
+      "All of it. You write how it introduces itself, the questions it asks, the details it collects and the things it must never say — and you can try it yourself in settings before a customer ever hears it. It won't quote a price or promise a time unless you've told it to.",
+  },
+  {
     id: "out-of-hours",
     question: "What happens outside my working hours?",
     answer:
@@ -114,18 +130,21 @@ export function allFaqItems(): FaqItem[] {
 /**
  * The five objections that stop somebody buying, in the order they occur.
  *
- * Trimmed from seven. The homepage FAQ sits directly under the price, which is
- * the moment the objections fire, so it holds the ones that decide a sale —
- * my number, my reputation, will it cope, how much work is this, can I get out.
- * Recording and out-of-hours are reassurances rather than blockers; they are a
- * click away on /how-it-works and the chat below still answers both.
+ * The homepage FAQ sits directly under the price, which is the moment the
+ * objections fire, so it holds the ones that decide a sale — my number, my
+ * reputation, will it cope, do I get a say, how fast.
+ *
+ * "Can I control what it says" displaced "cancel". Cancelling is already
+ * promised in the line directly above this section, where it does more good;
+ * the fear that a machine will speak badly for your business is the one the
+ * page had left entirely unanswered.
  */
 export const HOME_FAQ_IDS = [
   "keep-number",
   "is-it-a-machine",
   "misunderstands",
+  "control-what-it-says",
   "time-to-live",
-  "cancel",
 ] as const;
 
 /** The full set, for somebody reading the page that explains the product. */
@@ -133,6 +152,7 @@ export const LEARN_FAQ_IDS = [
   "keep-number",
   "is-it-a-machine",
   "misunderstands",
+  "control-what-it-says",
   "out-of-hours",
   "recording",
   "time-to-live",

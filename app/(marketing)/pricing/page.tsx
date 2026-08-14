@@ -6,8 +6,16 @@ import { formatPrice, soldPlan, weeklyPrice } from "@/lib/plans";
 
 export const metadata: Metadata = {
   title: "Pricing — FlowPilot",
+  /*
+   * No trial is mentioned, because there isn't one. This said "Free trial, no
+   * setup fee" — the trial was removed from lib/plans.ts along with every
+   * branch hanging off it, and this description was missed. It is the text
+   * Google shows under the result, so it was advertising a free trial to
+   * everybody searching, on the page whose entire job is being straight about
+   * what things cost.
+   */
   description:
-    "Simple monthly pricing for an AI receptionist that answers the calls you miss. Free trial, no setup fee, cancel any time.",
+    "One plan, €159 a month excluding VAT, for an AI receptionist that answers the calls you miss. 120 answered calls included. No setup fee, cancel any time.",
 };
 
 export default function PricingPage() {

@@ -1,3 +1,5 @@
+import { composeOpening } from "@/lib/disclosure";
+
 /**
  * A worked example of the call the live demo would have had.
  *
@@ -30,7 +32,19 @@ export type ExampleTurn = { role: "assistant" | "caller"; text: string };
 export const EXAMPLE_TURNS: ExampleTurn[] = [
   {
     role: "assistant",
-    text: "This is an automated assistant, and I'll take notes. Hello, O'Brien Plumbing — sorry we missed you. What can we do for you?",
+    /*
+     * Generated, not typed out. This line read "This is an automated assistant,
+     * and I'll take notes. Hello, O'Brien Plumbing — sorry we missed you." for
+     * months after the disclosure was rewritten, which is the fourth time this
+     * site has published words no caller has heard: the disclosure line, the
+     * default greeting, the animated phone, and this.
+     *
+     * It is the worst of the four, because of when it shows. This transcript
+     * appears precisely when the live demo is unavailable — so a visitor who
+     * cannot try the real thing was shown a stale imitation of it instead, at
+     * the exact moment they were deciding whether the product is real.
+     */
+    text: composeOpening(DEMO_BUSINESS_NAME, DEMO_GREETING),
   },
   { role: "caller", text: "We're doing up the kitchen and need the plumbing moved" },
   {

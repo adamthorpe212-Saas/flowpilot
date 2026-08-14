@@ -17,8 +17,36 @@ import type { Lead } from "@/types/database";
  * ringing back is the most common thing anyone does from this page, so the
  * whole card stays tappable and the number stays separately tappable.
  */
-export default function LeadCard({ lead }: { lead: Lead }) {
+export default function LeadCard({
+  lead,
+  /**
+   * Off for the marketing site, where this card is shown as a picture of the
+   * product to somebody who has not signed in.
+   *
+   * The public page used to render the interactive card inside an `inert`
+   * wrapper. That works — the links genuinely cannot be focused or clicked —
+   * but it leaves a signed-out page emitting anchors to /dashboard/<id>, which
+   * Next prefetches, crawlers follow to a login redirect, and any future
+   * refactor of that wrapper silently re-arms. A `tel:` to a caller is the
+   * worse half: the guard against dialling a stranger should not be one
+   * attribute on an ancestor.
+   *
+   * So the marketing build renders the same card with no anchors in it at all,
+   * rather than anchors that have been talked out of working.
+   */
+  interactive = true,
+}: {
+  lead: Lead;
+  interactive?: boolean;
+}) {
   const number = formatIrishNumber(lead.caller_number);
+
+  /*
+   * The `sr-only` "Ring" prefix belongs to a link that rings. Rendered as a
+   * span it would announce "Ring 087 000 0123" to a screen reader user on a
+   * page where nothing rings, so the element and its label change together.
+   */
+  const Tag = interactive ? "a" : "span";
 
   /*
    * "New" on a list where almost everything is new is a pill that costs a line
@@ -31,12 +59,16 @@ export default function LeadCard({ lead }: { lead: Lead }) {
     <div className="group relative rounded-2xl border border-white/10 bg-white/[0.02] p-5 transition focus-within:border-white/30 hover:border-white/25">
       <div className="flex items-start justify-between gap-3">
         <h3 className="min-w-0 text-[17px] font-medium leading-6">
-          <Link
-            href={`/dashboard/${lead.id}`}
-            className="outline-none after:absolute after:inset-0 after:rounded-2xl focus-visible:after:ring-2 focus-visible:after:ring-white/40"
-          >
-            {lead.job_type ?? "Enquiry"}
-          </Link>
+          {interactive ? (
+            <Link
+              href={`/dashboard/${lead.id}`}
+              className="outline-none after:absolute after:inset-0 after:rounded-2xl focus-visible:after:ring-2 focus-visible:after:ring-white/40"
+            >
+              {lead.job_type ?? "Enquiry"}
+            </Link>
+          ) : (
+            (lead.job_type ?? "Enquiry")
+          )}
         </h3>
         <span className="flex-none pt-0.5 text-xs text-zinc-500">
           {formatLeadTime(lead.created_at)}
@@ -65,8 +97,13 @@ export default function LeadCard({ lead }: { lead: Lead }) {
           Above the card's own overlay, so a tap here rings rather than opens.
           min-h-11 because this is aimed at a thumb, often in a van.
         */}
-        <a
-          href={`tel:${lead.caller_number}`}
+        {/*
+          An anchor only when it can ring. On the marketing site this renders as
+          a span with the same shape, so the number is still shown as the
+          tappable thing it is in the product, without being one.
+        */}
+        <Tag
+          {...(interactive ? { href: `tel:${lead.caller_number}` } : {})}
           className="relative z-10 inline-flex min-h-11 items-center gap-2 rounded-xl bg-white/10 px-4 text-sm font-medium text-white transition hover:bg-white/20"
         >
           <svg
@@ -80,9 +117,9 @@ export default function LeadCard({ lead }: { lead: Lead }) {
           >
             <path d="M5.5 6.5a16 16 0 0 0 12 12l2-2.5 3.5 1v3a1.5 1.5 0 0 1-1.7 1.5A19 19 0 0 1 3.5 2.7 1.5 1.5 0 0 1 5 1h3l1 3.5z" />
           </svg>
-          <span className="sr-only">Ring </span>
+          {interactive && <span className="sr-only">Ring </span>}
           {number}
-        </a>
+        </Tag>
 
         {showStatus && (
           <span

@@ -1,3 +1,9 @@
+import { EXAMPLE_CAPTURED } from "@/lib/demo-example";
+import {
+  DEMO_CALLER_E164,
+  DEMO_CALLER_E164_ALT,
+  DEMO_CALLER_E164_THIRD,
+} from "@/lib/demo-numbers";
 import type { Appointment, Lead } from "@/types/database";
 
 /**
@@ -70,20 +76,44 @@ export function previewLeads(now: Date = new Date()): Lead[] {
       ...base,
       id: "preview-1",
       code: "K4x9M2p7",
-      caller_number: "+353871234567",
+      caller_number: DEMO_CALLER_E164,
       caller_name: "Mary Cullen",
       job_type: "Burst pipe under the sink",
       location: "Raheny",
-      preferred_time: "Thursday morning",
+      // Urgent and wanting it today, so the two things a list has to surface
+      // at a glance are both visible on the first card.
+      preferred_time: "Today if you can",
       urgency: "high",
       status: "new",
       created_at: minutesAgo(6, now),
     },
     {
+      /*
+       * The call the rest of the site is about.
+       *
+       * Its details come from EXAMPLE_CAPTURED — the same fixture that drives
+       * the demo transcript and both SMS previews — so the lead in the list,
+       * the record opened beside it, the text the tradesperson gets and the
+       * text the customer gets are all one call rather than four unrelated
+       * inventions that happen to share a page.
+       */
       ...base,
       id: "preview-2",
       code: "R8m3Qz1v",
-      caller_number: "+353861112222",
+      caller_number: DEMO_CALLER_E164_ALT,
+      caller_name: EXAMPLE_CAPTURED.contact_name,
+      job_type: EXAMPLE_CAPTURED.job_type,
+      location: EXAMPLE_CAPTURED.location,
+      preferred_time: EXAMPLE_CAPTURED.preferred_time,
+      urgency: "normal",
+      status: "new",
+      created_at: minutesAgo(41, now),
+    },
+    {
+      ...base,
+      id: "preview-3",
+      code: "T2k7Wn4b",
+      caller_number: DEMO_CALLER_E164_THIRD,
       caller_name: "Declan Byrne",
       job_type: "Quote for a bathroom refit",
       location: "Clontarf",
@@ -94,15 +124,15 @@ export function previewLeads(now: Date = new Date()): Lead[] {
     },
     {
       ...base,
-      id: "preview-3",
-      code: "T2k7Wn4b",
-      caller_number: "+353851119999",
+      id: "preview-4",
+      code: "W6h2Vd9s",
+      caller_number: DEMO_CALLER_E164,
       // No name: the caller rang off before giving one, and the product keeps
       // the job anyway. Showing that is more convincing than hiding it.
       caller_name: null,
       job_type: "Immersion not heating",
       location: "Killester",
-      preferred_time: "Today if you can",
+      preferred_time: "Thursday morning",
       urgency: "normal",
       status: "new",
       created_at: minutesAgo(60 * 3, now),
@@ -140,13 +170,19 @@ export function previewAppointments(now: Date = new Date()): Appointment[] {
    * that is plausibly somebody's, rather than either empty or solid. Thursday
    * carries three so the full-day state is visible, which is the one thing a
    * week view shows that a list cannot.
+   *
+   * Plumbing, because the business is a plumber. These were an electrician's
+   * week — down lamps, sockets, a rewire, a fuse board — sitting in the diary
+   * of O'Brien Plumbing, whose demo call is about moving a sink. Nobody would
+   * have filed a bug for it, and anybody reading the page properly would have
+   * quietly concluded the screenshots were made up.
    */
   return [
-    at(0, "morning", "Down lamps"),
-    at(2, "afternoon", "Sockets"),
-    at(3, "morning", "Rewire kitchen"),
+    at(0, "morning", "Bathroom refit"),
+    at(2, "afternoon", "Radiator swap"),
+    at(3, "morning", "New boiler"),
     at(3, "afternoon", "Immersion"),
-    at(3, "anytime", "Fuse board"),
-    at(4, "morning", "Bathroom quote"),
+    at(3, "anytime", "Leaking shower"),
+    at(4, "morning", "Kitchen tap"),
   ];
 }

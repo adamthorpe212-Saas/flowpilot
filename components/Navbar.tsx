@@ -16,6 +16,12 @@ const LINKS = [
   { href: "/how-it-works", label: "How it works" },
   { href: "/pricing", label: "Pricing" },
   { href: "/faq", label: "FAQ" },
+  /*
+   * A way to reach a person, in the navigation rather than only in the footer.
+   * A tradesperson deciding on EUR159 a month wants to ask somebody first, and
+   * a grey "Contact" under the privacy policy is not an answer to that.
+   */
+  { href: "/contact", label: "Talk to us" },
 ];
 
 /**
@@ -56,7 +62,18 @@ export default function Navbar() {
 
   return (
     <>
-      <header className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-black/70 backdrop-blur-xl">
+      {/*
+        Padded for the notch. `viewportFit: cover` makes an installed app fill
+        the screen, and the cost is that a fixed header starts behind the clock
+        and the battery. Resolves to zero in a browser tab, so it changes
+        nothing there — but somebody who installs FlowPilot and then taps
+        through to a marketing page would otherwise find this header half
+        hidden.
+      */}
+      <header
+        className="fixed inset-x-0 top-0 z-50 border-b border-white/10 bg-black/70 backdrop-blur-xl"
+        style={{ paddingTop: "env(safe-area-inset-top)" }}
+      >
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 sm:h-20 sm:px-6">
         <Link href="/" className="py-2">
           <Logo size="large" />
@@ -146,7 +163,11 @@ export default function Navbar() {
       {open && (
         <div
           id="mobile-nav"
-          className="fixed inset-x-0 top-16 z-40 flex h-[calc(100dvh-4rem)] flex-col overflow-y-auto overscroll-contain bg-black md:hidden"
+          className="fixed inset-x-0 z-40 flex flex-col overflow-y-auto overscroll-contain bg-black md:hidden"
+          style={{
+            top: "calc(4rem + env(safe-area-inset-top))",
+            height: "calc(100dvh - 4rem - env(safe-area-inset-top))",
+          }}
         >
           <nav
             aria-label="Primary"

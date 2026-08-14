@@ -34,7 +34,7 @@ export default function Footer() {
             Terms
           </Link>
           <a
-            href={`mailto:${LEGAL.email}`}
+            href="/contact"
             className="transition hover:text-white"
           >
             Contact

@@ -1,9 +1,7 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import type { ReactNode } from "react";
-import { signOut } from "@/app/(auth)/actions";
+import AppNav from "@/components/AppNav";
 import InstallApp from "@/components/InstallApp";
-import Logo from "@/components/Logo";
 import { getCurrentBusiness } from "@/lib/auth";
 
 export default async function AppLayout({ children }: { children: ReactNode }) {
@@ -16,43 +14,7 @@ export default async function AppLayout({ children }: { children: ReactNode }) {
 
   return (
     <div className="flex min-h-full flex-col bg-black text-white">
-      <header className="border-b border-white/10">
-        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-5 sm:px-6">
-          <div className="flex items-center gap-6">
-            <Link href="/dashboard">
-              <Logo />
-            </Link>
-            <nav aria-label="Application" className="flex items-center gap-5 text-sm">
-              <Link href="/dashboard" className="text-zinc-400 transition hover:text-white">
-                Jobs
-              </Link>
-              <Link href="/calendar" className="text-zinc-400 transition hover:text-white">
-                Calendar
-              </Link>
-              <Link href="/settings" className="text-zinc-400 transition hover:text-white">
-                Settings
-              </Link>
-              <Link href="/billing" className="text-zinc-400 transition hover:text-white">
-                Billing
-              </Link>
-            </nav>
-          </div>
-
-          <div className="flex items-center gap-4">
-            <span className="hidden max-w-[16ch] truncate text-sm text-zinc-400 sm:block">
-              {business.name}
-            </span>
-            <form action={signOut}>
-              <button
-                type="submit"
-                className="text-sm text-zinc-400 transition hover:text-white"
-              >
-                Sign out
-              </button>
-            </form>
-          </div>
-        </div>
-      </header>
+      <AppNav businessName={business.name} />
 
       {/*
         Padded for the notch and the home indicator, which only exist once this

@@ -20,6 +20,7 @@ const PAGES: { path: string; priority: number }[] = [
    * page that ranks for something else entirely.
    */
   { path: "/faq", priority: 0.6 },
+  { path: "/contact", priority: 0.6 },
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

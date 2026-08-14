@@ -41,6 +41,22 @@ const MAX_HINTS = 200;
  * than for being large: "Cork" survives most recognisers, "Dun Laoghaire" does
  * not.
  */
+/**
+ * Dublin postal districts, in the form a caller says them.
+ *
+ * "Dublin 11" and "D11" are the same place and only one of them is speech.
+ * These are structured rather than proper nouns, so unlike padding the list
+ * with more town names they cannot pull a real place name towards a wrong one —
+ * there is nothing else in Irish speech that sounds like "Dublin 15".
+ *
+ * Generated rather than typed: twenty-five hand-written strings is twenty-five
+ * chances to skip one, and the one skipped is the one somebody lives in.
+ */
+const DUBLIN_DISTRICTS = [
+  ...Array.from({ length: 24 }, (_, i) => `Dublin ${i + 1}`),
+  "Dublin 6W",
+];
+
 const IRISH_PLACES = [
   // Dublin areas, the ones that break recognisers.
   "Raheny", "Clontarf", "Donnybrook", "Finglas", "Rathmines", "Ranelagh",
@@ -51,6 +67,17 @@ const IRISH_PLACES = [
   "Dundrum", "Clondalkin", "Lucan", "Palmerstown", "Castleknock", "Coolock",
   "Artane", "Marino", "Fairview", "Santry", "Ballymun", "Beaumont", "Killester",
   "Balbriggan", "Skerries", "Rush", "Lusk", "Donaghmede", "Kilbarrack",
+  /*
+   * The Dublin 15 belt, which was missing entirely.
+   *
+   * A real call asked "what area?" and recorded "Tyler C11 42" — Tyrrelstown,
+   * plus a routing key, reduced to a first name and two numbers. These are some
+   * of the most densely populated addresses in the country and none of them
+   * were on this list.
+   */
+  "Tyrrelstown", "Ongar", "Clonsilla", "Mulhuddart", "Corduff", "Hartstown",
+  "Huntstown", "Blakestown", "Carpenterstown", "Littlepace", "Damastown",
+  "Ashtown", "Navan Road", "Finglas West", "Ballycoolin",
   // Counties and cities.
   "Dublin", "Cork", "Galway", "Limerick", "Waterford", "Kilkenny", "Wexford",
   "Wicklow", "Meath", "Kildare", "Louth", "Drogheda", "Dundalk", "Navan",
@@ -106,6 +133,7 @@ export function speechHints(context: ReceptionistContext): string {
   add(context.businessName);
 
   IRISH_PLACES.forEach(add);
+  DUBLIN_DISTRICTS.forEach(add);
   TRADE_WORDS.forEach(add);
 
   return hints.slice(0, MAX_HINTS).join(",");

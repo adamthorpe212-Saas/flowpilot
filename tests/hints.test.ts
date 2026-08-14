@@ -110,3 +110,49 @@ describe("gatherAttributes", () => {
     expect(attributes).not.toMatch(/hints="[^"]*"[^ ]/);
   });
 });
+
+describe("Irish address coverage", () => {
+  /*
+   * A real call recorded "Tyler C11 42" when the caller said a Dublin 15
+   * address. The business had no service area set, so the only thing the
+   * recogniser had was this fallback list — and the entire D15 belt, some of
+   * the most densely populated addresses in the country, was missing from it.
+   */
+  const anyBusiness = {
+    businessName: "K.S Electrics",
+    serviceArea: [],
+    services: [],
+  } as never;
+
+  it("expects the Dublin 15 addresses a caller actually gives", () => {
+    const hints = speechHints(anyBusiness).toLowerCase();
+    for (const place of ["tyrrelstown", "ongar", "clonsilla", "mulhuddart"]) {
+      expect(hints, `${place} missing from hints`).toContain(place);
+    }
+  });
+
+  it("expects every Dublin postal district, spoken the way people say it", () => {
+    // "Dublin 11", not "D11" — only one of those is speech.
+    const hints = speechHints(anyBusiness);
+    for (const n of [1, 6, 11, 15, 24]) {
+      expect(hints).toContain(`Dublin ${n}`);
+    }
+    expect(hints).toContain("Dublin 6W");
+  });
+
+  it("still puts the business's own patch ahead of the generic list", () => {
+    /*
+     * The cap truncates, so anything added to the fallback must not be able to
+     * push a business's own areas out. Their words are the ones that work.
+     */
+    const withArea = {
+      businessName: "K.S Electrics",
+      serviceArea: ["Tyrrelstown", "Blanchardstown"],
+      services: [],
+    } as never;
+
+    const words = speechHints(withArea).split(",");
+    expect(words[0]).toBe("Tyrrelstown");
+    expect(words[1]).toBe("Blanchardstown");
+  });
+});

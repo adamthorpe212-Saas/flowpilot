@@ -1,11 +1,13 @@
 import Link from "next/link";
 import CustomerJourney from "@/components/CustomerJourney";
 import StickyCta from "@/components/StickyCta";
-import DiaryPreview from "@/components/DiaryPreview";
+import WeekStrip, { weekFrom } from "@/components/WeekStrip";
 import Faq from "@/components/Faq";
 import LeadRecord from "@/components/LeadRecord";
 import { HOME_FAQ_IDS, faqItems } from "@/lib/faq";
+import { previewAppointments } from "@/lib/app-preview";
 import { formatPrice, soldPlan, weeklyPrice } from "@/lib/plans";
+import { isoDateIn, startOfDayIn } from "@/lib/today";
 
 /**
  * The homepage sells. It does not explain.
@@ -46,6 +48,11 @@ const NEVERS = [
 
 export default function Home() {
   const plan = soldPlan();
+
+  // Ireland's day, not the server's — Vercel runs UTC.
+  const now = startOfDayIn();
+  const week = weekFrom(previewAppointments(now), now);
+  const today = isoDateIn();
 
   return (
     <>
@@ -187,7 +194,7 @@ export default function Home() {
       <StickyCta price={formatPrice(plan)} allowance={plan.callAllowance} />
 
       {/* 2 — The whole thing, once, in four steps. */}
-      <section className="border-t border-white/10 px-5 py-20 sm:px-6 sm:py-24">
+      <section className="border-t border-white/10 px-5 py-14 sm:px-6 sm:py-24">
         <div className="mx-auto max-w-5xl">
           <div className="max-w-2xl">
             {/*
@@ -245,8 +252,23 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 3 — Where the work lives. */}
-      <section className="border-t border-white/10 px-5 py-20 sm:px-6 sm:py-28">
+      {/*
+        3 — The job book and the diary, in one section.
+
+        These were two, and together they came to 2,221px on a phone — 2.7
+        screens making one point twice. "Every lead in one place" and "your
+        calls and calendar working together" are the same argument told from
+        either end, and a visitor from an ad does not stay for the second
+        telling.
+
+        One heading, then the two screens that prove it: a job as it arrives,
+        and the week it lands in. The panels that used to sit under the week —
+        the customer's text and the line the next caller hears — moved to the
+        tour on /how-it-works, where somebody has already chosen to look
+        properly. On a landing page they were detail in front of somebody still
+        deciding whether to read on.
+      */}
+      <section className="border-t border-white/10 px-5 py-14 sm:px-6 sm:py-28">
         <div className="mx-auto max-w-6xl">
           <div className="max-w-2xl">
             <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">
@@ -256,16 +278,16 @@ export default function Home() {
               Every lead. Every job. One place.
             </h2>
             <p className="mt-5 text-[16px] leading-7 text-zinc-400">
-              See who called, what they need, where they are and when they want
-              it. Ring them back, move it along, and book the work — without
-              relying on scraps of paper or voicemail.
+              See who called, what they need and when they want it. Ring them
+              back, or put the work straight in your diary — alongside the
+              referrals and repeat customers that never came through FlowPilot
+              at all.
             </p>
           </div>
 
           {/*
-            No phone and no transcript on this page. The homepage argues; the
-            app is walked through on /how-it-works, where somebody who wants
-            convincing can click around it properly.
+            No phone and no transcript here. The homepage argues; the app is
+            walked through on /how-it-works.
 
             The transcript in particular was the tallest object on the landing
             page — nine turns of a plumber's phone call, in front of somebody
@@ -274,6 +296,10 @@ export default function Home() {
           */}
           <div className="mt-12">
             <LeadRecord transcript={false} />
+          </div>
+
+          <div className="mt-4">
+            <WeekStrip days={week} today={today} />
           </div>
 
           <p className="mt-8 text-sm text-zinc-400">
@@ -288,32 +314,8 @@ export default function Home() {
         </div>
       </section>
 
-      {/* 4 — And the diary it feeds. */}
-      <section className="border-t border-white/10 px-5 py-20 sm:px-6 sm:py-28">
-        <div className="mx-auto max-w-5xl">
-          <div className="max-w-2xl">
-            <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">
-              Your calendar
-            </p>
-            <h2 className="mt-3 text-balance text-[2rem] font-semibold leading-[1.08] tracking-[-0.03em] sm:text-4xl">
-              Your calls and calendar, working together.
-            </h2>
-            <p className="mt-5 text-[16px] leading-7 text-zinc-400">
-              Book a job straight from the call, or add the ones that never came
-              through FlowPilot — the referral, the WhatsApp, the customer you
-              have had for ten years. Your receptionist can see which days are
-              heavy. It never arranges anything itself.
-            </p>
-          </div>
-
-          <div className="mt-12">
-            <DiaryPreview />
-          </div>
-        </div>
-      </section>
-
       {/* 5 — What it costs. */}
-      <section className="border-t border-white/10 px-5 py-20 sm:px-6 sm:py-28">
+      <section className="border-t border-white/10 px-5 py-14 sm:px-6 sm:py-28">
         <div className="mx-auto max-w-lg text-center">
           <h2 className="text-[2rem] font-semibold tracking-[-0.03em] sm:text-5xl">
             One saved job could pay for the month.
@@ -389,7 +391,7 @@ export default function Home() {
       {/* 6 — The objections, then the ask. */}
       <section
         id="faq"
-        className="scroll-mt-20 border-t border-white/10 px-5 py-20 sm:px-6 sm:py-24"
+        className="scroll-mt-20 border-t border-white/10 px-5 py-14 sm:px-6 sm:py-24"
       >
         <div className="mx-auto max-w-2xl">
           <h2 className="text-[2rem] font-semibold tracking-[-0.03em] sm:text-4xl">

@@ -98,9 +98,20 @@ export const PLANS: PlanDefinition[] = [
      * and the column that implied otherwise was dropped for the same reason.
      * A pricing page is the worst possible place to overstate.
      */
+    /*
+     * Five, not seven.
+     *
+     * "A 24/7 receptionist" and "keeps your existing number" were both cut
+     * because the homepage hero already states them as reassurances, three
+     * screens above — a feature list that repeats what somebody read on the way
+     * down is length without information, and on a phone length is the tax the
+     * whole page pays.
+     *
+     * What is left is what they cannot get anywhere else: the details captured,
+     * how fast it reaches them, that their customer is answered too, that they
+     * control the words, and that the conversation is kept.
+     */
     features: [
-      "A 24/7 receptionist on your own Irish number",
-      "Keeps your existing number — nothing on your van changes",
       // Was "how urgent it is". The date is the field a planned job turns on,
       // and this list is where a customer decides what they are buying.
       "Every caller's name, job, address and when they want it done",

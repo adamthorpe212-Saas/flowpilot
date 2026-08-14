@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { siteUrl } from "@/lib/env";
@@ -18,7 +18,33 @@ const geistMono = Geist_Mono({
  * job over. It does not book — that's Phase 4 in docs/ROADMAP.md, and claiming
  * it here would promise a calendar integration the product doesn't have.
  */
+/*
+ * Standalone-app metadata, so an installed FlowPilot behaves like an app
+ * rather than a bookmark.
+ *
+ * `themeColor` paints the status bar to match the UI — without it iOS leaves a
+ * white strip above a black app, which is the single most obvious tell that
+ * something is a website in a costume.
+ */
+export const viewport: Viewport = {
+  themeColor: "#09090b",
+  // Content reaches under the notch and the home indicator; the app layout
+  // pads for them with env(safe-area-inset-*).
+  viewportFit: "cover",
+};
+
 export const metadata: Metadata = {
+  /*
+   * iOS reads none of the web app manifest for its home-screen behaviour — it
+   * has its own meta tags and ignores `display: standalone` entirely. Both have
+   * to be declared or an iPhone install opens in Safari with the address bar
+   * still there, which is the whole thing the customer was promised.
+   */
+  appleWebApp: {
+    capable: true,
+    title: "FlowPilot",
+    statusBarStyle: "black-translucent",
+  },
   /*
    * Without this, Next cannot turn the Open Graph image into the absolute URL
    * that social platforms require, and the card silently renders blank — the

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import CustomerJourney from "@/components/CustomerJourney";
+import StickyCta from "@/components/StickyCta";
 import DiaryPreview from "@/components/DiaryPreview";
 import Faq from "@/components/Faq";
 import LeadRecord from "@/components/LeadRecord";
@@ -96,13 +97,14 @@ export default function Home() {
           </h1>
 
           {/*
-            Both halves of the product in one sentence. The old line stopped at
-            "has it on your phone", which is why the whole site read as a
-            texting service.
+            Both halves, and the second one named in words a tradesperson uses.
+            "One simple app" is what a software person calls it; a job book and
+            a diary are what the man buying it already keeps, badly, in a van.
           */}
           <p className="mx-auto mt-7 max-w-xl text-pretty text-[16px] leading-7 text-zinc-300 sm:text-lg sm:leading-8">
-            FlowPilot answers the calls you miss, captures the job, and puts
-            every lead, conversation and booking into one simple app.
+            An AI receptionist that answers the calls you miss — and a job book
+            and diary that keep every lead, conversation and booking in one
+            place.
           </p>
 
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -139,7 +141,24 @@ export default function Home() {
             </Link>
           </div>
 
-          <ul className="mx-auto mt-9 flex max-w-xl flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[13px] text-zinc-400">
+          {/*
+            The price, in the first screen.
+
+            "159" did not appear until 69% of the way through the page text,
+            which is four and a half screens on a phone. "How much" is the first
+            question a tradesperson asks, and paid traffic will not scroll to
+            find it — they assume it is expensive and leave. Stating it early
+            also filters: somebody who reads €159 and keeps going is worth far
+            more than somebody who reaches the pricing card and bounces.
+          */}
+          <p className="mt-6 text-[14px] text-zinc-400">
+            <span className="font-semibold text-white">
+              {formatPrice(plan)} a month
+            </span>{" "}
+            · one plan · cancel any time
+          </p>
+
+          <ul className="mx-auto mt-8 flex max-w-xl flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[13px] text-zinc-400">
             {REASSURANCES.map((item) => (
               <li key={item} className="flex items-center gap-2">
                 <svg
@@ -160,6 +179,12 @@ export default function Home() {
           </ul>
         </div>
       </section>
+
+      {/*
+        Follows them down the page. The hero button is the last chance to buy
+        for four thousand pixels otherwise — see the component for the numbers.
+      */}
+      <StickyCta price={formatPrice(plan)} allowance={plan.callAllowance} />
 
       {/* 2 — The whole thing, once, in four steps. */}
       <section className="border-t border-white/10 px-5 py-20 sm:px-6 sm:py-24">

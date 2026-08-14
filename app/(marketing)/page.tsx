@@ -145,7 +145,14 @@ export default function Home() {
                 href="/how-it-works#demo"
                 className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-white/20 px-8 text-[15px] font-medium text-white transition hover:border-white/40 hover:bg-white/5 sm:w-auto"
               >
-                Hear it answer a call
+                {/*
+                  Not "hear it answer a call". This links to a typed demo with
+                  no audio in it at all, and the page it lands on opens "Say
+                  something a customer would say" — so the button promised a
+                  sound the visitor then went looking for and could not find.
+                  The first thing the site does is set an expectation it breaks.
+                */}
+                See how it replies
                 <svg
                   aria-hidden="true"
                   viewBox="0 0 20 20"

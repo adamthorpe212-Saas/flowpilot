@@ -28,10 +28,20 @@ function isoDate(date: Date): string {
   return `${date.getFullYear()}-${month}-${day}`;
 }
 
-function daysFromNow(days: number, now: Date): string {
-  const date = new Date(now);
-  date.setDate(date.getDate() + days);
-  return isoDate(date);
+/**
+ * A date in the current week, counted from its Monday.
+ *
+ * Anchored to the week rather than to "days from now", which was the bug this
+ * replaced: fixtures spread across a fortnight left the week strip showing one
+ * job on a Saturday, and the marketing copy underneath announced the tradesman
+ * was "fairly booked Sat". A demo week has to look like a working week whatever
+ * day somebody happens to load the page.
+ */
+function dayOfThisWeek(weekday: number, now: Date): string {
+  const monday = new Date(now);
+  // getDay() is 0=Sunday, so shift before subtracting to land on Monday.
+  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7) + weekday);
+  return isoDate(monday);
 }
 
 /** Minutes ago, so the newest job reads as "just now" rather than a date. */
@@ -101,19 +111,19 @@ export function previewLeads(now: Date = new Date()): Lead[] {
 }
 
 /**
- * A fortnight with a full Thursday in it.
+ * One working week, with a full Thursday in it.
  *
- * Built so the amber "full day" state is visible — that dot colour is the whole
- * point of a month view, and a calendar with one job on it demonstrates
- * nothing.
+ * Built so the amber "full day" state is visible — that is the one thing a week
+ * view shows which a list cannot, and a diary with a single job on it
+ * demonstrates nothing.
  */
 export function previewAppointments(now: Date = new Date()): Appointment[] {
-  const at = (days: number, slot: Appointment["slot"], title: string) =>
+  const at = (weekday: number, slot: Appointment["slot"], title: string) =>
     ({
-      id: `preview-apt-${days}-${slot}`,
+      id: `preview-apt-${weekday}-${slot}`,
       business_id: BUSINESS_ID,
       lead_id: null,
-      scheduled_for: daysFromNow(days, now),
+      scheduled_for: dayOfThisWeek(weekday, now),
       slot,
       title,
       customer_name: null,
@@ -125,12 +135,18 @@ export function previewAppointments(now: Date = new Date()): Appointment[] {
       updated_at: now.toISOString(),
     }) as Appointment;
 
+  /*
+   * Monday is 0. A quiet start, a heavy Thursday, and Tuesday free — a week
+   * that is plausibly somebody's, rather than either empty or solid. Thursday
+   * carries three so the full-day state is visible, which is the one thing a
+   * week view shows that a list cannot.
+   */
   return [
-    at(1, "morning", "Rewire kitchen"),
-    at(4, "morning", "Immersion"),
-    at(4, "afternoon", "Fuse board"),
-    at(4, "anytime", "Sockets"),
-    at(6, "afternoon", "Bathroom quote"),
-    at(11, "morning", "Outside lights"),
+    at(0, "morning", "Down lamps"),
+    at(2, "afternoon", "Sockets"),
+    at(3, "morning", "Rewire kitchen"),
+    at(3, "afternoon", "Immersion"),
+    at(3, "anytime", "Fuse board"),
+    at(4, "morning", "Bathroom quote"),
   ];
 }

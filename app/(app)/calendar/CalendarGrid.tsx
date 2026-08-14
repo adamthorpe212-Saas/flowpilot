@@ -5,6 +5,7 @@ import { moveAppointment, removeAppointment } from "@/app/(app)/calendar/actions
 import NotifyCustomer from "@/app/(app)/calendar/NotifyCustomer";
 import { formatIrishNumber } from "@/lib/phone";
 import MonthGrid, { FULL_DAY_JOBS } from "@/components/MonthGrid";
+import WeekStrip, { weekFrom } from "@/components/WeekStrip";
 import { isoDate, monthName, shiftMonth } from "@/lib/month-grid";
 import type { Appointment } from "@/types/database";
 
@@ -125,6 +126,16 @@ export default function CalendarGrid({
 
   const selectedJobs = byDay.get(selected) ?? [];
 
+  /*
+   * The week, above the month.
+   *
+   * A month answers "how does the 20th look"; a week answers "what am I doing",
+   * which is the question somebody opens a diary to settle most mornings. The
+   * same component the marketing site uses, so neither can drift from the
+   * other.
+   */
+  const week = useMemo(() => weekFrom(shown, new Date()), [shown]);
+
   return (
     <div>
       <div className="flex items-center justify-between gap-3">
@@ -188,6 +199,10 @@ export default function CalendarGrid({
       )}
 
       <div className="mt-4">
+        <WeekStrip days={week} today={today} />
+      </div>
+
+      <div className="mt-3">
         <MonthGrid
           year={viewing.year}
           month={viewing.month}

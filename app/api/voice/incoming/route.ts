@@ -119,6 +119,23 @@ export async function POST(request: NextRequest) {
   }
 
   /*
+   * The owner has switched it off.
+   *
+   * Rejected rather than answered, and that difference is the whole feature. An
+   * answered call is a billed call, a moment of hold music, and a stranger
+   * hearing a machine speak for a business that deliberately turned the machine
+   * off. Rejecting hands the call straight back to the carrier, which does
+   * whatever it would have done if FlowPilot had never been set up.
+   *
+   * Checked before shouldAnswerCalls, which also returns false here, because
+   * the two need different answers: a lapsed subscription is our problem to
+   * explain, a pause is the owner's decision to have nothing said at all.
+   */
+  if (business.receptionist_paused_at) {
+    return twiml("<Response><Reject reason='busy'/></Response>");
+  }
+
+  /*
    * A lapsed subscription stops the service, but never rudely. This is somebody
    * else's customer on the line who has done nothing wrong — they should hear a
    * normal "leave it with us" rather than anything about billing, which is

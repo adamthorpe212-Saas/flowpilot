@@ -5,6 +5,7 @@ import BusinessForm from "@/app/(app)/onboarding/business/BusinessForm";
 import ServicesForm from "@/app/(app)/onboarding/services/ServicesForm";
 import { titleClass } from "@/components/ui/field-styles";
 import BlockedCallers from "./BlockedCallers";
+import PauseReceptionist from "./PauseReceptionist";
 import OpeningHoursForm from "./OpeningHoursForm";
 import NotificationRules from "./NotificationRules";
 import QuestionsForm from "./QuestionsForm";
@@ -132,6 +133,19 @@ export default async function SettingsPage() {
         Somebody scanning this page is looking for the thing their receptionist
         says out loud, and the details it comes back with.
       */}
+      {/*
+        First on the page, above everything it configures.
+
+        Somebody scrolling to find "how do I turn this off" is usually somebody
+        who wants it off now — on holiday, or having a week where they want
+        their own phone back. Burying that under eight sections of wording
+        settings is how they end up dialling ##002# instead and losing their
+        voicemail with it.
+      */}
+      <div className="mt-6">
+        <PauseReceptionist pausedAt={business.receptionist_paused_at} />
+      </div>
+
       <Section
         title="What your receptionist says"
         blurb="Its opening line, how it should sound, and the things it must never say."

@@ -54,6 +54,7 @@ function seed(overrides: Partial<Business> = {}): Business {
     name: "Thorpe Electrical",
     plan: "pro",
     status: "active",
+    receptionist_paused_at: null,
     subscription_status: "incomplete",
     stripe_customer_id: null,
     stripe_subscription_id: null,

@@ -70,6 +70,7 @@ beforeEach(() => {
     stripe_customer_id: null,
     stripe_subscription_id: null,
     status: "active",
+    receptionist_paused_at: null,
     trial_reminder_stage: null,
     created_at: "2026-07-01T00:00:00Z",
     updated_at: "2026-07-01T00:00:00Z",

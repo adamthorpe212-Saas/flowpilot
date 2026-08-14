@@ -65,8 +65,13 @@ export async function getUsage(business: Business): Promise<Usage> {
  * through checkout, and it answers nothing — a number costs monthly rental from
  * the moment it is bought, and provisioning gates on this same function, so an
  * unpaid account cannot make FlowPilot spend money on its behalf.
+ *
+ * A paused receptionist is the one case here the customer chose. It is checked
+ * first and separately from `suspended` for that reason: suspended is our
+ * decision and they cannot undo it, paused is theirs and they can.
  */
 export function shouldAnswerCalls(business: Business): boolean {
+  if (business.receptionist_paused_at) return false;
   if (business.status === "suspended") return false;
 
   return ["trialing", "active", "past_due"].includes(

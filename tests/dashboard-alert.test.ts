@@ -8,6 +8,7 @@ function business(overrides: Partial<Business> = {}): Business {
     id: "b1",
     name: "Byrne Plumbing",
     status: "active",
+    receptionist_paused_at: null,
     subscription_status: "active",
     phone_number: "+353871234567",
     forwarding_verified_at: "2026-08-01T10:00:00.000Z",

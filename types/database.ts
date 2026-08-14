@@ -68,6 +68,13 @@ export type Business = {
   stripe_customer_id: string | null;
   stripe_subscription_id: string | null;
   status: BusinessStatus;
+  /**
+   * When the owner paused the receptionist, or null while it is answering.
+   *
+   * Distinct from `status: "suspended"`, which is our decision and one they
+   * cannot undo. This one is theirs.
+   */
+  receptionist_paused_at: string | null;
   /** Last trial reminder sent, so the daily job cannot repeat itself. */
   trial_reminder_stage: "ending_soon" | "expired" | null;
   created_at: string;

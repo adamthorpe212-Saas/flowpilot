@@ -27,6 +27,7 @@ function business(overrides: Partial<Business> = {}): Business {
     stripe_customer_id: null,
     stripe_subscription_id: null,
     status: "active",
+    receptionist_paused_at: null,
     trial_reminder_stage: null,
     created_at: "2026-07-01T00:00:00Z",
     updated_at: "2026-07-01T00:00:00Z",
@@ -95,5 +96,76 @@ describe("who the receptionist answers for", () => {
     expect(shouldAnswerCalls(business({ subscription_status: "trialing" }))).toBe(
       true,
     );
+  });
+});
+
+describe("pausing the receptionist", () => {
+  it("stops answering while it is paused", () => {
+    /*
+     * The switch a tradesperson on holiday needs. Without it the only way to
+     * stop FlowPilot answering was ##002# at the carrier, which also wipes the
+     * network voicemail they were told to disable during setup — so "off for a
+     * week" cost them their voicemail and two dial codes to undo.
+     */
+    expect(
+      shouldAnswerCalls(
+        business({ receptionist_paused_at: "2026-08-14T09:00:00.000Z" }),
+      ),
+    ).toBe(false);
+  });
+
+  it("answers again the moment it is switched back on", () => {
+    expect(shouldAnswerCalls(business({ receptionist_paused_at: null }))).toBe(
+      true,
+    );
+  });
+
+  it("beats a healthy subscription", () => {
+    /*
+     * Paused wins over every reason to answer. A paying, fully set-up account
+     * that has been switched off must stay silent — the owner's decision is not
+     * a preference the billing state gets to overrule.
+     */
+    expect(
+      shouldAnswerCalls(
+        business({
+          subscription_status: "active",
+          status: "active",
+          receptionist_paused_at: "2026-08-14T09:00:00.000Z",
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it("does not let un-pausing revive a lapsed account", () => {
+    /*
+     * The other direction, and the one worth guarding. Pausing and un-pausing
+     * must not become a way to switch the product back on without paying for
+     * it — entitlement still comes from the subscription.
+     */
+    expect(
+      shouldAnswerCalls(
+        business({
+          subscription_status: "incomplete",
+          receptionist_paused_at: null,
+        }),
+      ),
+    ).toBe(false);
+  });
+
+  it("keeps a pause separate from a suspension", () => {
+    /*
+     * Two different offs with two different owners: suspended is ours and the
+     * customer cannot undo it, paused is theirs and they can. Collapsing them
+     * into one field would make "why is this not answering" a question with
+     * two answers and no way to tell them apart.
+     */
+    const paused = business({ receptionist_paused_at: "2026-08-14T09:00:00Z" });
+    const suspended = business({ status: "suspended" });
+
+    expect(shouldAnswerCalls(paused)).toBe(false);
+    expect(shouldAnswerCalls(suspended)).toBe(false);
+    expect(paused.status).toBe("active");
+    expect(suspended.receptionist_paused_at).toBeNull();
   });
 });

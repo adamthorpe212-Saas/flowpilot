@@ -1023,3 +1023,316 @@ $$;
 revoke all on function public.create_business_for_current_user(text, text) from public;
 grant execute on function public.create_business_for_current_user(text, text) to authenticated;
 
+-- ======================================================================
+-- 20260812150000_blocked_callers.sql
+-- ======================================================================
+
+-- ---------------------------------------------------------------------------
+-- Callers the receptionist should never answer
+--
+-- Two different people ask for this and they want the same mechanism. The
+-- tradesman whose wife rings and hears "Hello, Byrne Plumbing, sorry we missed
+-- your call" — that is the moment the product feels like it took something
+-- over rather than helped. And the one getting six scam calls a week who does
+-- not want a job record created for any of them.
+--
+-- Worth being precise about what this can do. By the time a call arrives here
+-- it has already been missed: their phone rang, they did not pick up, and the
+-- carrier forwarded it. So blocking cannot mean "put them through" — that has
+-- already failed. It means we do not answer, and the call falls back to
+-- whatever their carrier does with an unanswered forward.
+--
+-- Stored per business rather than globally. One person's spam is another's
+-- supplier, and a shared blocklist would be us making that call for them.
+-- ---------------------------------------------------------------------------
+
+create table public.blocked_caller (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references public.business(id) on delete cascade,
+
+  -- E.164, normalised on the way in. Matching a number typed four different
+  -- ways is the whole job here, so the normalising happens once at write time
+  -- rather than on every inbound call.
+  number text not null,
+
+  -- "Sarah", "that scam crowd". Optional, and only ever shown to the owner —
+  -- it exists so a list of bare numbers is still readable in six months.
+  label text,
+
+  /*
+   * Proof it is working.
+   *
+   * Without this a blocklist is a promise with no evidence: somebody adds a
+   * number and can never tell whether it did anything. A count and a date turn
+   * it into "blocked 3 times, last Tuesday", which is also how they notice
+   * they have blocked the wrong number.
+   */
+  blocked_count integer not null default 0,
+  last_blocked_at timestamptz,
+
+  created_at timestamptz not null default now(),
+
+  -- The same number twice in one list is a no-op with a confusing UI. Adding
+  -- an existing number updates the label instead of creating a duplicate.
+  unique (business_id, number)
+);
+
+create index blocked_caller_business_id_idx
+  on public.blocked_caller(business_id);
+
+/*
+ * The lookup every inbound call makes, before answering.
+ *
+ * Deliberately covering: the incoming route asks "is this exact number blocked
+ * for this business", and this index answers it without touching the table.
+ * It sits in front of the most latency-sensitive path in the product — a
+ * caller is listening to silence while it runs.
+ */
+create index blocked_caller_lookup_idx
+  on public.blocked_caller(business_id, number);
+
+alter table public.blocked_caller enable row level security;
+
+-- Owned entirely by the business, like notification rules. The server reads it
+-- through the admin client during a call, which bypasses RLS by design.
+create policy blocked_caller_all_own on public.blocked_caller
+  for all using (public.is_business_member(business_id))
+  with check (public.is_business_member(business_id));
+
+-- ======================================================================
+-- 20260813120000_appointments.sql
+-- ======================================================================
+
+-- ---------------------------------------------------------------------------
+-- The tradesman's diary
+--
+-- Written and edited by the business, only ever read by the receptionist. That
+-- boundary is the point of the feature, not a limitation of it: an AI that can
+-- write to somebody's calendar can double-book them, and a plumber ringing a
+-- customer to cancel a job a robot agreed to is the failure that ends the
+-- account. There is no code path that lets the receptionist insert here.
+--
+-- Days and parts of days, not clock times. A tradesman says "Thursday morning",
+-- not "Thursday 09:15", and a part-of-day is enough for both things this table
+-- exists to do — telling a customer when to expect him, and telling the
+-- receptionist which days are already heavy. Exact times can be added later if
+-- anybody actually asks; guessing now would build a precision the trade does
+-- not work in.
+--
+-- lead_id is nullable on purpose. Half a tradesman's week never came through a
+-- phone call — a regular customer, a foreman, his brother-in-law — and a diary
+-- that only knows about FlowPilot leads would give the receptionist a
+-- confidently wrong picture of how busy he is.
+-- ---------------------------------------------------------------------------
+
+create table public.appointment (
+  id uuid primary key default gen_random_uuid(),
+  business_id uuid not null references public.business(id) on delete cascade,
+
+  /*
+   * The job this came from, if it came from one.
+   *
+   * `on delete set null` rather than cascade: erasing a lead — which a caller
+   * can request under GDPR — must not silently delete a job out of somebody's
+   * diary. The appointment carries its own copy of the details it needs.
+   */
+  lead_id uuid references public.lead(id) on delete set null,
+
+  scheduled_for date not null,
+  slot text not null default 'anytime'
+    check (slot in ('morning', 'afternoon', 'anytime')),
+
+  /** What the job is, in his words. "Rewire kitchen". */
+  title text not null,
+
+  /*
+   * Copied from the lead rather than joined to it, so the diary still reads
+   * correctly after a lead is erased, and so a job added by hand can carry the
+   * same details without inventing a lead to hang them off.
+   */
+  customer_name text,
+  customer_number text,
+  location text,
+  notes text,
+
+  /*
+   * When the customer was told, and never set by the system on its own.
+   *
+   * The confirmation text goes out only when the owner taps send. It is a
+   * message in his name to his customer, and one that fires unexpectedly is
+   * how somebody stops trusting the whole feature.
+   */
+  customer_notified_at timestamptz,
+
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+
+/*
+ * The two reads this table gets, and they are different shapes.
+ *
+ * The calendar page asks for one business's jobs from today forward. The
+ * receptionist asks, mid-call with somebody on the line, which of the next
+ * fortnight's days are already busy. Both are business_id then date, so one
+ * index serves them.
+ */
+create index appointment_business_date_idx
+  on public.appointment(business_id, scheduled_for);
+
+alter table public.appointment enable row level security;
+
+create policy appointment_all_own on public.appointment
+  for all using (public.is_business_member(business_id))
+  with check (public.is_business_member(business_id));
+
+create trigger appointment_set_updated_at
+  before update on public.appointment
+  for each row execute function public.set_updated_at();
+
+-- ======================================================================
+-- 20260813140000_only_create_on_a_plan_we_sell.sql
+-- ======================================================================
+
+-- ---------------------------------------------------------------------------
+-- A new business can only be created on a plan that is actually sold
+--
+-- The validation here already knew not to trust the caller — auth metadata is
+-- user-editable, so the plan arriving is an expression of intent and never
+-- proof of payment. What it got wrong was the list it validated against:
+-- ('starter', 'pro', 'business'), written when all three were on sale.
+--
+-- Starter and Business were withdrawn. The check kept admitting them, so a
+-- crafted signup could still create a business row on a tier the site does not
+-- advertise, at an allowance nobody costed. The application-side fallback had
+-- the matching half of the fault — it defaulted to the literal 'starter' — and
+-- both are fixed together, because either one alone leaves the hole open.
+--
+-- This is the same defect that once billed customers against Starter's 50-call
+-- allowance while they paid for Pro: a withdrawn tier left reachable because
+-- removing it looked riskier than leaving it.
+--
+-- The business.plan CHECK constraint deliberately still permits all three.
+-- Rows created before the tiers were withdrawn carry those values and must
+-- continue to load — getPlan() falls back for exactly that reason. What
+-- narrows is what can be created from now on, not what may exist.
+-- ---------------------------------------------------------------------------
+
+create or replace function public.create_business_for_current_user(
+  business_name text,
+  selected_plan text default 'pro'
+)
+returns uuid
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  current_user_id uuid := (select auth.uid());
+  new_business_id uuid;
+  safe_plan text := coalesce(selected_plan, 'pro');
+begin
+  if current_user_id is null then
+    raise exception 'Not authenticated';
+  end if;
+
+  if business_name is null or length(trim(business_name)) = 0 then
+    raise exception 'Business name is required';
+  end if;
+
+  /*
+   * One plan is sold, so one plan can be created. Anything else — a withdrawn
+   * tier, a typo, a crafted value — becomes the plan on sale rather than being
+   * rejected: a signup must not fail over a field that only ever records
+   * intent, and entitlement comes from the Stripe webhook regardless.
+   *
+   * When a second plan goes on sale this list is what has to change, and it
+   * should be a deliberate edit rather than a value that was already permitted.
+   */
+  if safe_plan not in ('pro') then
+    safe_plan := 'pro';
+  end if;
+
+  -- One business per user until team accounts exist (roadmap Phase 7). Returning
+  -- the existing id rather than raising makes this safe to call on every page
+  -- load, which is what lets onboarding work whether or not email confirmation
+  -- is enabled on the project.
+  select business_id into new_business_id
+  from public.business_member
+  where user_id = current_user_id
+  limit 1;
+
+  if new_business_id is not null then
+    return new_business_id;
+  end if;
+
+  insert into public.business (name, plan)
+  values (trim(business_name), safe_plan)
+  returning id into new_business_id;
+
+  insert into public.business_member (business_id, user_id, role)
+  values (new_business_id, current_user_id, 'owner');
+
+  return new_business_id;
+end;
+$$;
+
+revoke all on function public.create_business_for_current_user(text, text) from public;
+grant execute on function public.create_business_for_current_user(text, text) to authenticated;
+
+-- ======================================================================
+-- 20260814100000_pause_the_receptionist.sql
+-- ======================================================================
+
+-- ---------------------------------------------------------------------------
+-- Turning the receptionist off for a while
+--
+-- A tradesperson on holiday, or having a week where he wants his own phone
+-- back, needs a switch. Without one the only way to stop FlowPilot answering is
+-- to dial ##002# and clear forwarding at the carrier — which also wipes the
+-- network voicemail we told him to turn off during setup, and leaves him
+-- re-dialling two codes to come back. That is not a setting, it is a
+-- workaround.
+--
+-- A column rather than a new business.status value. `status` distinguishes
+-- onboarding, active and suspended, and suspended means WE stopped the account
+-- — a billing or abuse decision that the customer cannot undo. Overloading it
+-- with a state the customer controls would make "why is this account not
+-- answering" a question with two very different answers and one field.
+--
+-- Nullable timestamp rather than a boolean, because when it was paused is worth
+-- knowing. A receptionist quietly off for three weeks is the most likely
+-- explanation for "I'm not getting any jobs", and a date answers that
+-- immediately where a boolean starts a conversation.
+-- ---------------------------------------------------------------------------
+
+alter table public.business
+  add column receptionist_paused_at timestamptz;
+
+comment on column public.business.receptionist_paused_at is
+  'When the owner paused the receptionist. Null means it is answering. Distinct from status = suspended, which is our decision rather than theirs.';
+
+-- ======================================================================
+-- 20260814120000_let_the_owner_pause.sql
+-- ======================================================================
+
+-- ---------------------------------------------------------------------------
+-- The owner may actually write the pause switch
+--
+-- 20260731120500 revoked UPDATE on public.business from authenticated and
+-- granted it back one column at a time, so that a customer could not hand
+-- themselves a free plan by writing `plan` or `subscription_status` directly.
+-- That is the right shape, and it has a cost: every column added afterwards is
+-- read-only to the owner until somebody remembers to grant it.
+--
+-- receptionist_paused_at was added in 20260814100000 and never granted. The
+-- switch in Settings therefore failed for every customer with "permission
+-- denied for column receptionist_paused_at" — the one control that answers
+-- "is my phone being covered right now", rejected by the database.
+--
+-- Granted narrowly, to this column alone. It is the customer's decision by
+-- definition: it is theirs to make, and it is distinct from status =
+-- suspended, which is ours and stays service-role only.
+-- ---------------------------------------------------------------------------
+
+grant update (receptionist_paused_at) on public.business to authenticated;
+

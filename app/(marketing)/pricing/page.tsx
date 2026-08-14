@@ -102,6 +102,20 @@ export default function PricingPage() {
           <div className="mt-8">
             <Faq items={faqItems(PRICING_FAQ_IDS)} />
           </div>
+
+          {/*
+            The four asked with a card in hand stay here. Everything else is a
+            click away rather than repeated underneath a price.
+          */}
+          <p className="mt-8 text-sm text-zinc-400">
+            <Link
+              href="/faq"
+              className="text-white underline underline-offset-4 transition hover:text-zinc-300"
+            >
+              Read every question
+            </Link>{" "}
+            — or ask us one of your own.
+          </p>
         </div>
       </section>
     </>

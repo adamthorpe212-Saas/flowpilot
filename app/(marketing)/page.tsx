@@ -1,5 +1,4 @@
 import Link from "next/link";
-import AskFlowPilot from "@/components/AskFlowPilot";
 import CustomerJourney from "@/components/CustomerJourney";
 import DiaryPreview from "@/components/DiaryPreview";
 import Faq from "@/components/Faq";
@@ -338,10 +337,21 @@ export default function Home() {
             <Faq items={faqItems(HOME_FAQ_IDS)} />
           </div>
 
-          {/* The one we didn't think of. */}
-          <div className="mt-10">
-            <AskFlowPilot />
-          </div>
+          {/*
+            The five that block a sale stay here, under the price, where the
+            objections actually fire. The rest — and the chat for the one we
+            did not think of — moved to /faq, which is a page somebody can
+            share, bookmark and find from Google.
+          */}
+          <p className="mt-8 text-sm text-zinc-400">
+            <Link
+              href="/faq"
+              className="text-white underline underline-offset-4 transition hover:text-zinc-300"
+            >
+              Read every question
+            </Link>{" "}
+            — or ask us one of your own.
+          </p>
 
           <div className="mt-20 text-center">
             <h2 className="text-[2rem] font-semibold leading-[1.08] tracking-[-0.03em] sm:text-4xl">

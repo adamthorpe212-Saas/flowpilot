@@ -13,6 +13,13 @@ const PAGES: { path: string; priority: number }[] = [
   { path: "", priority: 1 },
   { path: "/how-it-works", priority: 0.8 },
   { path: "/pricing", priority: 0.8 },
+  /*
+   * Worth indexing in its own right. "does an AI receptionist record my calls"
+   * and "do I keep my number" are things people type into Google, and the
+   * answers only became findable once they stopped being an anchor on a sales
+   * page that ranks for something else entirely.
+   */
+  { path: "/faq", priority: 0.6 },
 ];
 
 export default function sitemap(): MetadataRoute.Sitemap {

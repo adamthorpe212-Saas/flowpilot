@@ -188,14 +188,14 @@ export default function HowItWorks() {
               Get FlowPilot
             </Link>
             {/*
-              The FAQ is on the homepage, under the price. Repeating all seven
-              answers here was the single longest thing on this page, and every
-              visitor arriving from the hero had just scrolled past them.
+              Repeating all seven answers here was the single longest thing on
+              this page, and every visitor arriving from the hero had just
+              scrolled past them. They live on /faq now.
             */}
             <p className="mt-5 text-sm text-zinc-400">
               Still deciding?{" "}
               <Link
-                href="/#faq"
+                href="/faq"
                 className="text-white underline underline-offset-4 transition hover:text-zinc-300"
               >
                 Read the questions worth asking

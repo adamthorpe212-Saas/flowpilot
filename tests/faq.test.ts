@@ -38,12 +38,17 @@ describe("faqItems", () => {
     /*
      * An answer written and then displayed nowhere is worse than one never
      * written: it reads as covered in review and is invisible to a customer.
-     * Caught the moment a page list is trimmed without checking the rest.
+     *
+     * /faq renders allFaqItems() directly, so this can no longer fail — which
+     * is the point of building that page from the source rather than from a
+     * fourth hand-maintained id list. The assertion stays as the thing that
+     * breaks if somebody later gives /faq a subset of its own.
      */
     const shown = new Set<string>([
       ...HOME_FAQ_IDS,
       ...LEARN_FAQ_IDS,
       ...PRICING_FAQ_IDS,
+      ...allFaqItems().map((item) => item.id),
     ]);
 
     const orphaned = allFaqItems()
@@ -51,6 +56,16 @@ describe("faqItems", () => {
       .map((item) => item.id);
 
     expect(orphaned, "written but on no page").toEqual([]);
+  });
+
+  it("keeps the homepage subset small enough to read under a price", () => {
+    /*
+     * The homepage FAQ sits directly under the cost, at the moment the
+     * objections fire. Its value is that it is short — the full set is one
+     * click away on /faq, and this is the guard against it creeping back to
+     * being the longest thing on the page.
+     */
+    expect(HOME_FAQ_IDS.length).toBeLessThanOrEqual(5);
   });
 });
 

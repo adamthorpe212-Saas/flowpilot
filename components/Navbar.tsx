@@ -4,10 +4,18 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import Logo from "@/components/Logo";
 
+/*
+ * Three destinations, all of them real pages.
+ *
+ * "FAQ" pointed at /#faq — an anchor four thousand pixels down the homepage.
+ * On a phone that reads as a broken link, because the menu closes and the page
+ * jumps somewhere with no heading in view; and it gave the mobile panel a link
+ * that behaved differently from the two above it.
+ */
 const LINKS = [
   { href: "/how-it-works", label: "How it works" },
   { href: "/pricing", label: "Pricing" },
-  { href: "/#faq", label: "FAQ" },
+  { href: "/faq", label: "FAQ" },
 ];
 
 /**

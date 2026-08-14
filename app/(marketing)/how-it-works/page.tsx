@@ -104,34 +104,17 @@ export default function HowItWorks() {
         </div>
       </section>
 
-      {/* 3 — What lands in the app. */}
-      <section className="border-t border-white/10 px-5 py-20 sm:px-6 sm:py-24">
-        <div className="mx-auto max-w-6xl">
-          <div className="mx-auto max-w-2xl text-center">
-            <h2 className="text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
-              What lands with you
-            </h2>
-            <p className="mx-auto mt-5 max-w-lg text-[15px] leading-7 text-zinc-400">
-              A text the moment they hang up, and the whole job waiting in your
-              app — with what was said, so you can check exactly what they
-              asked for.
-            </p>
-          </div>
-
-          <div className="mt-12">
-            <AfterTheCall />
-          </div>
-        </div>
-      </section>
-
       {/*
-        The app itself, walkable.
+        3 — What lands with you, as the app rather than a picture of it.
 
-        This section used to be a stack: the job record, then the week, then a
-        heading explaining that one became the other. Three static panels
-        arguing that the product has screens. Letting somebody click between
-        the screens makes the argument in one move, and the homepage links
-        straight to it — hence the id and the scroll margin for the fixed bar.
+        This was two sections: a pair of 400px phone mockups showing the texts,
+        then the walkable app underneath. Seven hundred pixels arguing "you get
+        a text" sat above the thing that actually answers "what am I buying",
+        and a visitor met the least of the product first. One section now — the
+        app you can click through, with the texts as a footnote under it.
+
+        The homepage links straight here, so the heading needs scroll margin to
+        clear the fixed bar.
       */}
       <section
         id="tour"
@@ -140,12 +123,13 @@ export default function HowItWorks() {
         <div className="mx-auto max-w-5xl">
           <div className="mx-auto max-w-2xl text-center">
             <h2 className="text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
-              Have a look around.
+              What lands with you
             </h2>
             <p className="mx-auto mt-5 max-w-lg text-[15px] leading-7 text-zinc-400">
-              This is the app, with a made-up week in it. Click between the
-              screens — nothing here can be changed, and no real customer&apos;s
-              details are shown.
+              The whole job, waiting in your app — with what was said, so you
+              can check exactly what they asked for. Have a click around: this
+              is the real thing with a made-up week in it, nothing here can be
+              changed, and no real customer&apos;s details are shown.
             </p>
           </div>
 
@@ -153,11 +137,27 @@ export default function HowItWorks() {
             <AppTour />
           </div>
 
-          <p className="mx-auto mt-8 max-w-lg text-center text-xs leading-5 text-zinc-500">
+          <p className="mx-auto mt-10 max-w-lg text-center text-xs leading-5 text-zinc-500">
             Settings isn&apos;t shown here because every part of it writes to
             your account. You decide how it introduces itself, what it asks, and
             what it must never say — and you can hear it before a customer does.
           </p>
+
+          {/*
+            And the bit that reaches you without opening anything. Kept because
+            "nothing you have to remember to check" is a distinct claim from
+            "there is an app" — but as two message bubbles rather than two
+            handsets, so it reads as a footnote instead of the headline.
+          */}
+          <div className="mt-14 border-t border-white/10 pt-12">
+            <p className="text-center text-[15px] leading-7 text-zinc-400">
+              You don&apos;t have to open it to find out. Two texts go the
+              moment they hang up.
+            </p>
+            <div className="mt-6">
+              <AfterTheCall />
+            </div>
+          </div>
         </div>
       </section>
 

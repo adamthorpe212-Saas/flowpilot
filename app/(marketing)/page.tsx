@@ -64,105 +64,101 @@ export default function Home() {
           className="fp-grid pointer-events-none absolute inset-x-0 top-0 h-[38rem]"
         />
 
-        <div className="relative mx-auto w-full max-w-6xl">
-          <div className="grid items-center gap-14 lg:grid-cols-[1.15fr_auto] lg:gap-16">
-            <div className="text-center lg:text-left">
-              <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-4 py-1.5 text-[12px] font-medium text-zinc-300 backdrop-blur">
-                <span
-                  aria-hidden="true"
-                  className="h-1.5 w-1.5 rounded-full bg-emerald-400"
-                />
-                Made for Irish trades
-              </p>
+        {/*
+          Centred, and nothing beside it.
 
+          A phone sat to the right of this and it made the landing page worse in
+          the way a second thing always does: the headline stopped being the
+          only place to look. A hero has one job — say what this is, once,
+          large — and the product has three sections below to prove itself in.
+          One column also means one layout, so the page a tradesperson sees on
+          a phone is the page everyone else sees.
+        */}
+        <div className="relative mx-auto w-full max-w-3xl text-center">
+          <p className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.04] px-4 py-1.5 text-[12px] font-medium text-zinc-300 backdrop-blur">
+            <span
+              aria-hidden="true"
+              className="h-1.5 w-1.5 rounded-full bg-emerald-400"
+            />
+            Made for Irish trades
+          </p>
+
+          {/*
+            Sized so each sentence holds one line on a 375px phone. At 36px they
+            both wrapped — "Your business / answers." over "Even when you /
+            don't." — which breaks the only thing the headline is doing. The two
+            halves are a matched pair, and the second lands because it mirrors
+            the first.
+          */}
+          <h1 className="mt-8 text-balance text-[2rem] font-semibold leading-[1.1] tracking-[-0.035em] sm:text-6xl sm:leading-[1.03] lg:text-7xl">
+            Your business answers.
+            <br />
+            <span className="text-zinc-500">Even when you don&apos;t.</span>
+          </h1>
+
+          {/*
+            Both halves of the product in one sentence. The old line stopped at
+            "has it on your phone", which is why the whole site read as a
+            texting service.
+          */}
+          <p className="mx-auto mt-7 max-w-xl text-pretty text-[16px] leading-7 text-zinc-300 sm:text-lg sm:leading-8">
+            FlowPilot answers the calls you miss, captures the job, and puts
+            every lead, conversation and booking into one simple app.
+          </p>
+
+          <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Link
+              href="/signup"
+              className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-white px-8 text-[15px] font-semibold text-black shadow-lg shadow-emerald-500/10 transition hover:bg-zinc-200 sm:w-auto"
+            >
+              Get FlowPilot
+            </Link>
+            <Link
+              href="/how-it-works#demo"
+              className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-white/20 px-8 text-[15px] font-medium text-white transition hover:border-white/40 hover:bg-white/5 sm:w-auto"
+            >
               {/*
-                Sized so each sentence holds one line on a 375px phone. At 36px
-                they both wrapped — "Your business / answers." over "Even when
-                you / don't." — which breaks the only thing the headline is
-                doing. The two halves are a matched pair, and the second lands
-                because it mirrors the first.
+                Not "hear it answer a call". This links to a typed demo with no
+                audio in it at all, onto a page that opens "Say something a
+                customer would say" — so the button promised a sound the visitor
+                then went looking for and could not find.
               */}
-              <h1 className="mt-7 text-balance text-[1.9rem] font-semibold leading-[1.12] tracking-[-0.035em] sm:text-6xl sm:leading-[1.04]">
-                Your business answers.
-                <br />
-                <span className="text-zinc-500">Even when you don&apos;t.</span>
-              </h1>
-
-              {/*
-                Both halves of the product in one sentence. The old line stopped
-                at "has it on your phone", which is why the whole site read as a
-                texting service.
-              */}
-              <p className="mx-auto mt-6 max-w-xl text-pretty text-[16px] leading-7 text-zinc-300 sm:text-lg sm:leading-8 lg:mx-0">
-                FlowPilot answers the calls you miss, captures the job, and puts
-                every lead, conversation and booking into one simple app.
-              </p>
-
-              <div className="mt-9 flex flex-col items-center gap-3 sm:flex-row lg:justify-start">
-                <Link
-                  href="/signup"
-                  className="inline-flex min-h-12 w-full items-center justify-center rounded-full bg-white px-8 text-[15px] font-semibold text-black shadow-lg shadow-emerald-500/10 transition hover:bg-zinc-200 sm:w-auto"
-                >
-                  Get FlowPilot
-                </Link>
-                <Link
-                  href="/how-it-works#demo"
-                  className="inline-flex min-h-12 w-full items-center justify-center gap-2 rounded-full border border-white/20 px-8 text-[15px] font-medium text-white transition hover:border-white/40 hover:bg-white/5 sm:w-auto"
-                >
-                  {/*
-                    Not "hear it answer a call". This links to a typed demo with
-                    no audio in it at all, onto a page that opens "Say something
-                    a customer would say" — so the button promised a sound the
-                    visitor then went looking for and could not find.
-                  */}
-                  See how it replies
-                  <svg
-                    aria-hidden="true"
-                    viewBox="0 0 20 20"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.75"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    className="h-4 w-4"
-                  >
-                    <path d="M4 10h11" />
-                    <path d="m10 5 5 5-5 5" />
-                  </svg>
-                </Link>
-              </div>
-
-              <ul className="mt-8 flex flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[13px] text-zinc-400 lg:justify-start">
-                {REASSURANCES.map((item) => (
-                  <li key={item} className="flex items-center gap-2">
-                    <svg
-                      aria-hidden="true"
-                      viewBox="0 0 20 20"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      className="h-3.5 w-3.5 flex-none text-emerald-400"
-                    >
-                      <path d="m4 10 4 4 8-8" />
-                    </svg>
-                    {item}
-                  </li>
-                ))}
-              </ul>
-            </div>
-
-            {/*
-              The app itself, beside the headline rather than a scroll below it.
-              A tradesperson deciding in fifteen seconds should see the product
-              without moving, and the real LeadCard shows the urgency flag, the
-              status and the date in one glance.
-            */}
-            <div className="flex justify-center">
-              <LeadInbox />
-            </div>
+              See how it replies
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 20 20"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-4 w-4"
+              >
+                <path d="M4 10h11" />
+                <path d="m10 5 5 5-5 5" />
+              </svg>
+            </Link>
           </div>
+
+          <ul className="mx-auto mt-9 flex max-w-xl flex-wrap items-center justify-center gap-x-6 gap-y-2 text-[13px] text-zinc-400">
+            {REASSURANCES.map((item) => (
+              <li key={item} className="flex items-center gap-2">
+                <svg
+                  aria-hidden="true"
+                  viewBox="0 0 20 20"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="h-3.5 w-3.5 flex-none text-emerald-400"
+                >
+                  <path d="m4 10 4 4 8-8" />
+                </svg>
+                {item}
+              </li>
+            ))}
+          </ul>
         </div>
       </section>
 
@@ -205,22 +201,38 @@ export default function Home() {
       {/* 3 — Where the work lives. */}
       <section className="border-t border-white/10 px-5 py-20 sm:px-6 sm:py-28">
         <div className="mx-auto max-w-6xl">
-          <div className="max-w-2xl">
-            <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">
-              Leads &amp; Jobs
-            </p>
-            <h2 className="mt-3 text-balance text-[2rem] font-semibold leading-[1.08] tracking-[-0.03em] sm:text-4xl">
-              Every lead. Every job. One place.
-            </h2>
-            <p className="mt-5 text-[16px] leading-7 text-zinc-400">
-              See who called, what they need, where they are and when they want
-              it. Ring them back, move it along, and book the work — without
-              relying on scraps of paper or voicemail.
-            </p>
+          {/*
+            The phone belongs here, not in the hero. This heading promises a
+            list, so showing the list is the section doing its job rather than
+            a product shot competing with a headline.
+          */}
+          <div className="grid items-center gap-12 lg:grid-cols-[1fr_auto] lg:gap-16">
+            <div className="max-w-2xl">
+              <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">
+                Leads &amp; Jobs
+              </p>
+              <h2 className="mt-3 text-balance text-[2rem] font-semibold leading-[1.08] tracking-[-0.03em] sm:text-4xl">
+                Every lead. Every job. One place.
+              </h2>
+              <p className="mt-5 text-[16px] leading-7 text-zinc-400">
+                See who called, what they need, where they are and when they
+                want it. Ring them back, move it along, and book the work —
+                without relying on scraps of paper or voicemail.
+              </p>
+            </div>
+
+            <div className="flex justify-center">
+              <LeadInbox />
+            </div>
           </div>
 
-          <div className="mt-12">
-            <LeadRecord />
+          <div className="mt-14">
+            <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">
+              And the whole job, opened
+            </p>
+            <div className="mt-5">
+              <LeadRecord />
+            </div>
           </div>
         </div>
       </section>

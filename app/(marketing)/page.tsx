@@ -2,7 +2,6 @@ import Link from "next/link";
 import CustomerJourney from "@/components/CustomerJourney";
 import DiaryPreview from "@/components/DiaryPreview";
 import Faq from "@/components/Faq";
-import LeadInbox from "@/components/LeadInbox";
 import LeadRecord from "@/components/LeadRecord";
 import { HOME_FAQ_IDS, faqItems } from "@/lib/faq";
 import { formatPrice, soldPlan, weeklyPrice } from "@/lib/plans";
@@ -201,39 +200,38 @@ export default function Home() {
       {/* 3 — Where the work lives. */}
       <section className="border-t border-white/10 px-5 py-20 sm:px-6 sm:py-28">
         <div className="mx-auto max-w-6xl">
-          {/*
-            The phone belongs here, not in the hero. This heading promises a
-            list, so showing the list is the section doing its job rather than
-            a product shot competing with a headline.
-          */}
-          <div className="grid items-center gap-12 lg:grid-cols-[1fr_auto] lg:gap-16">
-            <div className="max-w-2xl">
-              <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">
-                Leads &amp; Jobs
-              </p>
-              <h2 className="mt-3 text-balance text-[2rem] font-semibold leading-[1.08] tracking-[-0.03em] sm:text-4xl">
-                Every lead. Every job. One place.
-              </h2>
-              <p className="mt-5 text-[16px] leading-7 text-zinc-400">
-                See who called, what they need, where they are and when they
-                want it. Ring them back, move it along, and book the work —
-                without relying on scraps of paper or voicemail.
-              </p>
-            </div>
-
-            <div className="flex justify-center">
-              <LeadInbox />
-            </div>
-          </div>
-
-          <div className="mt-14">
+          <div className="max-w-2xl">
             <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">
-              And the whole job, opened
+              Leads &amp; Jobs
             </p>
-            <div className="mt-5">
-              <LeadRecord />
-            </div>
+            <h2 className="mt-3 text-balance text-[2rem] font-semibold leading-[1.08] tracking-[-0.03em] sm:text-4xl">
+              Every lead. Every job. One place.
+            </h2>
+            <p className="mt-5 text-[16px] leading-7 text-zinc-400">
+              See who called, what they need, where they are and when they want
+              it. Ring them back, move it along, and book the work — without
+              relying on scraps of paper or voicemail.
+            </p>
           </div>
+
+          {/*
+            No phone anywhere on this page now. The homepage argues; the app is
+            walked through on /how-it-works, where somebody who wants convincing
+            can click around it properly rather than squint at a mockup.
+          */}
+          <div className="mt-12">
+            <LeadRecord />
+          </div>
+
+          <p className="mt-8 text-sm text-zinc-400">
+            <Link
+              href="/how-it-works#tour"
+              className="text-white underline underline-offset-4 transition hover:text-zinc-300"
+            >
+              Have a look around the app
+            </Link>{" "}
+            — the real screens, with a made-up week in them.
+          </p>
         </div>
       </section>
 

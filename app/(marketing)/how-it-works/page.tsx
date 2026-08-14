@@ -1,9 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import AfterTheCall from "@/components/AfterTheCall";
+import AppTour from "@/components/AppTour";
 import CustomerJourney from "@/components/CustomerJourney";
-import DiaryPreview from "@/components/DiaryPreview";
-import LeadRecord from "@/components/LeadRecord";
 import LiveDemo from "@/components/LiveDemo";
 
 export const metadata: Metadata = {
@@ -122,26 +121,43 @@ export default function HowItWorks() {
           <div className="mt-12">
             <AfterTheCall />
           </div>
+        </div>
+      </section>
 
-          <div className="mt-16 border-t border-white/10 pt-16">
-            <LeadRecord />
+      {/*
+        The app itself, walkable.
+
+        This section used to be a stack: the job record, then the week, then a
+        heading explaining that one became the other. Three static panels
+        arguing that the product has screens. Letting somebody click between
+        the screens makes the argument in one move, and the homepage links
+        straight to it — hence the id and the scroll margin for the fixed bar.
+      */}
+      <section
+        id="tour"
+        className="scroll-mt-24 border-t border-white/10 px-5 py-20 sm:px-6 sm:py-24"
+      >
+        <div className="mx-auto max-w-5xl">
+          <div className="mx-auto max-w-2xl text-center">
+            <h2 className="text-3xl font-semibold tracking-[-0.02em] sm:text-4xl">
+              Have a look around.
+            </h2>
+            <p className="mx-auto mt-5 max-w-lg text-[15px] leading-7 text-zinc-400">
+              This is the app, with a made-up week in it. Click between the
+              screens — nothing here can be changed, and no real customer&apos;s
+              details are shown.
+            </p>
           </div>
 
-          <div className="mt-16 border-t border-white/10 pt-16">
-            <div className="mx-auto max-w-2xl text-center">
-              <h3 className="text-2xl font-semibold tracking-[-0.02em] sm:text-3xl">
-                Then it becomes work in your week.
-              </h3>
-              <p className="mx-auto mt-4 max-w-lg text-[15px] leading-7 text-zinc-400">
-                Book it from the job itself, or add work that never came through
-                FlowPilot at all.
-              </p>
-            </div>
-
-            <div className="mt-10">
-              <DiaryPreview />
-            </div>
+          <div className="mt-10">
+            <AppTour />
           </div>
+
+          <p className="mx-auto mt-8 max-w-lg text-center text-xs leading-5 text-zinc-500">
+            Settings isn&apos;t shown here because every part of it writes to
+            your account. You decide how it introduces itself, what it asks, and
+            what it must never say — and you can hear it before a customer does.
+          </p>
         </div>
       </section>
 

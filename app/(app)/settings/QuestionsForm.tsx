@@ -7,25 +7,10 @@ import {
 } from "@/app/(app)/settings/question-actions";
 import FormError from "@/components/ui/FormError";
 import SubmitButton from "@/components/ui/SubmitButton";
+import { FIELD_LABELS } from "@/lib/question-labels";
 import type { Captures, QualificationQuestion } from "@/types/database";
 
 const INITIAL: QuestionState = { error: null };
-
-/**
- * What each question is for, in the customer's language.
- *
- * The database calls them job_type and preferred_time. A tradesperson should
- * see "The job" and "When they want it" — the column name is our concern, not
- * theirs, and showing it would invite somebody to think they can change it.
- */
-const FIELD_LABELS: Record<Captures, string> = {
-  job_type: "The job",
-  location: "Where they are",
-  preferred_time: "When they want it",
-  contact_name: "Their name",
-  urgency: "How urgent",
-  other: "Extra question",
-};
 
 /** Asked of every caller and not negotiable — see question-actions.ts. */
 const ALWAYS_REQUIRED: Captures = "job_type";

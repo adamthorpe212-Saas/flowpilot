@@ -128,24 +128,21 @@ export function allFaqItems(): FaqItem[] {
 }
 
 /**
- * The five objections that stop somebody buying, in the order they occur.
+ * The two objections left standing by the time somebody reaches the price.
  *
- * The homepage FAQ sits directly under the price, which is the moment the
- * objections fire, so it holds the ones that decide a sale — my number, my
- * reputation, will it cope, do I get a say, how fast.
+ * This was five, and three of them are now answered better upstairs than a
+ * collapsed paragraph ever managed. The control section shows the block list,
+ * the switch, the question builder and what the receptionist may know about the
+ * diary — so "can I control what it says", "is it obvious it's a machine" and
+ * "what if it misunderstands someone" are being asked of a reader who has just
+ * been shown the answer.
  *
- * "Can I control what it says" displaced "cancel". Cancelling is already
- * promised in the line directly above this section, where it does more good;
- * the fear that a machine will speak badly for your business is the one the
- * page had left entirely unanswered.
+ * What survives is the pair that no screenshot can settle: whether he keeps the
+ * number on his van, and how long before it is actually working. Both stay on
+ * /faq as well, so nothing is lost — only moved off the page where the reader
+ * is deciding rather than researching.
  */
-export const HOME_FAQ_IDS = [
-  "keep-number",
-  "is-it-a-machine",
-  "misunderstands",
-  "control-what-it-says",
-  "time-to-live",
-] as const;
+export const HOME_FAQ_IDS = ["keep-number", "time-to-live"] as const;
 
 /** The full set, for somebody reading the page that explains the product. */
 export const LEARN_FAQ_IDS = [

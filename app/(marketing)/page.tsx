@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Control from "@/components/Control";
 import CustomerJourney from "@/components/CustomerJourney";
 import StickyCta from "@/components/StickyCta";
 import WeekStrip, { weekFrom } from "@/components/WeekStrip";
@@ -12,9 +13,15 @@ import { isoDateIn, startOfDayIn } from "@/lib/today";
 /**
  * The homepage sells. It does not explain.
  *
- * Six sections, and each one earns its place by saying something the others do
- * not: the promise, the whole journey in four steps, where the leads live, how
- * the diary works, what it costs, and the objections.
+ * Each section earns its place by saying something the others do not: the
+ * promise, the whole journey in four steps, where the jobs live, the four
+ * things no competitor does, what it costs, and the objections.
+ *
+ * The control section sits between the product and the price on purpose. By
+ * then a reader knows what FlowPilot does, and the question that stops him
+ * buying has changed from "what is this" to "what will it do to my customer
+ * when I'm not listening". Answering that immediately above the price is also
+ * what let the FAQ below drop from five questions to two.
  *
  * It was eight, and three of them were arguing the same point — a benefits list
  * about answering, an emotional beat about answering, and a setup section that
@@ -110,7 +117,7 @@ export default function Home() {
           */}
           <p className="mx-auto mt-7 max-w-xl text-pretty text-[16px] leading-7 text-zinc-300 sm:text-lg sm:leading-8">
             An AI receptionist that answers the calls you miss — and a job book
-            and diary that keep every lead, conversation and booking in one
+            and diary that keep every job, conversation and booking in one
             place.
           </p>
 
@@ -271,17 +278,33 @@ export default function Home() {
       <section className="border-t border-white/10 px-5 py-14 sm:px-6 sm:py-28">
         <div className="mx-auto max-w-6xl">
           <div className="max-w-2xl">
+            {/*
+              "Jobs", to match the app. The nav inside FlowPilot says Jobs and
+              the tour says Jobs; only the sales page still called them leads,
+              which taught a buyer a word he would never see again after paying.
+            */}
             <p className="text-xs uppercase tracking-[0.18em] text-zinc-500">
-              Leads &amp; Jobs
+              Jobs
             </p>
             <h2 className="mt-3 text-balance text-[2rem] font-semibold leading-[1.08] tracking-[-0.03em] sm:text-4xl">
-              Every lead. Every job. One place.
+              Every call. Every job. One place.
             </h2>
             <p className="mt-5 text-[16px] leading-7 text-zinc-400">
               See who called, what they need and when they want it. Ring them
-              back, or put the work straight in your diary — alongside the
-              referrals and repeat customers that never came through FlowPilot
-              at all.
+              back, or put the work straight in your diary.
+            </p>
+            {/*
+              The manual half, said out loud rather than left as a clause.
+              A tradesman's week is mostly regulars, referrals and favours that
+              never rang the FlowPilot number, and a diary that only holds the
+              calls it answered is a diary he keeps twice — which means he
+              keeps it nowhere.
+            */}
+            <p className="mt-4 text-[16px] leading-7 text-zinc-400">
+              Work that never came through a call goes in yourself — a regular,
+              a foreman, a favour. Those count too, so when the receptionist
+              looks at how busy you are, it sees the whole week and not just its
+              own half of it.
             </p>
           </div>
 
@@ -313,6 +336,9 @@ export default function Home() {
           </p>
         </div>
       </section>
+
+      {/* 4 — The four things nobody else does. */}
+      <Control />
 
       {/* 5 — What it costs. */}
       <section className="border-t border-white/10 px-5 py-14 sm:px-6 sm:py-28">

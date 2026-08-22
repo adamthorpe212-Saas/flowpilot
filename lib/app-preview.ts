@@ -1,3 +1,4 @@
+import { busyDays, type DayLoad } from "@/lib/availability";
 import { EXAMPLE_CAPTURED } from "@/lib/demo-example";
 import {
   DEMO_CALLER_E164,
@@ -185,4 +186,29 @@ export function previewAppointments(now: Date = new Date()): Appointment[] {
     at(3, "anytime", "Leaking shower"),
     at(4, "morning", "Kitchen tap"),
   ];
+}
+
+/**
+ * The preview week as the receptionist is allowed to see it.
+ *
+ * Run through the real busyDays(), so the marketing site cannot claim the
+ * receptionist knows something availability.ts would never tell it — the
+ * density of a day, never its contents, and never that a day is free.
+ *
+ * Anchored to the Monday of the preview week rather than to today, and that is
+ * the whole reason this function exists. previewAppointments() fills Monday to
+ * Friday of the current week, while busyDays() drops anything already past —
+ * so by Friday the card showed one day, and at the weekend it showed nothing
+ * at all. A marketing page that quietly empties itself every Saturday is worse
+ * than a hardcoded fixture, because nothing fails and nobody finds out.
+ *
+ * Tuesday is absent from the result on purpose: it has no work on it, and a
+ * summary that named quiet days would be one rephrasing away from telling a
+ * caller the man is free.
+ */
+export function previewWeekLoad(now: Date = new Date()): DayLoad[] {
+  const monday = new Date(now);
+  // getDay() is 0=Sunday, so shift before subtracting to land on Monday.
+  monday.setDate(monday.getDate() - ((monday.getDay() + 6) % 7));
+  return busyDays(previewAppointments(now), monday);
 }

@@ -125,7 +125,7 @@ export default function Control() {
 
         <div className="mt-10 sm:mt-14">
           <Block
-            title={<>It doesn&rsquo;t answer your mother.</>}
+            title={<>It&rsquo;s your own phone. You say who it answers.</>}
             screen={
               <div>
                 <ul className="divide-y divide-white/5 rounded-2xl border border-white/10 bg-white/[0.02] px-5">
@@ -161,9 +161,11 @@ export default function Control() {
               </div>
             }
           >
-            Add the numbers you know — family, the lads, the foreman. It never
-            picks up to them. The only calls it answers are from numbers
-            you&apos;ve never seen, which is what a new customer is.
+            Your work number is the phone in your pocket. Add the ones you
+            know — family, the lads, the foreman — and they ring out to your
+            voicemail exactly like always, never knowing a receptionist exists.
+            It only answers numbers you&apos;ve never seen, which is what a new
+            customer is.
           </Block>
 
           <Block
